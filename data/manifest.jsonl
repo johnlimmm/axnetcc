@@ -1,0 +1,5 @@
+{"dataset_id":"legal-public-v1","agent":"legal","source_type":"public","owner":"법제처","update_cycle":"weekly","license_note":"공공데이터 이용조건 및 출처표시 확인","ingestion":"law-open-api","status":"sample-ready"}
+{"dataset_id":"security-policy-v1","agent":"security","source_type":"synthetic-internal","owner":"MNC Lab.","update_cycle":"manual","license_note":"실증용 합성 문서","ingestion":"markdown","status":"sample-ready"}
+{"dataset_id":"tech-standard-v1","agent":"tech","source_type":"synthetic-internal","owner":"MNC Lab.","update_cycle":"manual","license_note":"실증용 합성 문서","ingestion":"markdown","status":"sample-ready"}
+{"dataset_id":"finance-procurement-v1","agent":"finance","source_type":"synthetic-internal","owner":"MNC Lab.","update_cycle":"manual","license_note":"실증용 합성 문서","ingestion":"markdown","status":"sample-ready"}
+

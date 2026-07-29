@@ -196,12 +196,23 @@ export default function Home() {
 
   async function run() {
     setRunning(true);
-    await new Promise((resolve) => setTimeout(resolve, 850));
-    const next = buildFallbackResult(query, mode);
-    setResult(next);
-    const first = next.agents.find((agent) => agent.selected);
-    if (first) setActiveAgent(first.id);
-    setRunning(false);
+    try {
+      const response = await fetch("/api/orchestrate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query, mode }),
+      });
+      if (!response.ok) throw new Error("orchestration failed");
+      const next = await response.json() as RunResult;
+      setResult(next);
+      const first = next.agents.find((agent) => agent.selected);
+      if (first) setActiveAgent(first.id);
+    } catch {
+      const next = buildFallbackResult(query, mode);
+      setResult(next);
+    } finally {
+      setRunning(false);
+    }
   }
 
   return (
