@@ -7,7 +7,13 @@ export async function POST(request: Request) {
       return Response.json({ error: "query는 5자 이상이어야 합니다." }, { status: 400 });
     }
     const mode: RunMode =
-      body.mode === "parallel" || body.mode === "centralized" || body.mode === "managed" ? body.mode : "proposed";
+      body.mode === "parallel" ||
+      body.mode === "centralized" ||
+      body.mode === "managed" ||
+      body.mode === "masrouter" ||
+      body.mode === "remoterag"
+        ? body.mode
+        : "proposed";
     return Response.json(await orchestrate(body.query, mode, body.commercialJudge === true));
   } catch {
     return Response.json({ error: "올바른 JSON 요청이 아닙니다." }, { status: 400 });

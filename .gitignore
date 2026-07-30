@@ -51,3 +51,4 @@ public/index-*.css
 /corpus/index/
 __pycache__/
 *.py[cod]
+/paper/rendered/

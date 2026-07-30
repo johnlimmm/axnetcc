@@ -132,6 +132,14 @@ test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => 
     assert.equal(managed.metrics.calls, 2);
     assert.equal(managed.metrics.rawDataLeavesEdge, true);
     assert.ok(managed.metrics.privacyRiskScore > result.metrics.privacyRiskScore);
+    const masrouter = await orchestrate("개인정보 보안 법무 예산 검토", "masrouter");
+    assert.equal(masrouter.mode, "masrouter");
+    assert.equal(masrouter.metrics.rawDataLeavesEdge, true);
+    assert.ok(masrouter.agents.filter((agent) => agent.selected).length >= 2);
+    const remoterag = await orchestrate("agency internal privacy security legal budget review", "remoterag");
+    assert.equal(remoterag.mode, "remoterag");
+    assert.equal(remoterag.metrics.queryProtection, "deterministic-generalization");
+    assert.ok(remoterag.metrics.perturbedTerms > 0);
   } finally {
     delete process.env.LOCAL_LLM_BASE_URL;
     delete process.env.LOCAL_LLM_MODEL;

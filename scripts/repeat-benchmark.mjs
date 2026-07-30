@@ -1,6 +1,6 @@
 const endpoint = process.env.BENCHMARK_URL ?? "http://localhost:3000/api/orchestrate";
 const repetitions = Number(process.env.BENCHMARK_REPETITIONS ?? 3);
-const modes = ["centralized", "managed", "parallel", "proposed"];
+const modes = ["centralized", "parallel", "masrouter", "remoterag", "proposed"];
 const queries = [
   "민원 상담용 생성형 AI 서비스를 도입하려고 합니다. 개인정보 보호, 클라우드 보안, 법적 책임과 예산 타당성을 종합 검토해 주세요.",
   "기관 내부 문서를 활용하는 RAG 서비스를 구축할 때 데이터 품질, 접근통제, 개인정보 처리와 운영 SLA를 검토해 주세요.",

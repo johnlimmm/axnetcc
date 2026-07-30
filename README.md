@@ -10,7 +10,7 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 - Agent별 독립 Ollama endpoint와 모델 설정
 - Agent별 허용 범위를 적용한 로컬 RAG
 - 직접 식별자 마스킹과 근거 ID 연결
-- 중앙집중형, Managed Supervisor, 전체 Multi-Agent, 제안 방식의 동일 질의 비교
+- 중앙집중형, 전체 Multi-Agent, MasRouter-inspired, RemoteRAG-inspired, 제안 방식의 동일 질의 비교
 - E2E latency, TTFT, TPOT, Core 전송량, 원문 외부 전송 여부 측정
 - 선택적으로 OpenAI 호환 상용 LLM을 블라인드 평가자로 사용
 - 반복평가 페이지: `/evaluation`
@@ -18,16 +18,19 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 
 ## 검증된 반복평가 결과
 
-5개 복합 질의를 네 방식에 각각 3회 적용해 총 60개 결과를 비교했습니다.
+문헌 기반 baseline 추가 후 5개 복합 질의를 다섯 방식에 각각 3회 적용해 총 75개 결과를 비교했습니다.
 
 | 방식 | 종합 품질 평균 | 표준편차 | TTFT | TPOT | Core 전송량 | 원문 외부 전송 |
 |---|---:|---:|---:|---:|---:|---|
-| 중앙집중형 | 80.9 | 4.8 | 21.40초 | 125.1ms | 52,788B | 있음 |
-| Managed Supervisor | 77.7 | 5.9 | 2.69초 | 134.7ms | 56,267B | 있음 |
-| 전체 Multi-Agent | 82.3 | 4.4 | 5.41초 | 136.1ms | 6,718B | 없음 |
-| 제안 방식 | 77.1 | 4.0 | 2.35초 | 107.7ms | 3,479B | 없음 |
+| Single Centralized RAG | 81.6 | 5.1 | 18.36초 | 110.9ms | 52,788B | 있음 |
+| All-Agent Aggregation | 81.3 | 4.9 | 5.69초 | 157.4ms | 6,718B | 없음 |
+| MasRouter-inspired | 74.1 | 5.5 | 2.21초 | 133.4ms | 1,426B | 있음 |
+| RemoteRAG-inspired | 70.0 | 10.3 | 4.58초 | 104.0ms | 4,649B | 있음 |
+| 제안 방식 | 76.5 | 4.7 | 3.78초 | 152.2ms | 3,479B | 없음 |
 
-현재 환경에서 제안 방식은 최고 품질의 93.7%를 유지하면서 전체 Multi-Agent 대비 Core 전송량을 48.2% 줄였습니다. 이는 현재 평가셋과 장비에 대한 실측 결과이며 모든 환경에 대한 일반화된 성능 보장은 아닙니다.
+현재 환경에서 제안 방식은 최고 품질의 93.8%를 유지하면서 전체 Multi-Agent 대비 Core 전송량을 48.2% 줄였습니다. MasRouter-inspired보다 품질이 2.4점, RemoteRAG-inspired보다 6.5점 높았고 원문 비이동을 유지했습니다. 두 inspired baseline은 원 논문의 전체 학습 controller 또는 DistanceDP를 재현한 것이 아니라 공개된 핵심 메커니즘을 동일 환경에 맞춰 구현한 비교군입니다. 이는 현재 평가셋과 장비에 대한 실측 결과이며 모든 환경에 대한 일반화된 성능 보장은 아닙니다.
+
+실험 원자료 요약은 `data/evaluation/literature-baseline-report.json`, 국내 학술대회 2쪽 초안과 재생성 스크립트는 `paper/`에 있습니다.
 
 ## 구조
 
@@ -267,7 +270,7 @@ pnpm run rag:compile
 pnpm run eval:offline
 ```
 
-네 방식 반복 비교:
+다섯 방식 반복 비교:
 
 ```bash
 pnpm run build
@@ -331,7 +334,7 @@ curl -X POST http://localhost:3000/api/orchestrate \
 | `pnpm run local:check` | endpoint·모델 상태 확인 |
 | `pnpm run rag:compile` | RAG corpus 재생성 |
 | `pnpm run eval:offline` | golden set 오프라인 평가 |
-| `node scripts/repeat-benchmark.mjs` | 네 방식 반복평가 |
+| `node scripts/repeat-benchmark.mjs` | 다섯 방식 반복평가 |
 
 ## 라이선스와 데이터
 

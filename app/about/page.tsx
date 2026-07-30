@@ -47,7 +47,7 @@ export default function AboutPage() {
             <div className="noveltyGrid">
               <section><b>선택적 협력</b><p>모든 Agent를 항상 호출하지 않고 질의별로 필요한 전문성만 실행합니다.</p></section>
               <section><b>Agent별 데이터 주권</b><p>각 Agent가 독립 로컬 LLM과 RAG를 사용하고 원문은 Edge에 남깁니다.</p></section>
-              <section><b>품질–보호 동시 비교</b><p>동일 질의를 중앙집중형·상용 Supervisor형·전체 병렬형·제안 방식으로 실행합니다.</p></section>
+              <section><b>품질–보호 동시 비교</b><p>동일 질의를 중앙집중형·전체 병렬형·MasRouter-inspired·RemoteRAG-inspired·제안 방식으로 실행합니다.</p></section>
               <section><b>검증 가능한 거버넌스</b><p>답변뿐 아니라 호출 수, 근거 ID, Core 전송 바이트, TTFT·TPOT을 함께 기록합니다.</p></section>
             </div>
             <p className="researchClaim">연구 가설: 동적 Agent 선택과 Edge RAG를 결합하면 최고 품질 방식과 유사한 응답 품질을 유지하면서 Core 전송 바이트와 PII 유출률을 줄일 수 있다.</p>
@@ -82,7 +82,7 @@ export default function AboutPage() {
         </article>
         <article>
           <span className="aboutNumber">07</span>
-          <div><h2>비교 실험</h2><p>네 방식에 동일한 질의·문서·모델 조건을 적용합니다. 최고 품질 방식의 점수를 100%로 두고 제안 방식의 품질 유지율을 계산한 뒤, 호출 수·Core 전송 바이트·PII Leakage Rate·E2E·TTFT·TPOT의 차이를 함께 비교합니다. 핵심 결과 형식은 “품질 유지율은 유사하면서 데이터 이동과 개인정보 유출은 얼마나 감소했는가”입니다.</p></div>
+          <div><h2>비교 실험</h2><p>다섯 방식에 동일한 질의·문서·로컬 모델 조건을 적용합니다. 5개 복합 질의를 방식별 3회 반복한 75개 응답에서 제안 방식은 최고 평균 품질의 93.8%를 유지하면서 전체 병렬형보다 Core 전송량을 48.2% 줄였습니다. MasRouter-inspired보다 품질이 2.4점, RemoteRAG-inspired보다 6.5점 높았으며 원문 비이동을 유지했습니다. inspired 비교군은 원 논문의 전체 학습 제어기나 DistanceDP를 재현한 것이 아니라 공개된 핵심 메커니즘을 동일 환경에 구현한 비교군입니다.</p></div>
         </article>
       </section>
 

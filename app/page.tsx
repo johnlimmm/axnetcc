@@ -27,7 +27,13 @@ type AgentResult = {
 
 type RunResult = {
   runId: string;
-  mode: "proposed" | "parallel" | "centralized" | "managed";
+  mode:
+    | "proposed"
+    | "parallel"
+    | "centralized"
+    | "managed"
+    | "masrouter"
+    | "remoterag";
   title: string;
   conclusion: string;
   status: "ready" | "review";
@@ -317,8 +323,9 @@ export default function Home() {
   const comparison = useMemo(() => {
     return [
       { id: "centralized" as const, name: "중앙집중형" },
-      { id: "managed" as const, name: "상용 Managed Supervisor" },
       { id: "parallel" as const, name: "병렬 Multi-Agent" },
+      { id: "masrouter" as const, name: "MasRouter-inspired" },
+      { id: "remoterag" as const, name: "RemoteRAG-inspired" },
       { id: "proposed" as const, name: "제안 방식" },
     ].map((item) => ({
       ...item,
@@ -336,7 +343,7 @@ export default function Home() {
     const proposed = measured.find((row) => row.id === "proposed");
     const centralized = measured.find((row) => row.id === "centralized");
     return {
-      complete: measured.length === 4 && judged.length === 4,
+      complete: measured.length === 5 && judged.length === 5,
       bestQuality,
       qualityRetention:
         proposed?.judge?.overall != null && bestQuality
@@ -384,14 +391,15 @@ export default function Home() {
     setBenchmarks({});
     const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
       { mode: "centralized", label: "중앙집중형" },
-      { mode: "managed", label: "상용 Managed Supervisor" },
       { mode: "parallel", label: "전체 Multi-Agent" },
+      { mode: "masrouter", label: "MasRouter-inspired" },
+      { mode: "remoterag", label: "RemoteRAG-inspired" },
       { mode: "proposed", label: "제안 방식" },
     ];
     try {
       for (let index = 0; index < sequence.length; index += 1) {
         const item = sequence[index];
-        setRunProgress(`${index + 1}/4 ${item.label} 실측 중`);
+        setRunProgress(`${index + 1}/${sequence.length} ${item.label} 실측 중`);
         const next = await executeMode(item.mode);
         setBenchmarks((current) => ({ ...current, [next.mode]: next }));
         setResult(next);
@@ -455,9 +463,10 @@ export default function Home() {
           <div className="modePicker">
             {[
               ["proposed", "제안 방식", "동적 선택 + 최소 전달"],
+              ["masrouter", "MasRouter-inspired", "질의 복잡도 + 역할 라우팅"],
+              ["remoterag", "RemoteRAG-inspired", "질의 일반화 + 제한 검색"],
               ["parallel", "병렬 방식", "모든 Agent 호출"],
               ["centralized", "중앙집중형", "중앙에서 전체 처리"],
-              ["managed", "상용형 기준선", "Supervisor + 선택 Agent"],
             ].map(([id, label, detail]) => (
               <button key={id} className={mode === id ? "active" : ""} onClick={() => setMode(id as RunResult["mode"])}>
                 <span>{label}</span><small>{detail}</small>
@@ -484,7 +493,19 @@ export default function Home() {
         {hasRun ? <div className="resultPanel">
           <div className="orchestrationHead">
             <div><span className="liveDot" /> RUN {result.runId}</div>
-            <span>{result.mode === "proposed" ? "동적 오케스트레이션" : result.mode === "parallel" ? "병렬 호출" : result.mode === "managed" ? "Managed Supervisor" : "중앙집중 처리"}</span>
+            <span>{
+              result.mode === "proposed"
+                ? "데이터 경계 인지 오케스트레이션"
+                : result.mode === "parallel"
+                  ? "전체 Agent 병렬 호출"
+                  : result.mode === "masrouter"
+                    ? "MasRouter-inspired 역할 라우팅"
+                    : result.mode === "remoterag"
+                      ? "RemoteRAG-inspired 보호 검색"
+                      : result.mode === "managed"
+                        ? "Managed Supervisor"
+                        : "중앙집중 처리"
+            }</span>
           </div>
 
           <div className={`agentRail ${running ? "running" : ""}`}>

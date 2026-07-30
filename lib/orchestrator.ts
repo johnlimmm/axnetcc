@@ -3,7 +3,13 @@ import { evaluateWithCommercialJudge } from "./commercial-judge";
 import { generateLocalAnswer } from "./local-llm";
 import { ragStats, searchRag } from "./rag";
 
-export type RunMode = "proposed" | "parallel" | "centralized" | "managed";
+export type RunMode =
+  | "proposed"
+  | "parallel"
+  | "centralized"
+  | "managed"
+  | "masrouter"
+  | "remoterag";
 
 const sensitivePatterns = [
   { label: "주민등록번호", regex: /\b\d{6}-?[1-4]\d{6}\b/g },
@@ -23,6 +29,42 @@ function terms(text: string) {
 function overlap(query: string, values: string[]) {
   const normalized = query.toLowerCase();
   return values.reduce((score, value) => score + (normalized.includes(value.toLowerCase()) ? 1 : 0), 0);
+}
+
+function selectMasRouterInspired(
+  ids: AgentId[],
+  scores: Record<AgentId, number>,
+) {
+  const ranked = [...ids].sort((a, b) => scores[b] - scores[a]);
+  const relevant = ranked.filter((id) => scores[id] > 0);
+  if (!relevant.length) return [ranked[0]];
+  // MasRouter의 collaboration/role routing 핵심을 비학습식 baseline으로
+  // 옮긴다. 단순 질의는 단일 역할, 복합 질의는 상위 역할 집합을 사용한다.
+  const collaborationSize =
+    relevant.length === 1 ? 1 : Math.min(4, Math.max(2, Math.ceil(relevant.length * 0.6)));
+  return relevant.slice(0, collaborationSize);
+}
+
+function perturbQueryForRemoteRag(query: string) {
+  const protectedTerms = new Set([
+    "ai", "rag", "llm", "보안", "개인정보", "법적", "법무", "예산", "조달",
+    "운영", "sla", "클라우드", "품질", "민원", "데이터",
+  ]);
+  let replaced = 0;
+  const tokens = query.split(/(\s+)/);
+  const perturbed = tokens.map((token, index) => {
+    const normalized = token.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    if (
+      normalized.length >= 3 &&
+      !protectedTerms.has(normalized) &&
+      index % 7 === 0
+    ) {
+      replaced += 1;
+      return "[일반화]";
+    }
+    return token;
+  }).join("");
+  return { query: perturbed, replaced };
 }
 
 function lexicalCoverage(expected: string, actual: string) {
@@ -159,25 +201,34 @@ export async function orchestrate(
   const scores = Object.fromEntries(
     ids.map((id) => [id, overlap(query, agentProfiles[id].keywords)]),
   ) as Record<AgentId, number>;
+  const remoteRagQuery = perturbQueryForRemoteRag(query);
   const selected =
-    mode === "proposed" || mode === "managed"
+    mode === "masrouter"
+      ? selectMasRouterInspired(ids, scores)
+      : mode === "remoterag"
+        ? selectMasRouterInspired(ids, scores)
+      : mode === "proposed" || mode === "managed"
       ? ids.filter((id) => scores[id] > 0)
       : ids;
   if (!selected.length) selected.push("tech");
 
   const centralizedEvidence =
-    mode === "centralized"
+    mode === "centralized" || mode === "remoterag"
       ? ids
-          .flatMap((id) => retrieve(query, id, 1).map((item) => item.chunk))
+          .filter((id) => mode !== "remoterag" || selected.includes(id))
+          .flatMap((id) =>
+            retrieve(mode === "remoterag" ? remoteRagQuery.query : query, id, 1)
+              .map((item) => item.chunk),
+          )
           .filter((chunk, index, items) => items.findIndex((item) => item.id === chunk.id) === index)
       : [];
   const centralizedGeneration =
-    mode === "centralized"
+    mode === "centralized" || mode === "remoterag"
       ? await generateLocalAnswer({
           agent: "tech",
           agentName: "중앙집중형 Core LLM",
           responsibility: "전체 전문영역의 원문과 판단을 중앙에서 통합 처리",
-          query,
+          query: mode === "remoterag" ? remoteRagQuery.query : query,
           evidence: centralizedEvidence,
           fallback: synthesize("tech", centralizedEvidence),
         })
@@ -185,7 +236,9 @@ export async function orchestrate(
 
   const agentResults = await Promise.all(ids.map(async (id, index) => {
     const isSelected = selected.includes(id);
-    const retrieved = isSelected ? retrieve(`${query} ${retrievalFocus[id]}`, id) : [];
+    const retrievalQuery =
+      mode === "remoterag" ? remoteRagQuery.query : `${query} ${retrievalFocus[id]}`;
+    const retrieved = isSelected ? retrieve(retrievalQuery, id) : [];
     const fallbackSummary = isSelected
       ? synthesize(id, retrieved.map((item) => item.chunk))
       : "현재 질의에서는 이 Agent가 선택되지 않아 원문 검색과 로컬 LLM 추론을 실행하지 않았습니다.";
@@ -294,7 +347,26 @@ export async function orchestrate(
   const centralizedSourceBytes = encoder.encode(JSON.stringify(
     ids.flatMap((id) => retrieve(query, id, 3).map((item) => item.chunk)),
   )).length + encoder.encode(rawQuery).length;
-  const boundaryBytes = mode === "centralized" ? centralizedSourceBytes : distributedPayloadBytes;
+  const remoteRagBoundaryBytes = encoder.encode(JSON.stringify({
+    protectedQuery: remoteRagQuery.query,
+    candidateEvidence: centralizedEvidence.map((chunk) => ({
+      id: chunk.id,
+      text: chunk.text,
+    })),
+  })).length;
+  const masRouterBoundaryBytes = encoder.encode(JSON.stringify({
+    query,
+    selectedAgents: selected,
+    responses: selectedResults.map((result) => result.summary),
+  })).length;
+  const boundaryBytes =
+    mode === "centralized"
+      ? centralizedSourceBytes
+      : mode === "remoterag"
+        ? remoteRagBoundaryBytes
+        : mode === "masrouter"
+          ? masRouterBoundaryBytes
+          : distributedPayloadBytes;
   const minimizationRate =
     mode === "centralized"
       ? 0
@@ -304,6 +376,10 @@ export async function orchestrate(
       ? Math.min(100, 75 + inputFiltered.length * 10)
       : mode === "managed"
         ? Math.min(100, 65 + selected.length * 3 + inputFiltered.length * 6)
+      : mode === "remoterag"
+        ? Math.min(100, 42 + selected.length * 2 + inputFiltered.length * 4)
+      : mode === "masrouter"
+        ? Math.min(100, 58 + selected.length * 3 + inputFiltered.length * 5)
       : mode === "parallel"
         ? Math.min(100, 30 + selected.length * 4 + inputFiltered.length * 5)
         : Math.min(100, 8 + selected.length * 3 + inputFiltered.length * 4);
@@ -405,11 +481,20 @@ export async function orchestrate(
         : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
-      rawDataLeavesEdge: mode === "centralized" || mode === "managed",
+      rawDataLeavesEdge:
+        mode === "centralized" ||
+        mode === "managed" ||
+        mode === "masrouter" ||
+        mode === "remoterag",
       boundaryBytes: mode === "managed" ? centralizedSourceBytes + distributedPayloadBytes : boundaryBytes,
-      dataRecipients: mode === "centralized" ? 1 : selected.length + (mode === "managed" ? 1 : 0),
+      dataRecipients:
+        mode === "centralized" || mode === "remoterag"
+          ? 1
+          : selected.length + (mode === "managed" ? 1 : 0),
       minimizationRate: mode === "managed" ? 0 : minimizationRate,
       privacyRiskScore,
+      queryProtection: mode === "remoterag" ? "deterministic-generalization" : "none",
+      perturbedTerms: mode === "remoterag" ? remoteRagQuery.replaced : 0,
       groundedness,
       relevance,
       evidenceSupport,
