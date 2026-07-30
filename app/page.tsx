@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import benchmark from "../data/evaluation/latest-report.json";
 
 type AgentResult = {
   id: string;
@@ -54,6 +53,8 @@ type RunResult = {
     citationRecall?: number;
     claimSupportRate?: number;
     retrievalSuccessRate?: number;
+    evidenceUtilizationRate?: number;
+    claimCitationCoverage?: number;
     domainCoverage: number;
     answerCompleteness: number;
     qualityScore: number;
@@ -287,7 +288,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<RunResult["mode"]>("proposed");
   const [result, setResult] = useState<RunResult>(() => buildFallbackResult(exampleRequests[0], "proposed"));
-  const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult["metrics"]>>>({});
+  const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult>>>({});
   const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
   const [runProgress, setRunProgress] = useState("");
@@ -321,27 +322,25 @@ export default function Home() {
       { id: "proposed" as const, name: "제안 방식" },
     ].map((item) => ({
       ...item,
-      metrics: benchmarks[item.id] ?? buildFallbackResult(query, item.id).metrics,
+      metrics: benchmarks[item.id]?.metrics ?? buildFallbackResult(query, item.id).metrics,
+      judge: benchmarks[item.id]?.commercialJudge,
       measured: Boolean(benchmarks[item.id]),
     }));
   }, [benchmarks, query]);
   const liveComparison = useMemo(() => {
     const measured = comparison.filter((row) => row.measured);
-    const bestQuality = measured.length
-      ? Math.max(...measured.map((row) => row.metrics.qualityScore))
+    const judged = measured.filter((row) => row.judge?.overall != null);
+    const bestQuality = judged.length
+      ? Math.max(...judged.map((row) => row.judge?.overall ?? 0))
       : null;
     const proposed = measured.find((row) => row.id === "proposed");
     const centralized = measured.find((row) => row.id === "centralized");
     return {
-      complete: measured.length === 4,
+      complete: measured.length === 4 && judged.length === 4,
       bestQuality,
       qualityRetention:
-        proposed && bestQuality
-          ? Math.round(proposed.metrics.qualityScore / bestQuality * 100)
-          : null,
-      privacyGain:
-        proposed && centralized && centralized.metrics.privacyRiskScore
-          ? Math.round((1 - proposed.metrics.privacyRiskScore / centralized.metrics.privacyRiskScore) * 100)
+        proposed?.judge?.overall != null && bestQuality
+          ? Math.round(proposed.judge.overall / bestQuality * 100)
           : null,
       boundaryGain:
         proposed && centralized && centralized.metrics.boundaryBytes
@@ -368,7 +367,7 @@ export default function Home() {
       const next = await executeMode(mode);
       setResult(next);
       setHasRun(true);
-      setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
+      setBenchmarks((current) => ({ ...current, [next.mode]: next }));
       const first = next.agents.find((agent) => agent.selected);
       if (first) setActiveAgent(first.id);
     } catch {
@@ -394,7 +393,7 @@ export default function Home() {
         const item = sequence[index];
         setRunProgress(`${index + 1}/4 ${item.label} 실측 중`);
         const next = await executeMode(item.mode);
-        setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
+        setBenchmarks((current) => ({ ...current, [next.mode]: next }));
         setResult(next);
         setHasRun(true);
         const first = next.agents.find((agent) => agent.selected);
@@ -416,6 +415,7 @@ export default function Home() {
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </div>
+        <a className="aboutLink" href="/about">서비스 소개</a>
         <div className="networkState">
           <span /> {!llmHealth
             ? "Local LLM · 확인 중"
@@ -618,7 +618,7 @@ export default function Home() {
             <span>구조 기반 위험지표 · 낮을수록 안전</span>
           </div>
           <div className="privacyHead">
-            <span>방식</span><span>원문 Edge 이탈</span><span>신뢰경계 전송</span><span>데이터 수신 범위</span><span>최소화율</span><span>위험점수</span>
+            <span>방식</span><span>원문 외부 전송</span><span>Core 전송량</span><span>호출 Agent</span><span>데이터 감소율</span><span>PII 노출필드</span>
           </div>
           {comparison.map((row) => (
             <div className={row.id === "proposed" ? "privacyHighlight" : ""} key={`privacy-${row.id}`}>
@@ -627,47 +627,45 @@ export default function Home() {
                 {row.metrics.rawDataLeavesEdge ? "예" : "아니오"}
               </span>
               <span>{row.measured ? `${(row.metrics.boundaryBytes / 1024).toFixed(1)} KB` : "—"}</span>
-              <span>{row.metrics.dataRecipients}개 처리주체</span>
+              <span>{row.metrics.dataRecipients}개</span>
               <span>{row.metrics.minimizationRate}%</span>
-              <span className={row.metrics.privacyRiskScore >= 60 ? "riskBad" : "riskGood"}>
-                {row.metrics.privacyRiskScore} / 100
-              </span>
+              <span className={row.metrics.exposedFields > 0 ? "riskBad" : "riskGood"}>{row.metrics.exposedFields}개</span>
             </div>
           ))}
-          <p>위험점수는 원문 이동, 수신 범위, 탐지된 민감필드를 결합한 비교용 proxy이며 실제 침해 발생률이 아닙니다.</p>
+          <p>Core 전송량과 PII 노출필드는 실제 실행 payload에서 바이트와 필드 개수를 직접 측정합니다.</p>
         </div>
           <div className="qualityComparison">
             <div className="qualityHeading">
-              <strong>LIVE QUALITY EVALUATION</strong>
-              <span>현재 입력 질의에 대한 동일 조건 4방식 실시간 평가</span>
+              <strong>OPENAI BLIND QUALITY REVIEW</strong>
+              <span>gpt-5.4-mini가 방식 이름을 모른 채 동일 rubric으로 평가</span>
           </div>
           <div className="liveQualityClaim">
             {liveComparison.complete ? (
               <>
                 <strong>최고 방식 대비 품질 {liveComparison.qualityRetention}% 유지</strong>
-                <span>동시에 중앙집중형 대비 개인정보 위험 {liveComparison.privacyGain}%↓ · 경계 이동량 {liveComparison.boundaryGain}%↓</span>
+                <span>동시에 중앙집중형 대비 Core 전송량 {liveComparison.boundaryGain}% 감소</span>
               </>
             ) : (
               <>
-                <strong>4방식 비교 실행이 필요합니다</strong>
-                <span>상단의 ‘4방식 한번에 비교’를 실행하면 현재 질의의 품질 유지율과 보호 이득을 계산합니다.</span>
+                <strong>상용 LLM 전문가 평가를 켜고 4방식 비교를 실행하세요</strong>
+                <span>동일 질의의 정확성·근거충실도·완전성을 블라인드 비교합니다.</span>
               </>
             )}
           </div>
           <div className="qualityHead">
-            <span>방식</span><span>근거 확보율</span><span>인용 Precision</span><span>인용 Recall</span><span>Claim Support</span><span>자동 검증점수</span>
+            <span>방식</span><span>정확성</span><span>근거충실도</span><span>완전성</span><span>종합</span><span>상태</span>
           </div>
           {comparison.map((row) => (
             <div className={row.id === "proposed" ? "qualityHighlight" : ""} key={`quality-${row.id}`}>
               <strong>{row.name}</strong>
-              <span>{row.measured ? `${row.metrics.retrievalSuccessRate ?? 0}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.citationValidity}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.citationRecall ?? 0}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.claimSupportRate ?? 0}%` : "—"}</span>
-              <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
+              <span>{row.judge?.correctness ?? "—"}</span>
+              <span>{row.judge?.groundedness ?? "—"}</span>
+              <span>{row.judge?.completeness ?? "—"}</span>
+              <span className="qualityScore">{row.judge?.overall ?? "—"}</span>
+              <span>{row.judge?.error ? "평가 실패" : row.judge?.overall != null ? "평가 완료" : "미평가"}</span>
             </div>
           ))}
-            <p>근거 확보율은 선택 Agent 중 검색 성공 비율, 인용 Precision은 전체 인용 중 유효 ID 비율, Recall은 검색 근거 중 실제 인용 비율, Claim Support는 답변 주장 중 유효 근거 ID가 연결된 비율입니다.</p>
+            <p>이 점수는 자동 전문가 평가입니다. 재현 가능한 최종 성능 평가는 정답 라벨이 있는 검증셋의 표준 지표로 수행합니다.</p>
           </div>
           {result.commercialJudge?.enabled && (
             <div className="judgeResult">
@@ -685,17 +683,6 @@ export default function Home() {
               )}
             </div>
           )}
-          <div className="benchmarkPanel">
-            <div className="benchmarkHeading">
-              <div><strong>LIVE EVALUATOR CALIBRATION</strong><span>라이브 평가 산식 점검용 고정 pilot {benchmark.cases}문항 · held-out 아님</span></div>
-              <small>{new Date(benchmark.generatedAt).toLocaleDateString("ko-KR")} 측정</small>
-            </div>
-            <div className="benchmarkClaim">
-              <strong>평가 산식 점검: Agent F1 {benchmark.modes.proposed.agentSelectionF1}% · 검색 {benchmark.modes.proposed.retrievalSuccessRate}% · 인용 {benchmark.modes.proposed.citationValidity}%</strong>
-              <span>고정 문항에서도 제안 방식의 품질 유지율 {benchmark.proposedAdvantage.qualityRetention}% 확인</span>
-            </div>
-            <p>이 pilot은 라이브 지표가 완전히 엉뚱하게 움직이지 않는지 확인하는 calibration 자료입니다. 주 결과는 위의 현재 질의 실시간 비교이며, 최종 논문 수치는 별도 미사용 평가셋으로 재검증합니다.</p>
-          </div>
           <div className="axSpecialization">
           <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>
           <div><b>HUMAN ACCOUNTABILITY</b><strong>최종 책임자 승인</strong><p>AI 판단을 담당부서·승인자·근거 ID와 연결해 책임소재 유지</p></div>

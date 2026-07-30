@@ -309,6 +309,8 @@ export async function orchestrate(
   const claimSupportRate = Math.round(
     supportedClaims.length / Math.max(claimSentences.length, 1) * 100,
   );
+  const evidenceUtilizationRate = citationRecall;
+  const claimCitationCoverage = claimSupportRate;
   const retrievalSuccessRate = Math.round(
     selectedResults.filter((result) => result.evidence.length > 0).length /
       Math.max(selectedResults.length, 1) * 100,
@@ -389,6 +391,8 @@ export async function orchestrate(
       citationValidity,
       citationRecall,
       claimSupportRate,
+      evidenceUtilizationRate,
+      claimCitationCoverage,
       retrievalSuccessRate,
       domainCoverage,
       answerCompleteness,
