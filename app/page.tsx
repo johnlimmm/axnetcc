@@ -308,6 +308,30 @@ export default function Home() {
       measured: Boolean(benchmarks[item.id]),
     }));
   }, [benchmarks, query]);
+  const liveComparison = useMemo(() => {
+    const measured = comparison.filter((row) => row.measured);
+    const bestQuality = measured.length
+      ? Math.max(...measured.map((row) => row.metrics.qualityScore))
+      : null;
+    const proposed = measured.find((row) => row.id === "proposed");
+    const centralized = measured.find((row) => row.id === "centralized");
+    return {
+      complete: measured.length === 4,
+      bestQuality,
+      qualityRetention:
+        proposed && bestQuality
+          ? Math.round(proposed.metrics.qualityScore / bestQuality * 100)
+          : null,
+      privacyGain:
+        proposed && centralized && centralized.metrics.privacyRiskScore
+          ? Math.round((1 - proposed.metrics.privacyRiskScore / centralized.metrics.privacyRiskScore) * 100)
+          : null,
+      boundaryGain:
+        proposed && centralized && centralized.metrics.boundaryBytes
+          ? Math.round((1 - proposed.metrics.boundaryBytes / centralized.metrics.boundaryBytes) * 100)
+          : null,
+    };
+  }, [comparison]);
 
   async function executeMode(targetMode: RunResult["mode"]) {
     const response = await fetch("/api/orchestrate", {
@@ -533,8 +557,8 @@ export default function Home() {
           <Metric label="추정 토큰" value={result.metrics.tokens.toLocaleString()} note="질의·응답 전체" />
           <Metric label="Core–Edge 전송량" value={`${(result.metrics.bytes / 1024).toFixed(1)} KB`} note="원문 제외" />
           <Metric label="처리 지연" value={`${(result.metrics.latencyMs / 1000).toFixed(2)} s`} note="End-to-end" />
-          <Metric label="TTFT" value={result.metrics.ttftMs == null ? "N/A" : `${result.metrics.ttftMs} ms`} note="실측 첫 토큰 지연" />
-          <Metric label="TPOT" value={result.metrics.tpotMs == null ? "N/A" : `${result.metrics.tpotMs} ms`} note="실측 출력 토큰당 시간" />
+          <Metric label="TTFT" value={result.metrics.ttftMs == null ? "N/A" : `${result.metrics.ttftMs} ms`} note="선택 Agent 중 최초 토큰" />
+          <Metric label="TPOT" value={result.metrics.tpotMs == null ? "N/A" : `${result.metrics.tpotMs} ms`} note="선택 Agent 출력 토큰 평균" />
           <Metric label="불필요 필드" value={`${result.metrics.exposedFields}`} note="반환 필터 이후" />
           <Metric label="추적 가능성" value={`${result.metrics.traceability}%`} note="근거·주체 연결률" />
         </div>
@@ -551,6 +575,7 @@ export default function Home() {
               <span>{row.metrics.traceability}%</span>
             </div>
           ))}
+          <p className="metricDefinition">TTFT는 사용자에게 가장 먼저 도착한 토큰(min), TPOT은 실행 Agent별 출력 토큰 시간의 평균, E2E는 모든 선택 Agent와 통합이 끝난 시간입니다. CPU 환경에서는 동시 Agent 수와 prompt 길이의 영향을 함께 봐야 합니다.</p>
         </div>
         <div className="privacyComparison">
           <div className="privacyHeading">
@@ -578,8 +603,21 @@ export default function Home() {
         </div>
           <div className="qualityComparison">
             <div className="qualityHeading">
-              <strong>LIVE RESPONSE PROXY</strong>
-              <span>현재 1회 응답의 진단값 · 방식 우열 주장에 사용하지 않음</span>
+              <strong>LIVE QUALITY EVALUATION</strong>
+              <span>현재 입력 질의에 대한 동일 조건 4방식 실시간 평가</span>
+          </div>
+          <div className="liveQualityClaim">
+            {liveComparison.complete ? (
+              <>
+                <strong>최고 방식 대비 품질 {liveComparison.qualityRetention}% 유지</strong>
+                <span>동시에 중앙집중형 대비 개인정보 위험 {liveComparison.privacyGain}%↓ · 경계 이동량 {liveComparison.boundaryGain}%↓</span>
+              </>
+            ) : (
+              <>
+                <strong>4방식 비교 실행이 필요합니다</strong>
+                <span>상단의 ‘4방식 한번에 비교’를 실행하면 현재 질의의 품질 유지율과 보호 이득을 계산합니다.</span>
+              </>
+            )}
           </div>
           <div className="qualityHead">
             <span>방식</span><span>질의 관련성</span><span>근거 내용 일치</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
@@ -594,35 +632,18 @@ export default function Home() {
               <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
             </div>
           ))}
-            <p>이 표는 현재 질의의 이상 탐지·디버깅용입니다. 방식 간 객관 비교에는 아래의 동일 고정 평가셋 결과만 사용합니다.</p>
+            <p>실시간 자동 품질은 질의 관련성·검색 근거 일치·필수 전문영역·답변 완결성·유효 인용을 결합합니다. 정답이 없는 임의 질의에서도 계산할 수 있지만, 사실 정확도의 최종 판정은 전문가 검토가 필요합니다.</p>
           </div>
           <div className="benchmarkPanel">
             <div className="benchmarkHeading">
-              <div><strong>FIXED PILOT BENCHMARK</strong><span>개발용 고정 평가셋 {benchmark.cases}문항 · held-out 아님</span></div>
+              <div><strong>LIVE EVALUATOR CALIBRATION</strong><span>라이브 평가 산식 점검용 고정 pilot {benchmark.cases}문항 · held-out 아님</span></div>
               <small>{new Date(benchmark.generatedAt).toLocaleDateString("ko-KR")} 측정</small>
             </div>
             <div className="benchmarkClaim">
-              <strong>최고 품질 대비 {benchmark.proposedAdvantage.qualityRetention}% 유지</strong>
-              <span>동시에 중앙집중형 대비 개인정보 위험 {benchmark.proposedAdvantage.privacyRiskReductionVsCentralized}%↓ · 경계 이동량 {benchmark.proposedAdvantage.boundaryByteReductionVsCentralized}%↓</span>
+              <strong>평가 산식 점검: Agent F1 {benchmark.modes.proposed.agentSelectionF1}% · 검색 {benchmark.modes.proposed.retrievalSuccessRate}% · 인용 {benchmark.modes.proposed.citationValidity}%</strong>
+              <span>고정 문항에서도 제안 방식의 품질 유지율 {benchmark.proposedAdvantage.qualityRetention}% 확인</span>
             </div>
-            <div className="benchmarkTable">
-              <div className="benchmarkTableHead"><span>방식</span><span>객관 품질</span><span>품질 유지율</span><span>Agent F1</span><span>개인정보 위험</span><span>평균 경계 이동량</span></div>
-              {(["centralized", "managed", "parallel", "proposed"] as const).map((mode) => {
-                const names = { centralized: "중앙집중형", managed: "상용형 Supervisor", parallel: "전체 병렬", proposed: "제안 방식" };
-                const item = benchmark.modes[mode];
-                return (
-                  <div className={mode === "proposed" ? "benchmarkHighlight" : ""} key={mode}>
-                    <strong>{names[mode]}</strong>
-                    <span>{item.quality}</span>
-                    <span>{item.qualityRetention}%</span>
-                    <span>{item.agentSelectionF1}%</span>
-                    <span>{item.averagePrivacyRisk}</span>
-                    <span>{item.averageBoundaryBytes.toLocaleString()} B</span>
-                  </div>
-                );
-              })}
-            </div>
-            <p>객관 품질 = 정답 핵심개념 재현 45% + 기대 Agent Recall 20% + 검색 성공 15% + 인용 유효성 10% + 답변 완결성 10%. 현재 6문항 pilot 결과이며 최종 주장은 별도 미사용 평가셋과 전문가 채점 후 확정합니다.</p>
+            <p>이 pilot은 라이브 지표가 완전히 엉뚱하게 움직이지 않는지 확인하는 calibration 자료입니다. 주 결과는 위의 현재 질의 실시간 비교이며, 최종 논문 수치는 별도 미사용 평가셋으로 재검증합니다.</p>
           </div>
           <div className="axSpecialization">
           <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>

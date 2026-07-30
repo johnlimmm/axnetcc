@@ -165,6 +165,7 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .comparison > div { display: grid; grid-template-columns: 1.7fr repeat(6, 1fr); padding: 13px 18px; border-bottom: 1px solid #313b50; color: #aeb8cc; }
 .comparison .comparisonHead { color: #6f7b94; font-size: 9px; }
 .comparison .highlight { color: white; background: var(--blue); border: 0; }
+.comparison .metricDefinition { display: block; margin: 0; padding: 11px 18px; color: #727e96; font-size: 8px; line-height: 1.5; }
 .privacyComparison { margin-top: 30px; border: 1px solid #3b465e; }
 .privacyHeading { display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #3b465e; }
 .privacyHeading strong { color: var(--mint); font-size: 10px; letter-spacing: .1em; }.privacyHeading span { color: #8591a9; font-size: 9px; }
@@ -176,6 +177,8 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .qualityComparison { margin-top: 18px; border: 1px solid #3b465e; }
 .qualityHeading { display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #3b465e; }
 .qualityHeading strong { color: #8fb0ff; font-size: 10px; letter-spacing: .1em; }.qualityHeading span { color: #8591a9; font-size: 9px; }
+.liveQualityClaim { display: flex !important; justify-content: space-between; align-items: center; padding: 17px 18px !important; background: #18284b; border-bottom: 1px solid #36518e !important; }
+.liveQualityClaim strong { color: #fff; font-size: 15px; }.liveQualityClaim span { color: #aebfe8; font-size: 9px; }
 .qualityComparison > div:not(.qualityHeading) { display: grid; grid-template-columns: 1.7fr repeat(5, 1fr); padding: 12px 18px; border-bottom: 1px solid #313b50; color: #aeb8cc; font-size: 10px; }
 .qualityComparison .qualityHead { color: #6f7b94 !important; font-size: 9px !important; }
 .qualityComparison .qualityHighlight { background: #18284b; color: white; }.qualityScore { color: var(--mint); font-weight: 900; }
