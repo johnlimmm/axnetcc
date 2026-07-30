@@ -1,4 +1,5 @@
 import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./knowledge";
+import { generateLocalAnswer } from "./local-llm";
 import { ragStats, searchRag } from "./rag";
 
 export type RunMode = "proposed" | "parallel" | "centralized";
@@ -104,7 +105,7 @@ function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
   return `${lead[agent]} ${grounds}`;
 }
 
-export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
+export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
   const startedAt = Date.now();
   const { sanitized: query, filteredFields: inputFiltered } = sanitize(rawQuery.trim());
   const ids = Object.keys(agentProfiles) as AgentId[];
@@ -117,14 +118,41 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       : ids;
   if (!selected.length) selected.push("tech");
 
-  const agentResults = ids.map((id, index) => {
-    const retrieved = retrieve(query, id);
-    const rawSummary = synthesize(id, retrieved.map((item) => item.chunk));
+  const agentResults = await Promise.all(ids.map(async (id, index) => {
+    const isSelected = selected.includes(id);
+    const retrieved = isSelected ? retrieve(query, id) : [];
+    const fallbackSummary = isSelected
+      ? synthesize(id, retrieved.map((item) => item.chunk))
+      : "현재 질의에서는 이 Agent가 선택되지 않아 원문 검색과 로컬 LLM 추론을 실행하지 않았습니다.";
+    const generated = isSelected
+      ? await generateLocalAnswer({
+          agent: id,
+          agentName: agentProfiles[id].name,
+          responsibility: agentProfiles[id].responsibility,
+          query,
+          evidence: retrieved.map((item) => item.chunk),
+          fallback: fallbackSummary,
+        })
+      : {
+          text: fallbackSummary,
+          metrics: {
+            backend: "deterministic" as const,
+            model: process.env.LOCAL_LLM_MODEL ?? "qwen3:4b",
+            ttftMs: null,
+            tbtMs: null,
+            tokensPerSecond: null,
+            promptTokens: null,
+            completionTokens: null,
+            totalMs: 0,
+            fallbackReason: "Agent not selected",
+          },
+        };
+    const rawSummary = generated.text;
     const { sanitized: summary, filteredFields } = sanitize(rawSummary);
     return {
       id,
       ...agentProfiles[id],
-      selected: selected.includes(id),
+      selected: isSelected,
       selectionReason: scores[id] > 0
         ? `질의의 ${agentProfiles[id].keywords.filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase())).slice(0, 3).join("·")} 신호와 역할이 일치합니다.`
         : "현재 질의에서 이 역할의 직접 검토 신호가 발견되지 않았습니다.",
@@ -142,9 +170,12 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       })),
       responsibility: agentProfiles[id].responsibility,
       filteredFields: [...new Set([...inputFiltered, ...filteredFields])],
-      latencyMs: 220 + index * 31 + retrieved.length * 18,
+      latencyMs: generated.metrics.backend === "ollama"
+        ? generated.metrics.totalMs
+        : 220 + index * 31 + retrieved.length * 18,
+      inference: generated.metrics,
     };
-  });
+  }));
 
   const selectedResults = agentResults.filter((result) => result.selected);
   const evidenceCount = selectedResults.reduce((sum, result) => sum + result.evidence.length, 0);
@@ -175,10 +206,26 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       calls: selected.length,
       tokens,
       bytes,
-      latencyMs: Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
+      latencyMs: selectedResults.some((result) => result.inference.backend === "ollama")
+        ? Date.now() - startedAt
+        : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
       ragChunks: ragStats.chunks,
+      llmBackend: selectedResults.every((result) => result.inference.backend === "ollama") ? "ollama" : "deterministic",
+      model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen3:4b",
+      ttftMs: (() => {
+        const values = selectedResults
+          .map((result) => result.inference.ttftMs)
+          .filter((value): value is number => value !== null);
+        return values.length ? Math.min(...values) : null;
+      })(),
+      tbtMs: (() => {
+        const values = selectedResults
+          .map((result) => result.inference.tbtMs)
+          .filter((value): value is number => value !== null);
+        return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : null;
+      })(),
     },
     timeline: [
       { label: "요청 정제", detail: `민감필드 ${inputFiltered.length}개 제거`, ms: 8 },

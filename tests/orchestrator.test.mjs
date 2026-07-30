@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import test from "node:test";
 
 async function worker() {
@@ -83,4 +84,40 @@ test("selects only relevant agents in proposed mode", async () => {
   assert.deepEqual(selected, ["finance"]);
   assert.equal(result.agents.length, 8);
   assert.ok(result.agents.find((agent) => agent.id === "security")?.selectionReason.includes("발견되지 않았"));
+});
+
+test("uses an Ollama-compatible local model and records TTFT/TBT", async () => {
+  const server = createServer((request, response) => {
+    assert.equal(request.url, "/api/chat");
+    response.writeHead(200, { "content-type": "application/x-ndjson" });
+    setTimeout(() => {
+      response.write(`${JSON.stringify({ message: { content: "로컬 " }, done: false })}\n`);
+      setTimeout(() => {
+        response.end(`${JSON.stringify({
+          message: { content: "응답입니다." },
+          done: true,
+          prompt_eval_count: 42,
+          eval_count: 12,
+          eval_duration: 600_000_000,
+        })}\n`);
+      }, 15);
+    }, 10);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  process.env.LOCAL_LLM_BASE_URL = `http://127.0.0.1:${address.port}`;
+  process.env.LOCAL_LLM_MODEL = "qwen3:4b-test";
+  try {
+    const result = await orchestrate("3년 예산과 총소유비용을 산정해 주세요.");
+    assert.equal(result.metrics.llmBackend, "ollama");
+    assert.equal(result.metrics.model, "qwen3:4b-test");
+    assert.ok(result.metrics.ttftMs >= 0);
+    assert.ok(result.metrics.tbtMs > 0);
+    assert.match(result.agents.find((agent) => agent.id === "finance").summary, /로컬 응답입니다/);
+  } finally {
+    delete process.env.LOCAL_LLM_BASE_URL;
+    delete process.env.LOCAL_LLM_MODEL;
+    await new Promise((resolve) => server.close(resolve));
+  }
 });

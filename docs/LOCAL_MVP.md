@@ -35,3 +35,15 @@ docs/
 6. 실행 로그와 비교 실험 결과 저장
 7. Docker Compose로 서비스 분리
 8. 마지막에 Core/Edge 주소만 KOREN 배치값으로 교체
+
+## 로컬 LLM 실행
+
+Ollama와 `qwen3:4b`를 기본 로컬 추론기로 사용한다. `.env.example`을
+`.env.local`로 복사한 뒤 Ollama를 실행하면 선택된 Agent만 `/api/chat`을
+스트리밍 호출한다. 연결되지 않으면 결정론적 응답으로 대체하며 화면에는
+`Local LLM · 미연결`로 표시한다.
+
+로컬 LLM 실행에서는 Agent별 모델명, TTFT, 평균 스트림 청크 간격(TBT 근사),
+입출력 토큰, 생성 토큰/초, 전체 추론시간을 기록한다. 배포된 Cloudflare
+Worker는 사용자 PC의 `127.0.0.1`에 접근할 수 없으므로 실제 로컬 추론 실험은
+개발 서버 또는 향후 KOREN Edge 주소에서 수행한다.

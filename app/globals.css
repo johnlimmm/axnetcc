@@ -153,7 +153,7 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .sectionTitle { display: flex; justify-content: space-between; align-items: end; margin-bottom: 38px; }
 .sectionTitle h2 { font-size: 30px; margin: 9px 0 0; letter-spacing: -.035em; }.sectionTitle > p { color: var(--muted); font-size: 12px; }
 .metricsSection .sectionTitle > p { color: #9ba6bf; }
-.metricRow { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid #3b465e; }
+.metricRow { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #3b465e; }
 .metric { padding: 20px; border-right: 1px solid #3b465e; display: flex; flex-direction: column; }
 .metric:last-child { border: 0; }.metric span { color: #9ba6bf; font-size: 9px; }.metric strong { font-size: 24px; margin: 9px 0; }.metric small { color: #7b879f; font-size: 8px; }
 .comparison { margin-top: 28px; font-size: 11px; }

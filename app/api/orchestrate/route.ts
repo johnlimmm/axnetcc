@@ -8,9 +8,8 @@ export async function POST(request: Request) {
     }
     const mode: RunMode =
       body.mode === "parallel" || body.mode === "centralized" ? body.mode : "proposed";
-    return Response.json(orchestrate(body.query, mode));
+    return Response.json(await orchestrate(body.query, mode));
   } catch {
     return Response.json({ error: "올바른 JSON 요청이 아닙니다." }, { status: 400 });
   }
 }
-

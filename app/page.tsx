@@ -34,6 +34,10 @@ type RunResult = {
     exposedFields: number;
     traceability: number;
     ragChunks?: number;
+    llmBackend?: "ollama" | "deterministic";
+    model?: string;
+    ttftMs?: number | null;
+    tbtMs?: number | null;
   };
   timeline: { label: string; detail: string; ms: number }[];
 };
@@ -199,6 +203,10 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       latencyMs: mode === "proposed" ? 1120 : mode === "parallel" ? 1540 : 1890,
       exposedFields,
       traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : 35,
+      llmBackend: "deterministic",
+      model: "qwen3:4b",
+      ttftMs: null,
+      tbtMs: null,
     },
     timeline: [
       { label: "요청 분석", detail: "업무영역·의도·민감도 분류", ms: 74 },
@@ -268,7 +276,9 @@ export default function Home() {
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </div>
-        <div className="networkState"><span /> Public RAG {result.metrics.ragChunks?.toLocaleString() ?? "1,499"} chunks · 정상</div>
+        <div className="networkState">
+          <span /> {result.metrics.llmBackend === "ollama" ? `Local LLM · ${result.metrics.model}` : "Local LLM · 미연결"}
+        </div>
       </header>
 
       <section className="hero">
@@ -410,6 +420,8 @@ export default function Home() {
           <Metric label="추정 토큰" value={result.metrics.tokens.toLocaleString()} note="질의·응답 전체" />
           <Metric label="Core–Edge 전송량" value={`${(result.metrics.bytes / 1024).toFixed(1)} KB`} note="원문 제외" />
           <Metric label="처리 지연" value={`${(result.metrics.latencyMs / 1000).toFixed(2)} s`} note="End-to-end" />
+          <Metric label="TTFT" value={result.metrics.ttftMs == null ? "N/A" : `${result.metrics.ttftMs} ms`} note="실측 첫 토큰 지연" />
+          <Metric label="TBT" value={result.metrics.tbtMs == null ? "N/A" : `${result.metrics.tbtMs} ms`} note="실측 토큰 간 지연" />
           <Metric label="불필요 필드" value={`${result.metrics.exposedFields}`} note="반환 필터 이후" />
           <Metric label="추적 가능성" value={`${result.metrics.traceability}%`} note="근거·주체 연결률" />
         </div>
