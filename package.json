@@ -15,7 +15,8 @@
     "edge:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-ollama.ps1",
     "edge:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-agent-ollama.ps1",
     "db:generate": "drizzle-kit generate",
-    "rag:compile": "node scripts/compile-rag-index.mjs"
+    "rag:compile": "node scripts/compile-rag-index.mjs",
+    "eval:offline": "node scripts/evaluate-offline.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

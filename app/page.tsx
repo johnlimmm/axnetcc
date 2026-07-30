@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import benchmark from "../data/evaluation/latest-report.json";
 
 type AgentResult = {
   id: string;
@@ -575,7 +576,7 @@ export default function Home() {
           ))}
           <p>위험점수는 원문 이동, 수신 범위, 탐지된 민감필드를 결합한 비교용 proxy이며 실제 침해 발생률이 아닙니다.</p>
         </div>
-        <div className="qualityComparison">
+          <div className="qualityComparison">
           <div className="qualityHeading">
             <strong>RESPONSE QUALITY</strong>
             <span>동일 근거·동일 모델 기반 자동 품질지표</span>
@@ -593,9 +594,22 @@ export default function Home() {
               <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
             </div>
           ))}
-          <p>정확한 근거 ID 표기는 감사·거버넌스 지표로 별도 유지합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
-        </div>
-        <div className="axSpecialization">
+            <p>정확한 근거 ID 표기는 감사·거버넌스 지표로 별도 유지합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
+          </div>
+          <div className="benchmarkPanel">
+            <div className="benchmarkHeading">
+              <div><strong>HELD-OUT BENCHMARK</strong><span>고정 정답셋 {benchmark.cases}문항 · CPU 실행</span></div>
+              <small>{new Date(benchmark.generatedAt).toLocaleDateString("ko-KR")} 측정</small>
+            </div>
+            <div className="benchmarkMetrics">
+              <div><span>Agent 선택 F1</span><strong>{benchmark.metrics.agentSelectionF1}%</strong><small>Precision {benchmark.metrics.agentSelectionPrecision}% · Recall {benchmark.metrics.agentSelectionRecall}%</small></div>
+              <div><span>RAG 검색 성공률</span><strong>{benchmark.metrics.retrievalSuccessRate}%</strong><small>선택 Agent 근거 확보율</small></div>
+              <div><span>근거 ID 유효성</span><strong>{benchmark.metrics.citationValidity}%</strong><small>존재하는 검색 근거 인용</small></div>
+              <div><span>개인정보 차단</span><strong>{benchmark.metrics.privacyPassRate}%</strong><small>금지 문자열 비노출률</small></div>
+              <div><span>품질 Proxy</span><strong>{benchmark.metrics.averageQualityProxy}%</strong><small>전문가 평가는 별도 필요</small></div>
+            </div>
+          </div>
+          <div className="axSpecialization">
           <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>
           <div><b>HUMAN ACCOUNTABILITY</b><strong>최종 책임자 승인</strong><p>AI 판단을 담당부서·승인자·근거 ID와 연결해 책임소재 유지</p></div>
           <div><b>DATA SOVEREIGNTY</b><strong>조직별 데이터 주권</strong><p>기관·부서 원문과 RAG를 Edge에 보존하고 최소 결과만 교환</p></div>

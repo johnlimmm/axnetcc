@@ -29,6 +29,38 @@ function tokenize(text: string) {
   return [...words, ...bigrams];
 }
 
+const queryExpansions: Record<string, string[]> = {
+  개인정보: ["개인정보보호", "최소처리", "가명정보"],
+  보안: ["접근통제", "정보보호", "안전조치"],
+  조달: ["입찰", "계약", "발주", "디지털서비스"],
+  품질: ["정확성", "완전성", "평가", "검수"],
+  운영: ["SLA", "모니터링", "장애", "유지보수"],
+  데이터: ["메타데이터", "표준화", "품질관리"],
+  AI: ["인공지능", "생성형AI", "LLM"],
+  비용: ["예산", "TCO", "운영비"],
+};
+
+function expandQuery(query: string) {
+  const normalized = query.toLowerCase().normalize("NFKC");
+  const expansions = Object.entries(queryExpansions)
+    .filter(([term]) => normalized.includes(term.toLowerCase()))
+    .flatMap(([, values]) => values);
+  return `${query} ${expansions.join(" ")}`.trim();
+}
+
+function contentWords(text: string) {
+  return [...new Set(
+    [...tokenizer.segment(text.toLowerCase().normalize("NFKC"))]
+      .filter((part) => part.isWordLike && part.segment.length > 1)
+      .map((part) => part.segment),
+  )];
+}
+
+const boilerplateSignals = [
+  "이용안내", "찾아오시는 길", "업무추진비 공개", "누리집 열기",
+  "화면크기", "인쇄하기", "저작권정책", "개인정보처리방침",
+];
+
 const indexed = documents.map((document) => {
   const tokens = tokenize(`${document.title} ${document.section} ${document.text}`);
   const frequencies = new Map<string, number>();
@@ -54,14 +86,16 @@ export function searchRag(
   agents: AgentId[],
   limit = 3,
 ): RagHit[] {
-  const queryTokens = [...new Set(tokenize(query))];
+  const expandedQuery = expandQuery(query);
+  const queryTokens = [...new Set(tokenize(expandedQuery))];
+  const queryWords = contentWords(query);
   const candidates = indexed.filter((entry) => agents.includes(
     entry.document.agent,
   ));
   const k1 = 1.5;
   const b = 0.75;
 
-  return candidates
+  const bm25Candidates = candidates
     .map((entry) => {
       let score = 0;
       for (const token of queryTokens) {
@@ -76,10 +110,26 @@ export function searchRag(
           ((frequency * (k1 + 1)) /
             (frequency + k1 * (1 - b + b * (entry.length / averageLength))));
       }
-      if (entry.document.title.includes(query)) score += 4;
       return { chunk: entry.document, score };
     })
     .filter((result) => result.score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, Math.max(limit * 12, 30));
+
+  return bm25Candidates
+    .map((result) => {
+      const searchable = `${result.chunk.title} ${result.chunk.section} ${result.chunk.text}`.toLowerCase();
+      const title = result.chunk.title.toLowerCase();
+      const matchedWords = queryWords.filter((word) => searchable.includes(word));
+      const coverage = matchedWords.length / Math.max(queryWords.length, 1);
+      const titleMatches = queryWords.filter((word) => title.includes(word)).length;
+      const phraseBonus = searchable.includes(query.toLowerCase()) ? 4 : 0;
+      const boilerplatePenalty = boilerplateSignals.filter((signal) => searchable.includes(signal)).length * 0.7;
+      return {
+        ...result,
+        score: result.score + coverage * 8 + titleMatches * 1.5 + phraseBonus - boilerplatePenalty,
+      };
+    })
     .sort((left, right) => right.score - left.score)
     .slice(0, limit)
     .map((result) => ({ ...result, score: Number(result.score.toFixed(2)) }));
@@ -89,5 +139,5 @@ export const ragStats = {
   chunks: corpus.count,
   counts: corpus.counts,
   generatedAt: corpus.generatedAt,
-  algorithm: corpus.algorithm,
+  algorithm: "BM25 + CPU lexical reranker",
 };

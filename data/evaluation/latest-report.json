@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-07-30T06:13:03.266Z",
+  "cases": 6,
+  "model": "agent-specific local model",
+  "method": "fixed held-out golden set",
+  "metrics": {
+    "agentSelectionPrecision": 76.1,
+    "agentSelectionRecall": 100,
+    "agentSelectionF1": 84,
+    "retrievalSuccessRate": 100,
+    "citationValidity": 100,
+    "privacyPassRate": 100,
+    "averageQualityProxy": 68.2
+  },
+  "rows": [
+    {
+      "id": "Q001",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.7
+    },
+    {
+      "id": "Q002",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.72
+    },
+    {
+      "id": "Q003",
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.65
+    },
+    {
+      "id": "Q004",
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.75
+    },
+    {
+      "id": "Q005",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.65
+    },
+    {
+      "id": "Q006",
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "retrievalSuccess": 1,
+      "citationValidity": 1,
+      "privacyPass": 1,
+      "qualityProxy": 0.62
+    }
+  ]
+}

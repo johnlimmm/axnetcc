@@ -35,6 +35,15 @@ function lexicalCoverage(expected: string, actual: string) {
   );
 }
 
+function enforceEvidenceCitation(summary: string, evidenceIds: string[]) {
+  if (!evidenceIds.length) return summary;
+  const valid = new Set(evidenceIds);
+  const cited = [...summary.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]);
+  if (cited.some((id) => valid.has(id))) return summary;
+  const withoutInvalidIds = summary.replace(/\[([^\]]+)\]/g, "");
+  return `${withoutInvalidIds.trim()} [${evidenceIds[0]}]`;
+}
+
 function retrieveInternal(query: string, agent: AgentId, limit = 2) {
   const queryTerms = new Set(terms(query));
   return knowledge
@@ -176,7 +185,10 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
             fallbackReason: "Agent not selected",
           },
         };
-    const rawSummary = generated.text;
+    const rawSummary = enforceEvidenceCitation(
+      generated.text,
+      retrieved.map((item) => item.chunk.id),
+    );
     const { sanitized: summary, filteredFields } = sanitize(rawSummary);
     return {
       id,
