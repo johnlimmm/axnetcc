@@ -32,7 +32,7 @@ export async function generateLocalAnswer(input: {
   evidence: KnowledgeChunk[];
   fallback: string;
 }): Promise<{ text: string; metrics: LocalLlmMetrics }> {
-  const model = process.env.LOCAL_LLM_MODEL ?? "qwen3:4b";
+  const model = process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b";
   if (!configured()) {
     return {
       text: input.fallback,
@@ -65,11 +65,12 @@ export async function generateLocalAnswer(input: {
       body: JSON.stringify({
         model,
         stream: true,
+        think: false,
         keep_alive: "10m",
         options: {
           temperature: 0.1,
           seed: 42,
-          num_predict: 320,
+          num_predict: 120,
           num_ctx: 8192,
         },
         messages: [
@@ -77,14 +78,16 @@ export async function generateLocalAnswer(input: {
             role: "system",
             content:
               `당신은 ${input.agentName}이며 ${input.responsibility}을 담당한다. ` +
-              "제공된 근거만 사용해 한국어로 4문장 이내로 답하라. 핵심 판단 뒤에 [근거 ID]를 표시하고, 근거가 부족하면 명시하라.",
+              "분석 과정은 출력하지 말고 최종 답변만 작성한다. 제공된 근거만 사용해 한국어 2개 항목, 250자 이내로 답하라. " +
+              "각 항목 끝에 [근거 ID]를 표시하고, 근거가 부족하면 명시하라.",
           },
           {
             role: "user",
             content:
               `질의:\n${input.query}\n\n근거:\n` +
               input.evidence
-                .map((item) => `[${item.id}] ${item.title} / ${item.section}\n${item.text}`)
+                .slice(0, 2)
+                .map((item) => `[${item.id}] ${item.title} / ${item.section}\n${item.text.slice(0, 250)}`)
                 .join("\n\n"),
           },
         ],
@@ -155,4 +158,3 @@ export async function generateLocalAnswer(input: {
     clearTimeout(timeout);
   }
 }
-
