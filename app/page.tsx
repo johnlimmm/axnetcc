@@ -577,9 +577,9 @@ export default function Home() {
           <p>위험점수는 원문 이동, 수신 범위, 탐지된 민감필드를 결합한 비교용 proxy이며 실제 침해 발생률이 아닙니다.</p>
         </div>
           <div className="qualityComparison">
-          <div className="qualityHeading">
-            <strong>RESPONSE QUALITY</strong>
-            <span>동일 근거·동일 모델 기반 자동 품질지표</span>
+            <div className="qualityHeading">
+              <strong>LIVE RESPONSE PROXY</strong>
+              <span>현재 1회 응답의 진단값 · 방식 우열 주장에 사용하지 않음</span>
           </div>
           <div className="qualityHead">
             <span>방식</span><span>질의 관련성</span><span>근거 내용 일치</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
@@ -594,20 +594,35 @@ export default function Home() {
               <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
             </div>
           ))}
-            <p>정확한 근거 ID 표기는 감사·거버넌스 지표로 별도 유지합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
+            <p>이 표는 현재 질의의 이상 탐지·디버깅용입니다. 방식 간 객관 비교에는 아래의 동일 고정 평가셋 결과만 사용합니다.</p>
           </div>
           <div className="benchmarkPanel">
             <div className="benchmarkHeading">
-              <div><strong>HELD-OUT BENCHMARK</strong><span>고정 정답셋 {benchmark.cases}문항 · CPU 실행</span></div>
+              <div><strong>FIXED PILOT BENCHMARK</strong><span>개발용 고정 평가셋 {benchmark.cases}문항 · held-out 아님</span></div>
               <small>{new Date(benchmark.generatedAt).toLocaleDateString("ko-KR")} 측정</small>
             </div>
-            <div className="benchmarkMetrics">
-              <div><span>Agent 선택 F1</span><strong>{benchmark.metrics.agentSelectionF1}%</strong><small>Precision {benchmark.metrics.agentSelectionPrecision}% · Recall {benchmark.metrics.agentSelectionRecall}%</small></div>
-              <div><span>RAG 검색 성공률</span><strong>{benchmark.metrics.retrievalSuccessRate}%</strong><small>선택 Agent 근거 확보율</small></div>
-              <div><span>근거 ID 유효성</span><strong>{benchmark.metrics.citationValidity}%</strong><small>존재하는 검색 근거 인용</small></div>
-              <div><span>개인정보 차단</span><strong>{benchmark.metrics.privacyPassRate}%</strong><small>금지 문자열 비노출률</small></div>
-              <div><span>품질 Proxy</span><strong>{benchmark.metrics.averageQualityProxy}%</strong><small>전문가 평가는 별도 필요</small></div>
+            <div className="benchmarkClaim">
+              <strong>최고 품질 대비 {benchmark.proposedAdvantage.qualityRetention}% 유지</strong>
+              <span>동시에 중앙집중형 대비 개인정보 위험 {benchmark.proposedAdvantage.privacyRiskReductionVsCentralized}%↓ · 경계 이동량 {benchmark.proposedAdvantage.boundaryByteReductionVsCentralized}%↓</span>
             </div>
+            <div className="benchmarkTable">
+              <div className="benchmarkTableHead"><span>방식</span><span>객관 품질</span><span>품질 유지율</span><span>Agent F1</span><span>개인정보 위험</span><span>평균 경계 이동량</span></div>
+              {(["centralized", "managed", "parallel", "proposed"] as const).map((mode) => {
+                const names = { centralized: "중앙집중형", managed: "상용형 Supervisor", parallel: "전체 병렬", proposed: "제안 방식" };
+                const item = benchmark.modes[mode];
+                return (
+                  <div className={mode === "proposed" ? "benchmarkHighlight" : ""} key={mode}>
+                    <strong>{names[mode]}</strong>
+                    <span>{item.quality}</span>
+                    <span>{item.qualityRetention}%</span>
+                    <span>{item.agentSelectionF1}%</span>
+                    <span>{item.averagePrivacyRisk}</span>
+                    <span>{item.averageBoundaryBytes.toLocaleString()} B</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p>객관 품질 = 정답 핵심개념 재현 45% + 기대 Agent Recall 20% + 검색 성공 15% + 인용 유효성 10% + 답변 완결성 10%. 현재 6문항 pilot 결과이며 최종 주장은 별도 미사용 평가셋과 전문가 채점 후 확정합니다.</p>
           </div>
           <div className="axSpecialization">
           <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>
