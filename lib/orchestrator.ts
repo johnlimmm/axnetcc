@@ -137,7 +137,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
           text: fallbackSummary,
           metrics: {
             backend: "deterministic" as const,
-            model: process.env.LOCAL_LLM_MODEL ?? "qwen3:4b",
+            model: process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
             ttftMs: null,
             tbtMs: null,
             tokensPerSecond: null,
@@ -213,7 +213,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       traceability: evidenceCount ? 100 : 0,
       ragChunks: ragStats.chunks,
       llmBackend: selectedResults.every((result) => result.inference.backend === "ollama") ? "ollama" : "deterministic",
-      model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen3:4b",
+      model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
       ttftMs: (() => {
         const values = selectedResults
           .map((result) => result.inference.ttftMs)

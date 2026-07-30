@@ -204,7 +204,7 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       exposedFields,
       traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : 35,
       llmBackend: "deterministic",
-      model: "qwen3:4b",
+      model: "qwen2.5:3b",
       ttftMs: null,
       tbtMs: null,
     },

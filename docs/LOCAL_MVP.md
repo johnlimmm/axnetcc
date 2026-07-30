@@ -38,7 +38,7 @@ docs/
 
 ## 로컬 LLM 실행
 
-Ollama와 `qwen3:4b`를 기본 로컬 추론기로 사용한다. `.env.example`을
+Ollama의 비사고형 `qwen2.5:3b`를 기본 로컬 추론기로 사용한다. `.env.example`을
 `.env.local`로 복사한 뒤 Ollama를 실행하면 선택된 Agent만 `/api/chat`을
 스트리밍 호출한다. 연결되지 않으면 결정론적 응답으로 대체하며 화면에는
 `Local LLM · 미연결`로 표시한다.
