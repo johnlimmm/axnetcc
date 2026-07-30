@@ -42,7 +42,7 @@ function agentEnvironmentKey(agent: AgentId, suffix: "BASE_URL" | "MODEL") {
   return `LOCAL_LLM_${agent.toUpperCase()}_${suffix}`;
 }
 
-function resolveAgentRuntime(agent: AgentId) {
+export function resolveAgentRuntime(agent: AgentId) {
   const baseUrl =
     process.env[agentEnvironmentKey(agent, "BASE_URL")] ??
     process.env.LOCAL_LLM_BASE_URL ??

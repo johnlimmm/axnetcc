@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type AgentResult = {
   id: string;
@@ -47,6 +47,13 @@ type RunResult = {
     tpotMs?: number | null;
   };
   timeline: { label: string; detail: string; ms: number }[];
+};
+
+type LlmHealth = {
+  status: "connected" | "degraded" | "disconnected";
+  connected: number;
+  total: number;
+  model: string;
 };
 
 const agents = [
@@ -240,10 +247,26 @@ export default function Home() {
   const [mode, setMode] = useState<RunResult["mode"]>("proposed");
   const [result, setResult] = useState<RunResult>(() => buildFallbackResult(exampleRequests[0], "proposed"));
   const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult["metrics"]>>>({});
+  const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
   const selectedCount = result.agents.filter((agent) => agent.selected).length;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/health", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((health: LlmHealth) => {
+        if (active) setLlmHealth(health);
+      })
+      .catch(() => {
+        if (active) setLlmHealth({ status: "disconnected", connected: 0, total: 8, model: "" });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const comparison = useMemo(() => {
     return [
@@ -287,7 +310,11 @@ export default function Home() {
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </div>
         <div className="networkState">
-          <span /> {result.metrics.llmBackend === "ollama" ? `Local LLM · ${result.metrics.model}` : "Local LLM · 미연결"}
+          <span /> {!llmHealth
+            ? "Local LLM · 확인 중"
+            : llmHealth.status === "connected"
+              ? `Local LLM · ${llmHealth.connected}/${llmHealth.total} 연결 · ${llmHealth.model}`
+              : `Local LLM · ${llmHealth.connected}/${llmHealth.total} 연결`}
         </div>
       </header>
 
