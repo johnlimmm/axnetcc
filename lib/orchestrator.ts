@@ -1,4 +1,5 @@
 import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./knowledge";
+import { evaluateWithCommercialJudge } from "./commercial-judge";
 import { generateLocalAnswer } from "./local-llm";
 import { ragStats, searchRag } from "./rag";
 
@@ -125,7 +126,11 @@ function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
   return `${lead[agent]} ${grounds}`;
 }
 
-export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
+export async function orchestrate(
+  rawQuery: string,
+  mode: RunMode = "proposed",
+  useCommercialJudge = false,
+) {
   const startedAt = Date.now();
   const { sanitized: query, filteredFields: inputFiltered } = sanitize(rawQuery.trim());
   const ids = Object.keys(agentProfiles) as AgentId[];
@@ -288,6 +293,26 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
   const citationValidity = citations.length
     ? Math.round(validCitations.length / citations.length * 100)
     : 0;
+  const uniqueValidCitations = new Set(validCitations);
+  const citationRecall = Math.round(
+    uniqueValidCitations.size / Math.max(validEvidenceIds.size, 1) * 100,
+  );
+  const claimSentences = selectedResults.flatMap((result) =>
+    result.summary
+      .split(/\n+|(?<=[.!?다요])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => terms(sentence.replace(/\[[^\]]+\]/g, "")).length >= 3),
+  );
+  const supportedClaims = claimSentences.filter((sentence) =>
+    [...sentence.matchAll(/\[([^\]]+)\]/g)].some((match) => validEvidenceIds.has(match[1])),
+  );
+  const claimSupportRate = Math.round(
+    supportedClaims.length / Math.max(claimSentences.length, 1) * 100,
+  );
+  const retrievalSuccessRate = Math.round(
+    selectedResults.filter((result) => result.evidence.length > 0).length /
+      Math.max(selectedResults.length, 1) * 100,
+  );
   const relevance = Math.round(
     selectedResults.reduce((sum, result) => sum + lexicalCoverage(query, result.summary), 0) /
       Math.max(selectedResults.length, 1),
@@ -305,16 +330,29 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       Math.max(selectedResults.length, 1) * 100,
   );
   const qualityScore = Math.round(
-    relevance * 0.3 +
-      evidenceSupport * 0.3 +
-      domainCoverage * 0.2 +
-      answerCompleteness * 0.15 +
-      citationValidity * 0.05,
+    relevance * 0.15 +
+      evidenceSupport * 0.2 +
+      retrievalSuccessRate * 0.15 +
+      citationValidity * 0.15 +
+      citationRecall * 0.15 +
+      claimSupportRate * 0.2,
   );
   const inferenceResults = [
     ...selectedResults.map((result) => result.inference),
     ...(managedSupervisor ? [managedSupervisor.metrics] : []),
   ];
+  const commercialJudge = useCommercialJudge
+    ? await evaluateWithCommercialJudge({
+        query,
+        answer: selectedResults.map((result) => `${result.shortName}: ${result.summary}`).join("\n"),
+        evidence: selectedResults.flatMap((result) =>
+          result.evidence.map((item) => `[${item.id}] ${item.excerpt}`),
+        ).join("\n"),
+      })
+    : {
+        enabled: false,
+        provider: "disabled",
+      };
 
   return {
     runId: `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -349,6 +387,9 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       evidenceSupport,
       citationCoverage,
       citationValidity,
+      citationRecall,
+      claimSupportRate,
+      retrievalSuccessRate,
       domainCoverage,
       answerCompleteness,
       qualityScore,
@@ -368,6 +409,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
         return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : null;
       })(),
     },
+    commercialJudge,
     timeline: [
       { label: "요청 정제", detail: `민감필드 ${inputFiltered.length}개 제거`, ms: 8 },
       { label: "Agent 선택", detail: `${selected.length}개 역할 관련도·권한 일치`, ms: 12 },

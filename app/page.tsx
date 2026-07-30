@@ -51,6 +51,9 @@ type RunResult = {
     evidenceSupport: number;
     citationCoverage: number;
     citationValidity: number;
+    citationRecall?: number;
+    claimSupportRate?: number;
+    retrievalSuccessRate?: number;
     domainCoverage: number;
     answerCompleteness: number;
     qualityScore: number;
@@ -59,6 +62,17 @@ type RunResult = {
     model?: string;
     ttftMs?: number | null;
     tpotMs?: number | null;
+  };
+  commercialJudge?: {
+    enabled: boolean;
+    provider: string;
+    model?: string;
+    correctness?: number;
+    groundedness?: number;
+    completeness?: number;
+    overall?: number;
+    rationale?: string;
+    error?: string;
   };
   timeline: { label: string; detail: string; ms: number }[];
 };
@@ -279,6 +293,7 @@ export default function Home() {
   const [runProgress, setRunProgress] = useState("");
   const [hasRun, setHasRun] = useState(false);
   const [runError, setRunError] = useState("");
+  const [commercialJudgeEnabled, setCommercialJudgeEnabled] = useState(false);
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
   const selectedCount = hasRun ? result.agents.filter((agent) => agent.selected).length : 0;
@@ -339,7 +354,7 @@ export default function Home() {
     const response = await fetch("/api/orchestrate", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, mode: targetMode }),
+      body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled }),
     });
     if (!response.ok) throw new Error("orchestration failed");
     return response.json() as Promise<RunResult>;
@@ -446,6 +461,14 @@ export default function Home() {
               </button>
             ))}
           </div>
+          <label className="judgeToggle">
+            <input
+              type="checkbox"
+              checked={commercialJudgeEnabled}
+              onChange={(event) => setCommercialJudgeEnabled(event.target.checked)}
+            />
+            <span><strong>상용 LLM 전문가 평가</strong><small>선택 시 질의·답변·근거 일부가 외부 평가 API로 전송됩니다.</small></span>
+          </label>
           <button className="runButton" disabled={running || !query.trim()} onClick={run}>
             {running ? <><span className="spinner" /> {runProgress}</> : <>선택 방식 실행 <span>→</span></>}
           </button>
@@ -632,20 +655,36 @@ export default function Home() {
             )}
           </div>
           <div className="qualityHead">
-            <span>방식</span><span>질의 관련성</span><span>근거 내용 일치</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
+            <span>방식</span><span>근거 확보율</span><span>인용 Precision</span><span>인용 Recall</span><span>Claim Support</span><span>자동 검증점수</span>
           </div>
           {comparison.map((row) => (
             <div className={row.id === "proposed" ? "qualityHighlight" : ""} key={`quality-${row.id}`}>
               <strong>{row.name}</strong>
-              <span>{row.measured ? `${row.metrics.relevance}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.evidenceSupport}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.domainCoverage}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.answerCompleteness}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.retrievalSuccessRate ?? 0}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.citationValidity}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.citationRecall ?? 0}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.claimSupportRate ?? 0}%` : "—"}</span>
               <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
             </div>
           ))}
-            <p>실시간 자동 품질은 질의 관련성·검색 근거 일치·필수 전문영역·답변 완결성·유효 인용을 결합합니다. 정답이 없는 임의 질의에서도 계산할 수 있지만, 사실 정확도의 최종 판정은 전문가 검토가 필요합니다.</p>
+            <p>근거 확보율은 선택 Agent 중 검색 성공 비율, 인용 Precision은 전체 인용 중 유효 ID 비율, Recall은 검색 근거 중 실제 인용 비율, Claim Support는 답변 주장 중 유효 근거 ID가 연결된 비율입니다.</p>
           </div>
+          {result.commercialJudge?.enabled && (
+            <div className="judgeResult">
+              <div><strong>COMMERCIAL LLM BLIND JUDGE</strong><span>{result.commercialJudge.model ?? result.commercialJudge.provider}</span></div>
+              {result.commercialJudge.error ? (
+                <p>{result.commercialJudge.error}</p>
+              ) : (
+                <>
+                  <b>정확성 {result.commercialJudge.correctness}</b>
+                  <b>근거충실도 {result.commercialJudge.groundedness}</b>
+                  <b>완전성 {result.commercialJudge.completeness}</b>
+                  <b>종합 {result.commercialJudge.overall}</b>
+                  <p>{result.commercialJudge.rationale}</p>
+                </>
+              )}
+            </div>
+          )}
           <div className="benchmarkPanel">
             <div className="benchmarkHeading">
               <div><strong>LIVE EVALUATOR CALIBRATION</strong><span>라이브 평가 산식 점검용 고정 pilot {benchmark.cases}문항 · held-out 아님</span></div>

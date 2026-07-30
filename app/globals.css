@@ -99,6 +99,9 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .modePicker button.active { border-color: var(--blue); background: #f4f7ff; color: var(--blue); }
 .modePicker button.active::after { background: var(--blue); box-shadow: inset 0 0 0 2px white; }
 .modePicker span { font-size: 13px; font-weight: 800; }.modePicker small { color: var(--muted); font-size: 10px; }
+.judgeToggle { display: flex; gap: 9px; align-items: flex-start; margin: 14px 0; padding: 11px; border: 1px solid var(--line); background: #fafbfe; cursor: pointer; }
+.judgeToggle input { margin-top: 2px; }.judgeToggle span { display: flex; flex-direction: column; gap: 3px; }
+.judgeToggle strong { font-size: 10px; }.judgeToggle small { color: var(--muted); font-size: 8px; line-height: 1.4; }
 .runButton { width: 100%; height: 52px; margin-top: 24px; color: white; border: 0; background: var(--blue); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 8px 20px #255bff35; }
 .runButton:hover { background: var(--blue-deep); }.runButton:disabled { opacity: .65; cursor: wait; }
 .compareButton { width: 100%; height: 42px; margin-top: 9px; border: 1px solid var(--blue); background: white; color: var(--blue); font-size: 11px; font-weight: 900; }
@@ -187,6 +190,9 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .qualityComparison .qualityHead { color: #6f7b94 !important; font-size: 9px !important; }
 .qualityComparison .qualityHighlight { background: #18284b; color: white; }.qualityScore { color: var(--mint); font-weight: 900; }
 .qualityComparison > p { margin: 0; padding: 11px 18px; color: #727e96; font-size: 8px; }
+.judgeResult { margin-top: 12px; padding: 14px 18px; border: 1px solid #4e4264; background: #1d1728; display: flex; gap: 16px; align-items: center; color: #cfc4df; }
+.judgeResult > div { display: flex; flex-direction: column; margin-right: auto; }.judgeResult strong { color: #d7b8ff; font-size: 9px; letter-spacing: .08em; }
+.judgeResult span, .judgeResult b { font-size: 9px; }.judgeResult p { margin: 0; max-width: 420px; font-size: 8px; color: #9d91ac; }
 .benchmarkPanel { margin-top: 18px; border: 1px solid #3b465e; background: #111a2e; }
 .benchmarkHeading { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #3b465e; }
 .benchmarkHeading div { display: flex; align-items: baseline; gap: 12px; }.benchmarkHeading strong { color: var(--mint); font-size: 10px; letter-spacing: .1em; }
