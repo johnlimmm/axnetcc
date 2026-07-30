@@ -7,15 +7,37 @@
 ## 현재 배치
 
 - Core/UI/API: `http://127.0.0.1:3000`
-- Ollama: `http://127.0.0.1:11434`
-- 기본 모델: `qwen2.5:3b`
+- 기술 Agent Ollama: `http://127.0.0.1:11441`
+- 데이터 Agent Ollama: `http://127.0.0.1:11442`
+- 보안 Agent Ollama: `http://127.0.0.1:11443`
+- 법무 Agent Ollama: `http://127.0.0.1:11444`
+- 정책 Agent Ollama: `http://127.0.0.1:11445`
+- 재무 Agent Ollama: `http://127.0.0.1:11446`
+- 조달 Agent Ollama: `http://127.0.0.1:11447`
+- 운영 Agent Ollama: `http://127.0.0.1:11448`
+- 독립 Edge 모델: `qwen2.5:0.5b`
+- 품질 비교용 단일 모델: `qwen2.5:3b` (`11434`)
 - Agent: tech, data, security, legal, policy, finance, procurement, operations
 - RAG: Agent별 허용 corpus만 검색
 
-각 Agent는 독립 system prompt, 책임 범위, 검색 권한, 추론 지표를 가진다. 현재는
-GPU/메모리 중복 사용을 피하려고 같은 Ollama daemon과 모델 가중치를 공유한다.
-동일 endpoint를 공유하는 Agent 요청은 큐에서 순차 처리되며, 서로 다른 endpoint로
-분리하면 자동으로 병렬 처리된다.
+각 Agent는 독립 Ollama 프로세스, 포트, 모델 세션, system prompt, 책임 범위,
+검색 권한과 추론 지표를 가진다. 따라서 전체 Agent 방식은 같은 Ollama 큐를 공유하지
+않고 실제 동시 요청을 실행할 수 있다.
+
+현재 PC의 가용 메모리를 고려해 8개 독립 인스턴스에는 약 397MB 크기의 0.5B 모델을
+사용한다. 방식 비교 실험에서는 세 방식 모두 동일한 0.5B 모델을 사용해야 한다.
+3B 결과와 0.5B 결과를 같은 표에서 직접 비교하지 않는다.
+
+## 실행
+
+```powershell
+npm run edge:start
+npm run local:check
+npm run dev
+```
+
+종료할 때는 `npm run edge:stop`을 실행한다. Edge 로그와 PID 상태는 Git에서 제외된
+`.local-edge` 폴더에 저장된다.
 
 ## 물리 Edge로 이전
 

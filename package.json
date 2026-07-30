@@ -12,6 +12,8 @@
     "test": "npm run build && node --test tests/orchestrator.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "local:check": "node --env-file=.env.local scripts/check-local-stack.mjs",
+    "edge:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-ollama.ps1",
+    "edge:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-agent-ollama.ps1",
     "db:generate": "drizzle-kit generate",
     "rag:compile": "node scripts/compile-rag-index.mjs"
   },
