@@ -11,7 +11,7 @@ type AgentResult = {
   score: number;
   question: string;
   summary: string;
-  evidence: { id: string; title: string; excerpt: string }[];
+  evidence: { id: string; title: string; excerpt: string; sourceUrl?: string; effectiveDate?: string }[];
   responsibility: string;
   filteredFields: string[];
   latencyMs: number;
@@ -32,6 +32,7 @@ type RunResult = {
     latencyMs: number;
     exposedFields: number;
     traceability: number;
+    ragChunks?: number;
   };
   timeline: { label: string; detail: string; ms: number }[];
 };
@@ -222,7 +223,7 @@ export default function Home() {
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </div>
-        <div className="networkState"><span /> KOREN Testbed · 정상</div>
+        <div className="networkState"><span /> Public RAG {result.metrics.ragChunks?.toLocaleString() ?? "1,499"} chunks · 정상</div>
       </header>
 
       <section className="hero">
@@ -330,7 +331,15 @@ export default function Home() {
               <div className="sources">
                 <span className="miniLabel">근거 · 책임 추적</span>
                 {selectedResult.evidence.map((source) => (
-                  <div key={source.id}><b>{source.id}</b><strong>{source.title}</strong><small>{source.excerpt}</small></div>
+                  <div key={source.id}>
+                    <b>{source.id}</b>
+                    {source.sourceUrl ? (
+                      <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a>
+                    ) : (
+                      <strong>{source.title}</strong>
+                    )}
+                    <small>{source.excerpt}</small>
+                  </div>
                 ))}
                 <p className="owner"><span>검토 주체</span>{selectedResult.responsibility}</p>
               </div>

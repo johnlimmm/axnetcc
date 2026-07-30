@@ -144,7 +144,7 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .miniLabel { font-size: 9px; color: var(--muted); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .evidenceBody p { font-size: 12px; line-height: 1.55; color: #4d576c; }.evidenceBody p.question { color: var(--ink); background: #f3f6fd; padding: 12px; border-left: 2px solid var(--blue); }
 .sources > div { display: grid; grid-template-columns: auto 1fr; gap: 2px 9px; padding: 8px 0; border-bottom: 1px solid #edf0f5; }
-.sources b { color: var(--blue); font-size: 8px; }.sources strong { font-size: 10px; }.sources small { grid-column: 2; color: var(--muted); font-size: 9px; }
+.sources b { color: var(--blue); font-size: 8px; }.sources strong, .sources a { color: var(--ink); font-size: 10px; font-weight: 700; text-decoration: none; }.sources a:hover { color: var(--blue); text-decoration: underline; }.sources small { grid-column: 2; color: var(--muted); font-size: 9px; }
 .owner { display: flex; justify-content: space-between; font-size: 10px !important; }.owner span { color: var(--muted); }
 
 .metricsSection, .traceSection { max-width: 1440px; margin: 0 auto; padding: 80px 48px; }
@@ -182,4 +182,3 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
   .timeline { grid-template-columns: 1fr; gap: 28px; }.timeline > div::before { display: none; }
   footer { padding: 22px; display: block; line-height: 1.8; }
 }
-
