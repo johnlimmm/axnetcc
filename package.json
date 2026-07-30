@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "node scripts/sync-public-css.mjs && vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/orchestrator.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

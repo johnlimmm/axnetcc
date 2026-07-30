@@ -9,6 +9,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="stylesheet" href="/site.css" />
+      </head>
       <body>{children}</body>
     </html>
   );
