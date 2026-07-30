@@ -270,16 +270,18 @@ function Metric({ label, value, note }: { label: string; value: string; note: st
 }
 
 export default function Home() {
-  const [query, setQuery] = useState(exampleRequests[0]);
+  const [query, setQuery] = useState("");
   const [mode, setMode] = useState<RunResult["mode"]>("proposed");
   const [result, setResult] = useState<RunResult>(() => buildFallbackResult(exampleRequests[0], "proposed"));
   const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult["metrics"]>>>({});
   const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
   const [runProgress, setRunProgress] = useState("");
+  const [hasRun, setHasRun] = useState(false);
+  const [runError, setRunError] = useState("");
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
-  const selectedCount = result.agents.filter((agent) => agent.selected).length;
+  const selectedCount = hasRun ? result.agents.filter((agent) => agent.selected).length : 0;
 
   useEffect(() => {
     let active = true;
@@ -345,16 +347,17 @@ export default function Home() {
 
   async function run() {
     setRunning(true);
+    setRunError("");
     setRunProgress("선택 방식 실행 중");
     try {
       const next = await executeMode(mode);
       setResult(next);
+      setHasRun(true);
       setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
       const first = next.agents.find((agent) => agent.selected);
       if (first) setActiveAgent(first.id);
     } catch {
-      const next = buildFallbackResult(query, mode);
-      setResult(next);
+      setRunError("실행에 실패했습니다. Local LLM 연결 상태를 확인한 뒤 다시 시도해 주세요.");
     } finally {
       setRunning(false);
       setRunProgress("");
@@ -363,6 +366,7 @@ export default function Home() {
 
   async function runAllModes() {
     setRunning(true);
+    setRunError("");
     setBenchmarks({});
     const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
       { mode: "centralized", label: "중앙집중형" },
@@ -377,12 +381,13 @@ export default function Home() {
         const next = await executeMode(item.mode);
         setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
         setResult(next);
+        setHasRun(true);
         const first = next.agents.find((agent) => agent.selected);
         if (first) setActiveAgent(first.id);
       }
       setMode("proposed");
     } catch {
-      setResult(buildFallbackResult(query, "proposed"));
+      setRunError("전체 비교 실행이 중단되었습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.");
     } finally {
       setRunning(false);
       setRunProgress("");
@@ -450,7 +455,7 @@ export default function Home() {
           <p className="privacyNote">원문 데이터는 각 Edge를 벗어나지 않습니다.</p>
         </aside>
 
-        <div className="resultPanel">
+        {hasRun ? <div className="resultPanel">
           <div className="orchestrationHead">
             <div><span className="liveDot" /> RUN {result.runId}</div>
             <span>{result.mode === "proposed" ? "동적 오케스트레이션" : result.mode === "parallel" ? "병렬 호출" : result.mode === "managed" ? "Managed Supervisor" : "중앙집중 처리"}</span>
@@ -544,10 +549,17 @@ export default function Home() {
               </div>
             </div>
           </section>
-        </div>
+        </div> : (
+          <div className="resultPanel emptyResult">
+            <div className="emptyResultMark">READY</div>
+            <h2>아직 실행된 분석이 없습니다.</h2>
+            <p>업무 요청을 입력하고 실행하면 선택된 Agent, 로컬 RAG 근거, 품질·성능·데이터 보호 지표가 여기에 표시됩니다.</p>
+            {runError && <strong>{runError}</strong>}
+          </div>
+        )}
       </section>
 
-      <section className="metricsSection">
+      {hasRun && <><section className="metricsSection">
         <div className="sectionTitle">
           <div><span className="eyebrow">MEASURABLE GOVERNANCE</span><h2>효율과 보호를 수치로 증명합니다.</h2></div>
           <p>동일한 요청을 세 방식으로 실행한 비교값입니다.</p>
@@ -660,7 +672,7 @@ export default function Home() {
             <div key={item.label}><b>{String(index + 1).padStart(2, "0")}</b><i /><strong>{item.label}</strong><p>{item.detail}</p><span>{item.ms} ms</span></div>
           ))}
         </div>
-      </section>
+      </section></>}
 
       <footer><span>MNC Lab. · Korea University</span><span>KOREN 기반 분산 AI Agent 협력 거버넌스 플랫폼</span></footer>
     </main>
