@@ -32,6 +32,20 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 
 실험 원자료 요약은 `data/evaluation/literature-baseline-report.json`, 국내 학술대회 2쪽 초안과 재생성 스크립트는 `paper/`에 있습니다.
 
+### 40문항 고정 정답 평가
+
+별도로 정답 Agent, 필수 개념, 관련 공식 문서군과 금지 출력을 라벨링한 40개 공공·기업 AX 문항을 다섯 방식으로 실행해 총 200개 결과를 평가했습니다.
+
+| 방식 | 객관 품질 (95% CI) | Agent Micro-F1 | 필수개념 Recall | 문서군 Recall@K | 평균 Core 전송량 | 원문 외부 전송 |
+|---|---:|---:|---:|---:|---:|---|
+| Single Centralized RAG | 58.5 (55.4–62.2) | 46.5 | 14.4 | 51.2 | 50,503B | 있음 |
+| All-Agent Aggregation | 81.5 (79.1–83.9) | 46.5 | 75.0 | 51.2 | 6,324B | 없음 |
+| MasRouter-inspired | 62.0 (55.9–68.0) | 57.4 | 50.0 | 35.6 | 1,149B | 있음 |
+| RemoteRAG-inspired | 49.9 (45.2–54.9) | 57.4 | 14.4 | 37.5 | 4,004B | 있음 |
+| 제안 방식 | 70.6 (64.7–76.4) | 64.6 | 62.5 | 42.5 | 2,507B | 없음 |
+
+제안 방식은 정답 기반 최고 품질의 86.6%를 유지했고, MasRouter-inspired보다 +8.6점(95% CI +4.9~+12.8), RemoteRAG-inspired보다 +20.7점(+16.2~+25.5) 높았습니다. 이 평가는 저자 라벨 고정셋이며 독립 전문가 합의평가는 아닙니다. Retrieval Recall@K는 동일 공식 자료의 인접 페이지 검색을 과도하게 실패 처리하지 않도록 출처 문서군 기준으로 계산합니다. 평가셋과 전체 행 단위 결과는 `data/evaluation/ax-golden-set-40.jsonl`과 `data/evaluation/expanded-report.json`에 있습니다.
+
 ## 구조
 
 ```text
@@ -268,6 +282,7 @@ pnpm run rag:compile
 
 ```bash
 pnpm run eval:offline
+pnpm run eval:expanded
 ```
 
 다섯 방식 반복 비교:
@@ -334,6 +349,7 @@ curl -X POST http://localhost:3000/api/orchestrate \
 | `pnpm run local:check` | endpoint·모델 상태 확인 |
 | `pnpm run rag:compile` | RAG corpus 재생성 |
 | `pnpm run eval:offline` | golden set 오프라인 평가 |
+| `pnpm run eval:expanded` | 40문항·다섯 방식 고정 정답 평가 |
 | `node scripts/repeat-benchmark.mjs` | 다섯 방식 반복평가 |
 
 ## 라이선스와 데이터

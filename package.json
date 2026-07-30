@@ -15,7 +15,8 @@
     "edge:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-ollama.ps1",
     "edge:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-agent-ollama.ps1",
     "rag:compile": "node scripts/compile-rag-index.mjs",
-    "eval:offline": "node scripts/evaluate-offline.mjs"
+    "eval:offline": "node scripts/evaluate-offline.mjs",
+    "eval:expanded": "node scripts/evaluate-expanded.mjs"
   },
   "dependencies": {
     "next": "16.2.6",

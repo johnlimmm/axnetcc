@@ -6,6 +6,14 @@ const results = [
   { name: "제안 방식", quality: 76.5, deviation: 4.7, correctness: 77.1, groundedness: 75.3, completeness: 76.7, ttft: "3.78초", tpot: "152.2ms", latency: "59.2초", bytes: "3,479B", leaves: "미전송" },
 ];
 
+const fixedResults = [
+  { name: "Single Centralized RAG", quality: 58.5, ci: "55.4–62.2", f1: 46.5, concept: 14.4, retrieval: 51.2, bytes: "50,503B", leaves: "전송" },
+  { name: "All-Agent Aggregation", quality: 81.5, ci: "79.1–83.9", f1: 46.5, concept: 75.0, retrieval: 51.2, bytes: "6,324B", leaves: "미전송" },
+  { name: "MasRouter-inspired", quality: 62.0, ci: "55.9–68.0", f1: 57.4, concept: 50.0, retrieval: 35.6, bytes: "1,149B", leaves: "전송" },
+  { name: "RemoteRAG-inspired", quality: 49.9, ci: "45.2–54.9", f1: 57.4, concept: 14.4, retrieval: 37.5, bytes: "4,004B", leaves: "전송" },
+  { name: "제안 방식", quality: 70.6, ci: "64.7–76.4", f1: 64.6, concept: 62.5, retrieval: 42.5, bytes: "2,507B", leaves: "미전송" },
+];
+
 export default function EvaluationPage() {
   return (
     <main className="aboutPage evaluationPage">
@@ -60,6 +68,31 @@ export default function EvaluationPage() {
         <article>
           <div className="evaluationSectionHead">
             <span>02</span>
+            <div><h2>40문항 고정 정답 평가</h2><p>정답 Agent·필수 개념·관련 공식 문서군을 사전 라벨링한 40개 AX 문항을 다섯 방식으로 실행한 200개 결과입니다.</p></div>
+          </div>
+          <div className="evaluationTableWrap">
+            <div className="evaluationTable">
+              <div className="evaluationTableHead"><span>방식</span><span>객관 품질</span><span>95% CI</span><span>Agent F1</span><span>개념 Recall</span><span>문서군 Recall@K</span><span>Core 전송량</span><span>원문 외부 전송</span></div>
+              {fixedResults.map((result) => (
+                <div key={result.name} className={result.name === "제안 방식" ? "evaluationHighlight" : ""}>
+                  <strong>{result.name}</strong>
+                  <span>{result.quality}</span>
+                  <span>{result.ci}</span>
+                  <span>{result.f1}</span>
+                  <span>{result.concept}</span>
+                  <span>{result.retrieval}</span>
+                  <span>{result.bytes}</span>
+                  <b className={result.leaves === "미전송" ? "safeValue" : "riskValue"}>{result.leaves}</b>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="evaluationClaim">정답 기반 평가에서 제안 방식은 최고 객관 품질의 86.6%를 유지했습니다. Agent Micro-F1은 64.6으로 MasRouter-inspired의 57.4보다 높았고, 제안 방식과 두 inspired baseline의 품질 차이 95% 신뢰구간은 각각 +4.9~+12.8점, +16.2~+25.5점이었습니다.</p>
+        </article>
+
+        <article>
+          <div className="evaluationSectionHead">
+            <span>03</span>
             <div><h2>무엇이 더 좋은가</h2><p>제안 방식은 절대 품질 1위가 아니라, 공공기관과 기업 AX에서 중요한 품질·보호·속도의 균형을 목표로 합니다.</p></div>
           </div>
           <div className="tradeoffGrid">
@@ -73,7 +106,7 @@ export default function EvaluationPage() {
 
         <article>
           <div className="evaluationSectionHead">
-            <span>03</span>
+            <span>04</span>
             <div><h2>실험 설계와 산식</h2><p>결과를 재현할 수 있도록 비교 조건과 계산 기준을 고정했습니다.</p></div>
           </div>
           <div className="methodGrid">
@@ -88,14 +121,14 @@ export default function EvaluationPage() {
 
         <article>
           <div className="evaluationSectionHead">
-            <span>04</span>
+            <span>05</span>
             <div><h2>해석 시 주의사항</h2><p>이 결과가 말할 수 있는 범위와 아직 확장해야 할 부분을 구분합니다.</p></div>
           </div>
           <ul className="limitations">
-            <li><strong>현재 결론</strong><span>선정한 5개 AX 질의와 현재 로컬 환경에서 제안 방식은 최고 품질의 93.8%를 유지하고 문헌 기반 inspired baseline보다 높은 품질과 원문 비이동을 보였습니다.</span></li>
+            <li><strong>현재 결론</strong><span>75개 실제 응답 평가에서는 최고 품질의 93.8%, 40문항 고정 정답 평가에서는 86.6%를 유지했습니다. 두 평가 모두 inspired baseline보다 높은 품질과 원문 비이동을 보였습니다.</span></li>
             <li><strong>재현 범위</strong><span>MasRouter의 학습 controller와 RemoteRAG의 DistanceDP 전체를 재현한 것이 아니라, 공개된 핵심 메커니즘을 동일 로컬 환경에 맞춘 inspired baseline입니다.</span></li>
-            <li><strong>아직 아닌 것</strong><span>모든 업무와 모든 모델에서 같은 결과가 보장된다는 일반화된 성능 증명은 아닙니다.</span></li>
-            <li><strong>다음 검증</strong><span>전문가가 정답과 필수 개념을 부여한 30~50개 이상의 평가셋으로 Agent F1, Retrieval Recall@K, 정답 기반 품질과 95% 신뢰구간을 추가해야 합니다.</span></li>
+            <li><strong>라벨 한계</strong><span>40문항 정답은 저자 라벨이며 독립 전문가 합의평가는 아닙니다. Recall@K는 특정 페이지가 아니라 관련 공식 문서군 기준입니다.</span></li>
+            <li><strong>다음 검증</strong><span>외부 전문가 2인 이상의 독립 라벨과 합의도, 미사용 기관 데이터셋, routing·retrieval 구성요소 ablation을 추가해야 합니다.</span></li>
           </ul>
         </article>
       </section>
