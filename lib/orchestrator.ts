@@ -1,4 +1,5 @@
 import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./knowledge";
+import { ragStats, searchRag } from "./rag";
 
 export type RunMode = "proposed" | "parallel" | "centralized";
 
@@ -22,7 +23,7 @@ function overlap(query: string, values: string[]) {
   return values.reduce((score, value) => score + (normalized.includes(value.toLowerCase()) ? 1 : 0), 0);
 }
 
-function retrieve(query: string, agent: AgentId, limit = 2) {
+function retrieveInternal(query: string, agent: AgentId, limit = 2) {
   const queryTerms = new Set(terms(query));
   return knowledge
     .filter((chunk) => chunk.agent === agent)
@@ -34,6 +35,28 @@ function retrieve(query: string, agent: AgentId, limit = 2) {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+}
+
+function retrieve(query: string, agent: AgentId, limit = 3) {
+  const publicHits = searchRag(query, agent, limit);
+  if (publicHits.length) {
+    return publicHits.map(({ chunk, score }) => ({
+      score,
+      chunk: {
+        id: chunk.id,
+        agent: chunk.agent,
+        title: chunk.title,
+        section: chunk.section,
+        text: chunk.text,
+        sourceType: "public" as const,
+        classification: "public" as const,
+        effectiveDate: chunk.publishedAt ?? "발행일 미상",
+        sourceUrl: chunk.sourceUrl,
+        tags: [],
+      },
+    }));
+  }
+  return retrieveInternal(query, agent, limit);
 }
 
 function sanitize(text: string) {
@@ -67,7 +90,10 @@ function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
     legal: "최소처리 원칙을 준수하고 위탁·재위탁·삭제·산출물 책임을 계약과 업무절차에 명시해야 합니다.",
     finance: "PoC와 본사업을 분리하고 모델 사용료와 운영·보안 비용까지 포함한 총소유비용을 산정해야 합니다.",
   };
-  return `${lead[agent]} ${chunks.map((chunk) => chunk.text).join(" ")}`;
+  const grounds = chunks
+    .map((chunk) => chunk.text.replace(/\s+/g, " ").slice(0, 180))
+    .join(" ");
+  return `${lead[agent]} ${grounds}`;
 }
 
 export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
@@ -97,7 +123,7 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       evidence: retrieved.map(({ chunk, score }) => ({
         id: chunk.id,
         title: chunk.title,
-        excerpt: `${chunk.section} · ${chunk.text.slice(0, 76)}…`,
+        excerpt: `${chunk.section} · ${chunk.text.replace(/\s+/g, " ").slice(0, 110)}…`,
         sourceUrl: chunk.sourceUrl,
         sourceType: chunk.sourceType,
         effectiveDate: chunk.effectiveDate,
@@ -141,6 +167,7 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       latencyMs: Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
+      ragChunks: ragStats.chunks,
     },
     timeline: [
       { label: "요청 정제", detail: `민감필드 ${inputFiltered.length}개 제거`, ms: 8 },
@@ -151,4 +178,3 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
     ],
   };
 }
-

@@ -19,7 +19,7 @@ export const agentProfiles = {
     shortName: "기술",
     color: "#5B8CFF",
     responsibility: "디지털전략팀 기술검토 책임",
-    keywords: ["AI", "기술", "시스템", "서비스", "클라우드", "구축", "운영", "성능", "RAG", "모델"],
+    keywords: ["AI", "LLM", "기술", "시스템", "서비스", "클라우드", "구축", "운영", "성능", "RAG", "모델"],
     allowedClasses: ["public", "internal"],
   },
   security: {
@@ -146,4 +146,3 @@ export const knowledge: KnowledgeChunk[] = [
     tags: ["조달", "PoC", "종속성", "비용상한"],
   },
 ];
-
