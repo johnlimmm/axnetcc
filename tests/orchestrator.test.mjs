@@ -86,7 +86,7 @@ test("selects only relevant agents in proposed mode", async () => {
   assert.ok(result.agents.find((agent) => agent.id === "security")?.selectionReason.includes("발견되지 않았"));
 });
 
-test("uses an Ollama-compatible local model and records TTFT/TBT", async () => {
+test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => {
   const server = createServer((request, response) => {
     assert.equal(request.url, "/api/chat");
     response.writeHead(200, { "content-type": "application/x-ndjson" });
@@ -113,8 +113,13 @@ test("uses an Ollama-compatible local model and records TTFT/TBT", async () => {
     assert.equal(result.metrics.llmBackend, "ollama");
     assert.equal(result.metrics.model, "qwen3:4b-test");
     assert.ok(result.metrics.ttftMs >= 0);
-    assert.ok(result.metrics.tbtMs > 0);
+    assert.ok(result.metrics.tpotMs > 0);
     assert.match(result.agents.find((agent) => agent.id === "finance").summary, /로컬 응답입니다/);
+    const centralized = await orchestrate("예산과 보안 검토", "centralized");
+    assert.equal(centralized.metrics.calls, 1);
+    assert.equal(centralized.metrics.llmBackend, "ollama");
+    assert.ok(centralized.metrics.ttftMs >= 0);
+    assert.ok(centralized.metrics.tpotMs > 0);
   } finally {
     delete process.env.LOCAL_LLM_BASE_URL;
     delete process.env.LOCAL_LLM_MODEL;

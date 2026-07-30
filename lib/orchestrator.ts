@@ -118,6 +118,24 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       : ids;
   if (!selected.length) selected.push("tech");
 
+  const centralizedEvidence =
+    mode === "centralized"
+      ? ids
+          .flatMap((id) => retrieve(query, id, 1).map((item) => item.chunk))
+          .filter((chunk, index, items) => items.findIndex((item) => item.id === chunk.id) === index)
+      : [];
+  const centralizedGeneration =
+    mode === "centralized"
+      ? await generateLocalAnswer({
+          agent: "tech",
+          agentName: "중앙집중형 Core LLM",
+          responsibility: "전체 전문영역의 원문과 판단을 중앙에서 통합 처리",
+          query,
+          evidence: centralizedEvidence,
+          fallback: synthesize("tech", centralizedEvidence),
+        })
+      : null;
+
   const agentResults = await Promise.all(ids.map(async (id, index) => {
     const isSelected = selected.includes(id);
     const retrieved = isSelected ? retrieve(query, id) : [];
@@ -125,7 +143,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       ? synthesize(id, retrieved.map((item) => item.chunk))
       : "현재 질의에서는 이 Agent가 선택되지 않아 원문 검색과 로컬 LLM 추론을 실행하지 않았습니다.";
     const generated = isSelected
-      ? await generateLocalAnswer({
+      ? centralizedGeneration ?? await generateLocalAnswer({
           agent: id,
           agentName: agentProfiles[id].name,
           responsibility: agentProfiles[id].responsibility,
@@ -139,7 +157,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
             backend: "deterministic" as const,
             model: process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
             ttftMs: null,
-            tbtMs: null,
+            tpotMs: null,
             tokensPerSecond: null,
             promptTokens: null,
             completionTokens: null,
@@ -203,7 +221,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       { label: "민감정보", status: "pass", detail: inputFiltered.length ? `${inputFiltered.join("·")} 입력을 마스킹했습니다.` : "직접 식별자가 발견되지 않았습니다." },
     ],
     metrics: {
-      calls: selected.length,
+      calls: mode === "centralized" ? 1 : selected.length,
       tokens,
       bytes,
       latencyMs: selectedResults.some((result) => result.inference.backend === "ollama")
@@ -220,9 +238,9 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
           .filter((value): value is number => value !== null);
         return values.length ? Math.min(...values) : null;
       })(),
-      tbtMs: (() => {
+      tpotMs: (() => {
         const values = selectedResults
-          .map((result) => result.inference.tbtMs)
+          .map((result) => result.inference.tpotMs)
           .filter((value): value is number => value !== null);
         return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : null;
       })(),

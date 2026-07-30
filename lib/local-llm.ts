@@ -4,7 +4,7 @@ export type LocalLlmMetrics = {
   backend: "ollama" | "deterministic";
   model: string;
   ttftMs: number | null;
-  tbtMs: number | null;
+  tpotMs: number | null;
   tokensPerSecond: number | null;
   promptTokens: number | null;
   completionTokens: number | null;
@@ -70,7 +70,7 @@ export async function generateLocalAnswer(input: {
         backend: "deterministic",
         model,
         ttftMs: null,
-        tbtMs: null,
+        tpotMs: null,
         tokensPerSecond: null,
         promptTokens: null,
         completionTokens: null,
@@ -156,13 +156,19 @@ export async function generateLocalAnswer(input: {
       finalChunk.eval_count && finalChunk.eval_duration
         ? finalChunk.eval_count / (finalChunk.eval_duration / 1_000_000_000)
         : null;
+    const tpotMs =
+      finalChunk.eval_count && finalChunk.eval_duration
+        ? finalChunk.eval_duration / finalChunk.eval_count / 1_000_000
+        : gaps.length
+          ? gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
+          : null;
     return {
       text: text.trim() || input.fallback,
       metrics: {
         backend: "ollama",
         model,
         ttftMs: contentTimes.length ? Math.round(contentTimes[0] - startedAt) : null,
-        tbtMs: gaps.length ? Number((gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length).toFixed(1)) : null,
+        tpotMs: tpotMs == null ? null : Number(tpotMs.toFixed(1)),
         tokensPerSecond: tokensPerSecond ? Number(tokensPerSecond.toFixed(2)) : null,
         promptTokens: finalChunk.prompt_eval_count ?? null,
         completionTokens: finalChunk.eval_count ?? null,
@@ -176,7 +182,7 @@ export async function generateLocalAnswer(input: {
         backend: "deterministic",
         model,
         ttftMs: null,
-        tbtMs: null,
+        tpotMs: null,
         tokensPerSecond: null,
         promptTokens: null,
         completionTokens: null,

@@ -20,7 +20,7 @@ type AgentResult = {
     backend: "ollama" | "deterministic";
     model: string;
     ttftMs: number | null;
-    tbtMs: number | null;
+    tpotMs: number | null;
     fallbackReason?: string;
   };
 };
@@ -44,7 +44,7 @@ type RunResult = {
     llmBackend?: "ollama" | "deterministic";
     model?: string;
     ttftMs?: number | null;
-    tbtMs?: number | null;
+    tpotMs?: number | null;
   };
   timeline: { label: string; detail: string; ms: number }[];
 };
@@ -213,7 +213,7 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       llmBackend: "deterministic",
       model: "qwen2.5:3b",
       ttftMs: null,
-      tbtMs: null,
+      tpotMs: null,
     },
     timeline: [
       { label: "요청 분석", detail: "업무영역·의도·민감도 분류", ms: 74 },
@@ -239,21 +239,23 @@ export default function Home() {
   const [query, setQuery] = useState(exampleRequests[0]);
   const [mode, setMode] = useState<RunResult["mode"]>("proposed");
   const [result, setResult] = useState<RunResult>(() => buildFallbackResult(exampleRequests[0], "proposed"));
+  const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult["metrics"]>>>({});
   const [running, setRunning] = useState(false);
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
   const selectedCount = result.agents.filter((agent) => agent.selected).length;
 
   const comparison = useMemo(() => {
-    const central = buildFallbackResult(query, "centralized").metrics;
-    const parallel = buildFallbackResult(query, "parallel").metrics;
-    const proposed = buildFallbackResult(query, "proposed").metrics;
     return [
-      { name: "중앙집중형", ...central },
-      { name: "병렬 Multi-Agent", ...parallel },
-      { name: "제안 방식", ...proposed },
-    ];
-  }, [query]);
+      { id: "centralized" as const, name: "중앙집중형" },
+      { id: "parallel" as const, name: "병렬 Multi-Agent" },
+      { id: "proposed" as const, name: "제안 방식" },
+    ].map((item) => ({
+      ...item,
+      metrics: benchmarks[item.id] ?? buildFallbackResult(query, item.id).metrics,
+      measured: Boolean(benchmarks[item.id]),
+    }));
+  }, [benchmarks, query]);
 
   async function run() {
     setRunning(true);
@@ -266,6 +268,7 @@ export default function Home() {
       if (!response.ok) throw new Error("orchestration failed");
       const next = await response.json() as RunResult;
       setResult(next);
+      setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
       const first = next.agents.find((agent) => agent.selected);
       if (first) setActiveAgent(first.id);
     } catch {
@@ -437,15 +440,21 @@ export default function Home() {
           <Metric label="Core–Edge 전송량" value={`${(result.metrics.bytes / 1024).toFixed(1)} KB`} note="원문 제외" />
           <Metric label="처리 지연" value={`${(result.metrics.latencyMs / 1000).toFixed(2)} s`} note="End-to-end" />
           <Metric label="TTFT" value={result.metrics.ttftMs == null ? "N/A" : `${result.metrics.ttftMs} ms`} note="실측 첫 토큰 지연" />
-          <Metric label="TBT" value={result.metrics.tbtMs == null ? "N/A" : `${result.metrics.tbtMs} ms`} note="실측 토큰 간 지연" />
+          <Metric label="TPOT" value={result.metrics.tpotMs == null ? "N/A" : `${result.metrics.tpotMs} ms`} note="실측 출력 토큰당 시간" />
           <Metric label="불필요 필드" value={`${result.metrics.exposedFields}`} note="반환 필터 이후" />
           <Metric label="추적 가능성" value={`${result.metrics.traceability}%`} note="근거·주체 연결률" />
         </div>
         <div className="comparison">
-          <div className="comparisonHead"><span>방식별 비교</span><span>호출 수</span><span>토큰</span><span>전송량</span><span>추적성</span></div>
+          <div className="comparisonHead"><span>방식별 비교</span><span>상태</span><span>호출</span><span>E2E</span><span>TTFT</span><span>TPOT</span><span>추적성</span></div>
           {comparison.map((row) => (
-            <div className={row.name === "제안 방식" ? "highlight" : ""} key={row.name}>
-              <strong>{row.name}</strong><span>{row.calls}</span><span>{row.tokens.toLocaleString()}</span><span>{(row.bytes / 1024).toFixed(1)} KB</span><span>{row.traceability}%</span>
+            <div className={row.id === "proposed" ? "highlight" : ""} key={row.id}>
+              <strong>{row.name}</strong>
+              <span>{row.measured ? "실측" : "미실행"}</span>
+              <span>{row.metrics.calls}</span>
+              <span>{row.measured ? `${(row.metrics.latencyMs / 1000).toFixed(1)} s` : "—"}</span>
+              <span>{row.measured && row.metrics.ttftMs != null ? `${row.metrics.ttftMs} ms` : "—"}</span>
+              <span>{row.measured && row.metrics.tpotMs != null ? `${row.metrics.tpotMs} ms` : "—"}</span>
+              <span>{row.metrics.traceability}%</span>
             </div>
           ))}
         </div>
