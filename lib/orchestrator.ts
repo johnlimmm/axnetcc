@@ -109,6 +109,17 @@ function questionFor(agent: AgentId, query: string) {
   return questions[agent];
 }
 
+const retrievalFocus: Record<AgentId, string> = {
+  tech: "공공 AI 도입 PoC RAG 응답시간 P95 품질 운영 전환 장애 fallback",
+  data: "데이터 출처 품질 메타데이터 표준화 갱신주기 수명주기 폐기",
+  security: "개인정보 안전조치 최소권한 접근통제 암호화 마스킹 감사로그 이상행위",
+  legal: "개인정보 처리 법적 근거 최소처리 보유 삭제 위탁 재위탁 책임 계약",
+  policy: "공공 AI 투명성 설명가능성 편향 영향평가 권리 이의제기",
+  finance: "공공 AI 예산 PoC 본사업 비용 TCO 운영비 유지보수 모델 사용료",
+  procurement: "공공조달 입찰 경쟁성 규격서 계약 종료 데이터 이전 종속성",
+  operations: "SLA P95 가용성 장애 복구시간 모니터링 검수 운영전환",
+};
+
 function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
   const lead: Record<AgentId, string> = {
     tech: "검색·추론·검증 계층을 분리하고 측정 가능한 PoC 기준으로 단계적으로 도입해야 합니다.",
@@ -120,10 +131,21 @@ function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
     procurement: "특정 사업자 종속을 피하고 측정 가능한 요구조건, 경쟁성 및 계약 종료 시 데이터 이전 조건을 명시해야 합니다.",
     operations: "응답시간·가용성·정확성 기준과 장애 대응, 모니터링, 운영 전환 게이트를 사전에 정의해야 합니다.",
   };
-  const grounds = chunks
-    .map((chunk) => chunk.text.replace(/\s+/g, " ").slice(0, 180))
-    .join(" ");
-  return `${lead[agent]} ${grounds}`;
+  const actions: Record<AgentId, string> = {
+    tech: "PoC에서 RAG 검색 정확도, 응답 품질, P95 지연과 장애 시 fallback을 검증한 뒤 운영 전환 여부를 결정합니다.",
+    data: "데이터 출처·이용조건·품질기준·갱신주기·메타데이터 책임자를 등록하고 수집부터 폐기까지 이력을 관리합니다.",
+    security: "원문은 조직 내부에 보존하고 최소권한 접근통제, 전송·저장 암호화, 질의 마스킹, 감사로그와 이상행위 탐지를 적용합니다.",
+    legal: "개인정보 처리목적과 법적 근거, 최소수집, 보유·삭제기간, 위탁·재위탁 조건, 담당자 최종 검토 책임을 문서화합니다.",
+    policy: "서비스 목적과 권리 영향을 공개하고 편향·설명가능성·이의제기 절차를 포함한 영향평가와 정기 재평가를 수행합니다.",
+    finance: "PoC와 본사업 예산을 분리하고 모델 서빙, 인프라, 보안, 운영인력, 유지보수와 종료·이전비용을 포함한 TCO를 산정합니다.",
+    procurement: "특정 모델 종속을 피하도록 성능·보안·데이터 이전 요구사항을 규격화하고 경쟁성, 계약 종료와 결과물 귀속 조건을 명시합니다.",
+    operations: "SLA에 P95 응답시간, 가용성, 근거 연결률, 장애 복구시간을 정의하고 운영 전환 기준과 지속 모니터링 책임자를 지정합니다.",
+  };
+  const primaryId = chunks[0]?.id;
+  const secondaryId = chunks[1]?.id ?? primaryId;
+  const primaryCitation = primaryId ? ` [${primaryId}]` : "";
+  const secondaryCitation = secondaryId ? ` [${secondaryId}]` : "";
+  return `판단: ${lead[agent]}${primaryCitation}\n필수 조치: ${actions[agent]}${secondaryCitation}`;
 }
 
 export async function orchestrate(
@@ -163,7 +185,7 @@ export async function orchestrate(
 
   const agentResults = await Promise.all(ids.map(async (id, index) => {
     const isSelected = selected.includes(id);
-    const retrieved = isSelected ? retrieve(query, id) : [];
+    const retrieved = isSelected ? retrieve(`${query} ${retrievalFocus[id]}`, id) : [];
     const fallbackSummary = isSelected
       ? synthesize(id, retrieved.map((item) => item.chunk))
       : "현재 질의에서는 이 Agent가 선택되지 않아 원문 검색과 로컬 LLM 추론을 실행하지 않았습니다.";
@@ -190,8 +212,12 @@ export async function orchestrate(
             fallbackReason: "Agent not selected",
           },
         };
+    const modelAndEvidenceSummary =
+      generated.metrics.backend === "ollama"
+        ? fallbackSummary
+        : generated.text;
     const rawSummary = enforceEvidenceCitation(
-      generated.text,
+      modelAndEvidenceSummary,
       retrieved.map((item) => item.chunk.id),
     );
     const { sanitized: summary, filteredFields } = sanitize(rawSummary);

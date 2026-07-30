@@ -114,7 +114,9 @@ test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => 
     assert.equal(result.metrics.model, "qwen3:4b-test");
     assert.ok(result.metrics.ttftMs >= 0);
     assert.ok(result.metrics.tpotMs > 0);
-    assert.match(result.agents.find((agent) => agent.id === "finance").summary, /로컬 응답입니다/);
+    const financeSummary = result.agents.find((agent) => agent.id === "finance").summary;
+    assert.match(financeSummary, /^판단:/);
+    assert.match(financeSummary, /\[.+\]/);
     const centralized = await orchestrate("예산과 보안 검토", "centralized");
     assert.equal(centralized.metrics.calls, 1);
     assert.equal(centralized.metrics.llmBackend, "ollama");
