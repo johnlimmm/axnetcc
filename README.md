@@ -30,7 +30,7 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 
 현재 환경에서 제안 방식은 최고 품질의 93.8%를 유지하면서 전체 Multi-Agent 대비 Core 전송량을 48.2% 줄였습니다. MasRouter-inspired보다 품질이 2.4점, RemoteRAG-inspired보다 6.5점 높았고 원문 비이동을 유지했습니다. 두 inspired baseline은 원 논문의 전체 학습 controller 또는 DistanceDP를 재현한 것이 아니라 공개된 핵심 메커니즘을 동일 환경에 맞춰 구현한 비교군입니다. 이는 현재 평가셋과 장비에 대한 실측 결과이며 모든 환경에 대한 일반화된 성능 보장은 아닙니다.
 
-실험 원자료 요약은 `data/evaluation/literature-baseline-report.json`, 국내 학술대회 2쪽 초안과 재생성 스크립트는 `paper/`에 있습니다.
+실험 원자료 요약은 `data/evaluation/literature-baseline-report.json`에 있습니다.
 
 ### 40문항 고정 정답 평가
 
