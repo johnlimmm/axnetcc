@@ -6,7 +6,10 @@ export default function AboutPage() {
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </a>
-        <a className="aboutLink" href="/">실행 화면으로 돌아가기</a>
+        <nav className="navLinks" aria-label="주요 페이지">
+          <a className="aboutLink" href="/evaluation">평가 결과</a>
+          <a className="aboutLink" href="/">실행 화면</a>
+        </nav>
       </header>
 
       <section className="aboutHero">
@@ -83,7 +86,7 @@ export default function AboutPage() {
         </article>
       </section>
 
-      <footer><span>MNC Lab. · Korea University</span><a href="/">MNC FLOW 실행 화면 →</a></footer>
+      <footer><span>MNC Lab. · Korea University</span><div className="footerLinks"><a href="/evaluation">평가 결과</a><a href="/">MNC FLOW 실행 화면</a></div></footer>
     </main>
   );
 }

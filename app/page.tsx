@@ -415,7 +415,10 @@ export default function Home() {
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
         </div>
-        <a className="aboutLink" href="/about">서비스 소개</a>
+        <nav className="navLinks" aria-label="주요 페이지">
+          <a className="aboutLink" href="/about">서비스 소개</a>
+          <a className="aboutLink" href="/evaluation">평가 결과</a>
+        </nav>
         <div className="networkState">
           <span /> {!llmHealth
             ? "Local LLM · 확인 중"

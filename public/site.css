@@ -239,6 +239,34 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
 .metricList { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 24px 0 0; padding: 1px; list-style: none; background: var(--line); }
 .metricList li { background: white; padding: 18px; display: flex; flex-direction: column; gap: 6px; }.metricList b { font-size: 12px; }.metricList span { color: var(--muted); font-size: 10px; }
 .aboutPage footer a { color: var(--blue); font-weight: 800; text-decoration: none; }
+.navLinks, .footerLinks { display: flex; align-items: center; gap: 18px; }
+.evaluationHero { padding-bottom: 54px; }
+.evaluationSummary { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 44px; border: 1px solid var(--line); background: white; }
+.evaluationSummary > div { padding: 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+.evaluationSummary > div:last-child { border: 0; }.evaluationSummary span { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+.evaluationSummary strong { margin: 8px 0 4px; color: var(--blue); font-size: 28px; }.evaluationSummary small { color: var(--muted); font-size: 9px; }
+.evaluationBody { max-width: 1180px; margin: 0 auto 90px; border-top: 1px solid var(--line); }
+.evaluationBody > article { padding: 56px 0; border-bottom: 1px solid var(--line); }
+.evaluationSectionHead { display: grid; grid-template-columns: 110px 1fr; gap: 28px; margin-bottom: 26px; }
+.evaluationSectionHead > span { color: var(--blue); font-size: 13px; font-weight: 900; letter-spacing: .12em; }
+.evaluationSectionHead h2 { margin: 0 0 8px; font-size: 27px; letter-spacing: -.035em; }.evaluationSectionHead p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.evaluationTableWrap { overflow-x: auto; }
+.evaluationTable { min-width: 1000px; border: 1px solid var(--line); background: white; }
+.evaluationTable > div { display: grid; grid-template-columns: 1.7fr repeat(7, 1fr); align-items: center; min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--line); font-size: 10px; }
+.evaluationTable > div:last-child { border: 0; }.evaluationTableHead { min-height: 40px !important; color: var(--muted); background: #f5f7fb; font-size: 8px !important; font-weight: 800; }
+.evaluationTable strong { font-size: 11px; }.evaluationTable small { color: var(--muted); }.evaluationHighlight { color: white; background: var(--blue); }
+.evaluationHighlight small { color: #cfd9ff; }.safeValue { color: #13836a; }.riskValue { color: #b45143; }.evaluationHighlight .safeValue { color: var(--mint); }
+.tradeoffGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.tradeoffGrid section { min-height: 170px; padding: 22px; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; }
+.tradeoffGrid b { color: var(--blue); font-size: 9px; letter-spacing: .1em; }.tradeoffGrid strong { margin: 12px 0 8px; font-size: 26px; }
+.tradeoffGrid p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.65; }
+.evaluationClaim { margin: 14px 0 0; padding: 18px 20px; color: var(--blue-deep); background: #edf2ff; border-left: 3px solid var(--blue); font-size: 12px; font-weight: 700; line-height: 1.65; }
+.methodGrid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); background: var(--line); gap: 1px; }
+.methodGrid > div { min-height: 120px; padding: 20px; background: white; }.methodGrid b { display: block; margin-bottom: 9px; font-size: 11px; }
+.methodGrid p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.65; }.methodGrid code { display: block; padding: 12px; color: var(--blue-deep); background: #f2f5fb; font-size: 10px; line-height: 1.5; }
+.limitations { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); background: white; }
+.limitations li { display: grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.limitations li:last-child { border: 0; }.limitations strong { font-size: 11px; }.limitations span { color: var(--muted); font-size: 11px; line-height: 1.65; }
 
 @media (max-width: 1000px) {
   .workspace { grid-template-columns: 1fr; margin: 0 20px 50px; }
@@ -256,4 +284,7 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
   .aboutLink { margin-right: 0; }.aboutHero { padding: 58px 22px 44px; }.aboutContent { margin: 0 22px 60px; }
   .aboutContent > article { grid-template-columns: 1fr; gap: 12px; padding: 38px 0; }.aboutContent ol { grid-template-columns: 1fr; }.aboutContent ol li { min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .noveltyGrid, .metricList { grid-template-columns: 1fr; }.formulaTable > div { grid-template-columns: 1fr; gap: 8px; }
+  .navLinks { gap: 8px; }.aboutLink { font-size: 9px; }.evaluationSummary { grid-template-columns: 1fr 1fr; }.evaluationSummary > div:nth-child(2) { border-right: 0; }.evaluationSummary > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .evaluationBody { margin: 0 22px 60px; }.evaluationSectionHead { grid-template-columns: 1fr; gap: 10px; }.tradeoffGrid, .methodGrid { grid-template-columns: 1fr; }
+  .limitations li { grid-template-columns: 1fr; gap: 7px; }.footerLinks { margin-top: 8px; }
 }
