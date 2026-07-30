@@ -38,7 +38,7 @@ function retrieveInternal(query: string, agent: AgentId, limit = 2) {
 }
 
 function retrieve(query: string, agent: AgentId, limit = 3) {
-  const publicHits = searchRag(query, agent, limit);
+  const publicHits = searchRag(query, agentProfiles[agent].ragAgents, limit);
   if (publicHits.length) {
     return publicHits.map(({ chunk, score }) => ({
       score,
@@ -76,9 +76,13 @@ function questionFor(agent: AgentId, query: string) {
   const purpose = query.length > 74 ? `${query.slice(0, 74)}…` : query;
   const questions: Record<AgentId, string> = {
     tech: `“${purpose}”의 최소 기술 구성, 품질 기준과 운영 전환 조건은 무엇입니까?`,
+    data: `“${purpose}”에 필요한 데이터의 출처, 품질, 수명주기와 이용 조건은 무엇입니까?`,
     security: `“${purpose}”에서 허용 가능한 데이터 범위와 필수 보안 통제는 무엇입니까?`,
     legal: `“${purpose}”에 적용되는 법적 의무, 계약 조건과 최종 판단 책임은 무엇입니까?`,
+    policy: `“${purpose}”의 공공성, 투명성, 편향 및 영향평가 기준은 무엇입니까?`,
     finance: `“${purpose}”의 PoC·운영 비용, 조달 절차와 비용 통제 기준은 무엇입니까?`,
+    procurement: `“${purpose}”의 발주 방식, 경쟁성, 규격서 및 계약상 위험은 무엇입니까?`,
+    operations: `“${purpose}”의 SLA, 품질측정, 장애대응과 운영 전환 기준은 무엇입니까?`,
   };
   return questions[agent];
 }
@@ -86,9 +90,13 @@ function questionFor(agent: AgentId, query: string) {
 function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
   const lead: Record<AgentId, string> = {
     tech: "검색·추론·검증 계층을 분리하고 측정 가능한 PoC 기준으로 단계적으로 도입해야 합니다.",
+    data: "데이터 출처와 이용조건을 확인하고 품질·최신성·메타데이터·폐기 기준을 수명주기 전체에 적용해야 합니다.",
     security: "원문은 조직 경계에 유지하고 역할 기반 접근통제와 반환 전 민감정보 제거를 적용해야 합니다.",
     legal: "최소처리 원칙을 준수하고 위탁·재위탁·삭제·산출물 책임을 계약과 업무절차에 명시해야 합니다.",
+    policy: "공공성·투명성·설명가능성 기준을 정하고 편향과 권리 영향을 사전에 평가해야 합니다.",
     finance: "PoC와 본사업을 분리하고 모델 사용료와 운영·보안 비용까지 포함한 총소유비용을 산정해야 합니다.",
+    procurement: "특정 사업자 종속을 피하고 측정 가능한 요구조건, 경쟁성 및 계약 종료 시 데이터 이전 조건을 명시해야 합니다.",
+    operations: "응답시간·가용성·정확성 기준과 장애 대응, 모니터링, 운영 전환 게이트를 사전에 정의해야 합니다.",
   };
   const grounds = chunks
     .map((chunk) => chunk.text.replace(/\s+/g, " ").slice(0, 180))
@@ -117,6 +125,9 @@ export function orchestrate(rawQuery: string, mode: RunMode = "proposed") {
       id,
       ...agentProfiles[id],
       selected: selected.includes(id),
+      selectionReason: scores[id] > 0
+        ? `질의의 ${agentProfiles[id].keywords.filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase())).slice(0, 3).join("·")} 신호와 역할이 일치합니다.`
+        : "현재 질의에서 이 역할의 직접 검토 신호가 발견되지 않았습니다.",
       score: Math.min(99, 58 + scores[id] * 8),
       question: questionFor(id, query),
       summary,

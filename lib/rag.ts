@@ -49,9 +49,15 @@ export type RagHit = {
   score: number;
 };
 
-export function searchRag(query: string, agent: AgentId, limit = 3): RagHit[] {
+export function searchRag(
+  query: string,
+  agents: Array<"tech" | "security" | "legal" | "finance">,
+  limit = 3,
+): RagHit[] {
   const queryTokens = [...new Set(tokenize(query))];
-  const candidates = indexed.filter((entry) => entry.document.agent === agent);
+  const candidates = indexed.filter((entry) => agents.includes(
+    entry.document.agent as "tech" | "security" | "legal" | "finance",
+  ));
   const k1 = 1.5;
   const b = 0.75;
 
@@ -85,4 +91,3 @@ export const ragStats = {
   generatedAt: corpus.generatedAt,
   algorithm: corpus.algorithm,
 };
-
