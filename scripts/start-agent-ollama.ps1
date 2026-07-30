@@ -1,13 +1,19 @@
 $ErrorActionPreference = "Stop"
 
-$ollama = "C:\Users\lim15\AppData\Local\Programs\Ollama\ollama.exe"
+$ollama = $env:OLLAMA_EXE
+if (-not $ollama) {
+  $ollamaCommand = Get-Command ollama -ErrorAction SilentlyContinue
+  if ($ollamaCommand) {
+    $ollama = $ollamaCommand.Source
+  }
+}
 $runtimeDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.local-edge"))
 $workspace = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 if (-not $runtimeDir.StartsWith($workspace, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "Runtime directory must stay inside the project workspace."
 }
-if (-not (Test-Path -LiteralPath $ollama)) {
-  throw "Ollama executable was not found: $ollama"
+if (-not $ollama -or -not (Test-Path -LiteralPath $ollama)) {
+  throw "Ollama executable was not found. Add ollama to PATH or set OLLAMA_EXE."
 }
 
 New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
