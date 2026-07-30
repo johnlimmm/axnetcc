@@ -40,6 +40,11 @@ type RunResult = {
     latencyMs: number;
     exposedFields: number;
     traceability: number;
+    rawDataLeavesEdge: boolean;
+    boundaryBytes: number;
+    dataRecipients: number;
+    minimizationRate: number;
+    privacyRiskScore: number;
     ragChunks?: number;
     llmBackend?: "ollama" | "deterministic";
     model?: string;
@@ -217,6 +222,11 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       latencyMs: mode === "proposed" ? 1120 : mode === "parallel" ? 1540 : 1890,
       exposedFields,
       traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : 35,
+      rawDataLeavesEdge: mode === "centralized",
+      boundaryBytes: mode === "centralized" ? 42800 : mode === "parallel" ? 14680 : calls * 1840,
+      dataRecipients: mode === "centralized" ? 1 : calls,
+      minimizationRate: mode === "centralized" ? 0 : mode === "parallel" ? 66 : 78,
+      privacyRiskScore: mode === "centralized" ? 85 : mode === "parallel" ? 62 : Math.min(35, 8 + calls * 3),
       llmBackend: "deterministic",
       model: "qwen2.5:3b",
       ttftMs: null,
@@ -521,6 +531,30 @@ export default function Home() {
               <span>{row.metrics.traceability}%</span>
             </div>
           ))}
+        </div>
+        <div className="privacyComparison">
+          <div className="privacyHeading">
+            <strong>DATA PROTECTION IMPACT</strong>
+            <span>구조 기반 위험지표 · 낮을수록 안전</span>
+          </div>
+          <div className="privacyHead">
+            <span>방식</span><span>원문 Edge 이탈</span><span>신뢰경계 전송</span><span>데이터 수신 범위</span><span>최소화율</span><span>위험점수</span>
+          </div>
+          {comparison.map((row) => (
+            <div className={row.id === "proposed" ? "privacyHighlight" : ""} key={`privacy-${row.id}`}>
+              <strong>{row.name}</strong>
+              <span className={row.metrics.rawDataLeavesEdge ? "riskBad" : "riskGood"}>
+                {row.metrics.rawDataLeavesEdge ? "예" : "아니오"}
+              </span>
+              <span>{row.measured ? `${(row.metrics.boundaryBytes / 1024).toFixed(1)} KB` : "—"}</span>
+              <span>{row.metrics.dataRecipients}개 처리주체</span>
+              <span>{row.metrics.minimizationRate}%</span>
+              <span className={row.metrics.privacyRiskScore >= 60 ? "riskBad" : "riskGood"}>
+                {row.metrics.privacyRiskScore} / 100
+              </span>
+            </div>
+          ))}
+          <p>위험점수는 원문 이동, 수신 범위, 탐지된 민감필드를 결합한 비교용 proxy이며 실제 침해 발생률이 아닙니다.</p>
         </div>
       </section>
 

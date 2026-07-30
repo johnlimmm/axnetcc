@@ -120,6 +120,10 @@ test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => 
     assert.equal(centralized.metrics.llmBackend, "ollama");
     assert.ok(centralized.metrics.ttftMs >= 0);
     assert.ok(centralized.metrics.tpotMs > 0);
+    assert.equal(centralized.metrics.rawDataLeavesEdge, true);
+    assert.equal(result.metrics.rawDataLeavesEdge, false);
+    assert.ok(result.metrics.minimizationRate > centralized.metrics.minimizationRate);
+    assert.ok(result.metrics.privacyRiskScore < centralized.metrics.privacyRiskScore);
   } finally {
     delete process.env.LOCAL_LLM_BASE_URL;
     delete process.env.LOCAL_LLM_MODEL;

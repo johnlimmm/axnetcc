@@ -165,6 +165,14 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .comparison > div { display: grid; grid-template-columns: 1.7fr repeat(6, 1fr); padding: 13px 18px; border-bottom: 1px solid #313b50; color: #aeb8cc; }
 .comparison .comparisonHead { color: #6f7b94; font-size: 9px; }
 .comparison .highlight { color: white; background: var(--blue); border: 0; }
+.privacyComparison { margin-top: 30px; border: 1px solid #3b465e; }
+.privacyHeading { display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #3b465e; }
+.privacyHeading strong { color: var(--mint); font-size: 10px; letter-spacing: .1em; }.privacyHeading span { color: #8591a9; font-size: 9px; }
+.privacyComparison > div:not(.privacyHeading) { display: grid; grid-template-columns: 1.7fr repeat(5, 1fr); padding: 12px 18px; border-bottom: 1px solid #313b50; color: #aeb8cc; font-size: 10px; }
+.privacyComparison .privacyHead { color: #6f7b94 !important; font-size: 9px !important; }
+.privacyComparison .privacyHighlight { background: #172d35; color: white; }
+.privacyComparison .riskBad { color: #ff9d87; font-weight: 800; }.privacyComparison .riskGood { color: var(--mint); font-weight: 800; }
+.privacyComparison > p { margin: 0; padding: 11px 18px; color: #727e96; font-size: 8px; }
 .traceSection { padding-top: 76px; }
 .timeline { display: grid; grid-template-columns: repeat(5, 1fr); }
 .timeline > div { position: relative; padding: 0 20px 0 0; display: grid; grid-template-columns: 24px 1fr; }
@@ -184,7 +192,7 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
   .workspace { margin: 0 10px 40px; }.requestPanel, .resultPanel { padding: 18px; }
   .agentRail { grid-template-columns: 1fr; gap: 12px; }.railLine { width: 1px; height: 18px; margin: auto; }.agentNodes { grid-template-columns: repeat(4, minmax(55px, 1fr)); }
   .resultGrid, .evidenceBody { grid-template-columns: 1fr; }.metricRow { grid-template-columns: repeat(2, 1fr); }.metric:nth-child(3) { border-right: 1px solid #3b465e; }.metric:nth-child(even) { border-right: 0; }
-  .metricsSection, .traceSection { padding: 58px 22px; }.sectionTitle { display: block; }.comparison { overflow-x: auto; }.comparison > div { min-width: 680px; grid-template-columns: 1.5fr repeat(6, 1fr); padding: 11px 8px; font-size: 9px; }
+  .metricsSection, .traceSection { padding: 58px 22px; }.sectionTitle { display: block; }.comparison, .privacyComparison { overflow-x: auto; }.comparison > div { min-width: 680px; grid-template-columns: 1.5fr repeat(6, 1fr); padding: 11px 8px; font-size: 9px; }.privacyComparison > div:not(.privacyHeading) { min-width: 680px; }
   .timeline { grid-template-columns: 1fr; gap: 28px; }.timeline > div::before { display: none; }
   footer { padding: 22px; display: block; line-height: 1.8; }
 }

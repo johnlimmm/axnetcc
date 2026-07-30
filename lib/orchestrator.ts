@@ -204,7 +204,29 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
     requiresLegal && !selected.includes("legal") ? "법무" : "",
   ].filter(Boolean);
   const tokens = Math.ceil((query.length + selectedResults.reduce((sum, result) => sum + result.summary.length, 0)) * 1.7);
-  const bytes = new TextEncoder().encode(JSON.stringify(selectedResults)).length;
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(JSON.stringify(selectedResults)).length;
+  const distributedPayloadBytes = encoder.encode(JSON.stringify(
+    selectedResults.map((result) => ({
+      question: result.question,
+      summary: result.summary,
+      evidenceIds: result.evidence.map((item) => item.id),
+    })),
+  )).length;
+  const centralizedSourceBytes = encoder.encode(JSON.stringify(
+    ids.flatMap((id) => retrieve(query, id, 3).map((item) => item.chunk)),
+  )).length + encoder.encode(rawQuery).length;
+  const boundaryBytes = mode === "centralized" ? centralizedSourceBytes : distributedPayloadBytes;
+  const minimizationRate =
+    mode === "centralized"
+      ? 0
+      : Math.max(0, Math.round((1 - boundaryBytes / Math.max(centralizedSourceBytes, 1)) * 100));
+  const privacyRiskScore =
+    mode === "centralized"
+      ? Math.min(100, 75 + inputFiltered.length * 10)
+      : mode === "parallel"
+        ? Math.min(100, 30 + selected.length * 4 + inputFiltered.length * 5)
+        : Math.min(100, 8 + selected.length * 3 + inputFiltered.length * 4);
 
   return {
     runId: `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -229,6 +251,11 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
         : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
+      rawDataLeavesEdge: mode === "centralized",
+      boundaryBytes,
+      dataRecipients: mode === "centralized" ? 1 : selected.length,
+      minimizationRate,
+      privacyRiskScore,
       ragChunks: ragStats.chunks,
       llmBackend: selectedResults.every((result) => result.inference.backend === "ollama") ? "ollama" : "deterministic",
       model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
