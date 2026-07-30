@@ -43,6 +43,8 @@ next-env.d.ts
 /work/
 /deploy/
 /deploy-stage/
+public/*.js
+public/index-*.css
 /.local-edge/
 /corpus/raw/
 /corpus/processed/
