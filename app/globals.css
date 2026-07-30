@@ -101,6 +101,8 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .modePicker span { font-size: 13px; font-weight: 800; }.modePicker small { color: var(--muted); font-size: 10px; }
 .runButton { width: 100%; height: 52px; margin-top: 24px; color: white; border: 0; background: var(--blue); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 8px 20px #255bff35; }
 .runButton:hover { background: var(--blue-deep); }.runButton:disabled { opacity: .65; cursor: wait; }
+.compareButton { width: 100%; height: 42px; margin-top: 9px; border: 1px solid var(--blue); background: white; color: var(--blue); font-size: 11px; font-weight: 900; }
+.compareButton:hover { background: #f0f4ff; }.compareButton:disabled { opacity: .5; cursor: wait; }
 .spinner { width: 15px; height: 15px; border: 2px solid #ffffff66; border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .privacyNote { font-size: 10px; color: var(--muted); text-align: center; margin-top: 12px; }

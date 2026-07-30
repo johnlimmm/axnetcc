@@ -249,6 +249,7 @@ export default function Home() {
   const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult["metrics"]>>>({});
   const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
+  const [runProgress, setRunProgress] = useState("");
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
   const selectedCount = result.agents.filter((agent) => agent.selected).length;
@@ -280,16 +281,21 @@ export default function Home() {
     }));
   }, [benchmarks, query]);
 
+  async function executeMode(targetMode: RunResult["mode"]) {
+    const response = await fetch("/api/orchestrate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query, mode: targetMode }),
+    });
+    if (!response.ok) throw new Error("orchestration failed");
+    return response.json() as Promise<RunResult>;
+  }
+
   async function run() {
     setRunning(true);
+    setRunProgress("선택 방식 실행 중");
     try {
-      const response = await fetch("/api/orchestrate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query, mode }),
-      });
-      if (!response.ok) throw new Error("orchestration failed");
-      const next = await response.json() as RunResult;
+      const next = await executeMode(mode);
       setResult(next);
       setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
       const first = next.agents.find((agent) => agent.selected);
@@ -299,6 +305,34 @@ export default function Home() {
       setResult(next);
     } finally {
       setRunning(false);
+      setRunProgress("");
+    }
+  }
+
+  async function runAllModes() {
+    setRunning(true);
+    setBenchmarks({});
+    const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
+      { mode: "centralized", label: "중앙집중형" },
+      { mode: "parallel", label: "전체 Multi-Agent" },
+      { mode: "proposed", label: "제안 방식" },
+    ];
+    try {
+      for (let index = 0; index < sequence.length; index += 1) {
+        const item = sequence[index];
+        setRunProgress(`${index + 1}/3 ${item.label} 실측 중`);
+        const next = await executeMode(item.mode);
+        setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
+        setResult(next);
+        const first = next.agents.find((agent) => agent.selected);
+        if (first) setActiveAgent(first.id);
+      }
+      setMode("proposed");
+    } catch {
+      setResult(buildFallbackResult(query, "proposed"));
+    } finally {
+      setRunning(false);
+      setRunProgress("");
     }
   }
 
@@ -354,7 +388,10 @@ export default function Home() {
             ))}
           </div>
           <button className="runButton" disabled={running || !query.trim()} onClick={run}>
-            {running ? <><span className="spinner" /> 협업 실행 중</> : <>협업 실행 <span>→</span></>}
+            {running ? <><span className="spinner" /> {runProgress}</> : <>선택 방식 실행 <span>→</span></>}
+          </button>
+          <button className="compareButton" disabled={running || !query.trim()} onClick={runAllModes}>
+            3방식 전체 비교 실행
           </button>
           <p className="privacyNote">원문 데이터는 각 Edge를 벗어나지 않습니다.</p>
         </aside>
