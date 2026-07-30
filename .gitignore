@@ -42,3 +42,8 @@ next-env.d.ts
 /work/
 /deploy/
 /deploy-stage/
+/corpus/raw/
+/corpus/processed/
+/corpus/index/
+__pycache__/
+*.py[cod]
