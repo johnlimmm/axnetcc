@@ -48,7 +48,7 @@ test("retrieves public evidence for every agent", async () => {
     "공공기관 생성형 AI 도입의 기술, 개인정보 보안, 계약 책임, 조달 예산을 검토해 주세요.",
     "parallel",
   );
-  assert.equal(result.metrics.ragChunks, 1499);
+  assert.equal(result.metrics.ragChunks, 3027);
   for (const agent of result.agents) {
     assert.ok(agent.evidence.length >= 1, `${agent.id} has no evidence`);
     assert.ok(agent.evidence.some((item) => item.sourceUrl?.startsWith("https://")));

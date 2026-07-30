@@ -51,12 +51,12 @@ export type RagHit = {
 
 export function searchRag(
   query: string,
-  agents: Array<"tech" | "security" | "legal" | "finance">,
+  agents: AgentId[],
   limit = 3,
 ): RagHit[] {
   const queryTokens = [...new Set(tokenize(query))];
   const candidates = indexed.filter((entry) => agents.includes(
-    entry.document.agent as "tech" | "security" | "legal" | "finance",
+    entry.document.agent,
   ));
   const k1 = 1.5;
   const b = 0.75;

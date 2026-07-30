@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const root = new URL("../", import.meta.url);
-const agents = ["tech", "security", "legal", "finance"];
+const agents = ["tech", "data", "security", "legal", "policy", "finance", "procurement", "operations"];
 const documents = [];
 
 for (const agent of agents) {
@@ -41,4 +41,3 @@ await writeFile(
   "utf8",
 );
 console.log(`Compiled ${documents.length} chunks to ${join("data", "rag-corpus.json")}`);
-

@@ -24,6 +24,17 @@ function overlap(query: string, values: string[]) {
   return values.reduce((score, value) => score + (normalized.includes(value.toLowerCase()) ? 1 : 0), 0);
 }
 
+function lexicalCoverage(expected: string, actual: string) {
+  const expectedTerms = [...new Set(terms(expected))];
+  if (!expectedTerms.length) return 0;
+  const actualTerms = new Set(terms(actual));
+  return Math.round(
+    expectedTerms.filter((term) =>
+      [...actualTerms].some((candidate) => candidate.includes(term) || term.includes(candidate)),
+    ).length / expectedTerms.length * 100,
+  );
+}
+
 function retrieveInternal(query: string, agent: AgentId, limit = 2) {
   const queryTerms = new Set(terms(query));
   return knowledge
@@ -262,14 +273,31 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
     selectedResults.filter((result) => result.evidence.some((item) => result.summary.includes(`[${item.id}]`))).length /
       Math.max(selectedResults.length, 1) * 100,
   );
-  const groundedness = Math.round(validCitations.length / Math.max(citations.length, 1) * 100);
+  const citationValidity = citations.length
+    ? Math.round(validCitations.length / citations.length * 100)
+    : 0;
+  const relevance = Math.round(
+    selectedResults.reduce((sum, result) => sum + lexicalCoverage(query, result.summary), 0) /
+      Math.max(selectedResults.length, 1),
+  );
+  const evidenceSupport = Math.round(
+    selectedResults.reduce((sum, result) => {
+      const evidenceText = result.evidence.map((item) => item.excerpt).join(" ");
+      return sum + lexicalCoverage(result.summary, evidenceText);
+    }, 0) / Math.max(selectedResults.length, 1),
+  );
+  const groundedness = evidenceSupport;
   const domainCoverage = Math.round((selected.length - missing.length) / Math.max(selected.length, 1) * 100);
   const answerCompleteness = Math.round(
     selectedResults.filter((result) => result.summary.trim().length >= 40 && result.evidence.length > 0).length /
       Math.max(selectedResults.length, 1) * 100,
   );
   const qualityScore = Math.round(
-    groundedness * 0.35 + citationCoverage * 0.25 + domainCoverage * 0.25 + answerCompleteness * 0.15,
+    relevance * 0.3 +
+      evidenceSupport * 0.3 +
+      domainCoverage * 0.2 +
+      answerCompleteness * 0.15 +
+      citationValidity * 0.05,
   );
   const inferenceResults = [
     ...selectedResults.map((result) => result.inference),
@@ -305,7 +333,10 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       minimizationRate: mode === "managed" ? 0 : minimizationRate,
       privacyRiskScore,
       groundedness,
+      relevance,
+      evidenceSupport,
       citationCoverage,
+      citationValidity,
       domainCoverage,
       answerCompleteness,
       qualityScore,

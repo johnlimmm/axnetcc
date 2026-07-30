@@ -38,7 +38,7 @@ export const agentProfiles = {
     responsibility: "데이터 관리부서 품질·수명주기·메타데이터 검토",
     keywords: ["데이터셋", "데이터 품질", "학습데이터", "수집", "정제", "라벨링", "메타데이터", "갱신", "가명정보", "공공데이터"],
     allowedClasses: ["public", "internal"],
-    ragAgents: ["tech", "legal"],
+    ragAgents: ["data", "tech", "legal"],
   },
   security: {
     name: "보안 Agent",
@@ -65,7 +65,7 @@ export const agentProfiles = {
     responsibility: "AI 정책담당 공공성·투명성·영향평가 검토",
     keywords: ["정책", "윤리", "공정성", "편향", "투명성", "설명가능", "영향평가", "공공성", "책임성", "인권"],
     allowedClasses: ["public", "internal"],
-    ragAgents: ["legal", "tech"],
+    ragAgents: ["policy", "legal", "tech"],
   },
   finance: {
     name: "재무 Agent",
@@ -83,7 +83,7 @@ export const agentProfiles = {
     responsibility: "구매·계약부서 발주·경쟁성·사업자 종속 검토",
     keywords: ["조달", "발주", "입찰", "제안요청서", "규격서", "사업자", "수의계약", "카탈로그", "디지털서비스", "계약"],
     allowedClasses: ["public", "internal"],
-    ragAgents: ["finance", "legal"],
+    ragAgents: ["procurement", "finance", "legal"],
   },
   operations: {
     name: "운영·품질 Agent",
@@ -92,7 +92,7 @@ export const agentProfiles = {
     responsibility: "서비스 운영부서 SLA·장애·품질·모니터링 검토",
     keywords: ["운영", "SLA", "장애", "모니터링", "응답시간", "가용성", "품질", "평가", "검수", "유지보수", "성능"],
     allowedClasses: ["public", "internal"],
-    ragAgents: ["tech", "security"],
+    ragAgents: ["operations", "tech", "security"],
   },
 } satisfies Record<AgentId, {
   name: string;
@@ -101,7 +101,7 @@ export const agentProfiles = {
   responsibility: string;
   keywords: string[];
   allowedClasses: string[];
-  ragAgents: Array<"tech" | "security" | "legal" | "finance">;
+  ragAgents: AgentId[];
 }>;
 
 export const knowledge: KnowledgeChunk[] = [

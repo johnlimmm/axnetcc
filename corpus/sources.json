@@ -2,7 +2,7 @@
   {
     "id": "nia-ai-guide-2026",
     "agent": "tech",
-    "agents": ["tech", "finance"],
+    "agents": ["tech", "data", "policy", "finance", "procurement", "operations"],
     "title": "공공부문 AI 도입·활용 가이드(2026.5)",
     "publisher": "한국지능정보사회진흥원",
     "url": "https://www.nia.or.kr/common/board/Download.do?bcIdx=29526&cbIdx=37989&fileNo=2",
@@ -14,6 +14,7 @@
   {
     "id": "nia-ai-guide-system-manual-2026",
     "agent": "tech",
+    "agents": ["tech", "data", "security", "operations"],
     "title": "공공부문 AI 도입·활용 가이드 개발시스템 매뉴얼",
     "publisher": "한국지능정보사회진흥원",
     "url": "https://www.nia.or.kr/common/board/Download.do?bcIdx=29526&cbIdx=37989&fileNo=1",
@@ -25,6 +26,7 @@
   {
     "id": "nia-ai-public-cases-2026",
     "agent": "tech",
+    "agents": ["tech", "data", "policy", "operations"],
     "title": "AI 정부 서비스 사례집",
     "publisher": "행정안전부·한국지능정보사회진흥원",
     "url": "https://www.nia.or.kr/common/board/Download.do?bcIdx=29161&cbIdx=37989&fileNo=1",
@@ -102,6 +104,7 @@
   {
     "id": "pipc-generative-ai-privacy-2025",
     "agent": "legal",
+    "agents": ["legal", "data", "security"],
     "title": "생성형 인공지능 개발·활용을 위한 개인정보 처리 안내서",
     "publisher": "개인정보보호위원회",
     "url": "https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=20836",
@@ -113,6 +116,7 @@
   {
     "id": "pipc-public-personal-data-ai-2024",
     "agent": "legal",
+    "agents": ["legal", "data", "policy"],
     "title": "AI 개발·서비스를 위한 공개된 개인정보 처리 안내",
     "publisher": "개인정보보호위원회",
     "url": "https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS074&mCode=C020010000&nttId=10362",
@@ -124,6 +128,7 @@
   {
     "id": "pipc-pseudonymization-2026",
     "agent": "legal",
+    "agents": ["legal", "data", "security"],
     "title": "가명정보 처리 가이드라인 2026.3",
     "publisher": "개인정보보호위원회",
     "url": "https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS217&mCode=G010030000&nttId=11931",
@@ -168,6 +173,7 @@
   {
     "id": "law-government-contract",
     "agent": "finance",
+    "agents": ["finance", "procurement", "legal"],
     "title": "국가계약법 현행법령 검색 결과",
     "publisher": "법제처",
     "url": "https://www.law.go.kr/DRF/lawSearch.do?OC=test&target=eflaw&type=XML&query=%EA%B5%AD%EA%B0%80%EB%A5%BC%20%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%20%ED%95%98%EB%8A%94%20%EA%B3%84%EC%95%BD%EC%97%90%20%EA%B4%80%ED%95%9C%20%EB%B2%95%EB%A5%A0",
@@ -234,6 +240,7 @@
   {
     "id": "pps-digital-service-catalog",
     "agent": "finance",
+    "agents": ["finance", "procurement"],
     "title": "디지털서비스 카탈로그 계약 안내",
     "publisher": "조달청",
     "url": "https://www.pps.go.kr/kor/content.do?key=01182",
@@ -245,6 +252,7 @@
   {
     "id": "pps-ai-digital-service-contract-update-2026",
     "agent": "finance",
+    "agents": ["finance", "procurement", "policy"],
     "title": "AI·디지털서비스 및 상용소프트웨어 계약제도 개선",
     "publisher": "조달청",
     "url": "https://www.pps.go.kr/kor/bbs/view.do?bbsSn=2601050012&key=00318",
@@ -256,6 +264,7 @@
   {
     "id": "digitalmarket-service-use-guide",
     "agent": "finance",
+    "agents": ["finance", "procurement", "operations"],
     "title": "국가기관 등을 위한 디지털서비스 이용 가이드",
     "publisher": "디지털서비스 이용지원시스템",
     "url": "https://www.digitalmarket.kr/webcontent/ckeditor/2020/12/31/9f377cba-0d50-45f8-a0f7-84ccf7830d06.pdf",
@@ -267,6 +276,7 @@
   {
     "id": "digitalmarket-contract-guide",
     "agent": "finance",
+    "agents": ["finance", "procurement", "legal"],
     "title": "디지털서비스 계약 가이드라인",
     "publisher": "디지털서비스 이용지원시스템",
     "url": "https://www.digitalmarket.kr/webcontent/ckeditor/2021/4/22/87f7658c-b61d-404a-8185-35c443fa5e06.pdf",
@@ -285,5 +295,61 @@
     "filename": "finance/moef_budget_guideline_list_2026.html",
     "published_at": "2025-05-02",
     "license_review": "public-data-attribution"
+  },
+  {
+    "id": "nia-public-data-standardization-2026",
+    "agent": "data",
+    "title": "공공데이터베이스 표준화 관리 매뉴얼 개정 안내",
+    "publisher": "한국지능정보사회진흥원",
+    "url": "https://nia.or.kr/site/nia_kor/ex/bbs/ListBusiness.do?businessMnCd=23000500",
+    "format": "html",
+    "filename": "data/nia_public_data_standardization_2026.html",
+    "published_at": "2026-04-24",
+    "license_review": "required"
+  },
+  {
+    "id": "mois-ai-government-policy-2026",
+    "agent": "policy",
+    "title": "세계 최고 AI 민주정부 실현 정책",
+    "publisher": "행정안전부",
+    "url": "https://mois.go.kr/frt/sub/a05/aiGovInnovation/screen.do",
+    "format": "html",
+    "filename": "policy/mois_ai_government_policy_2026.html",
+    "published_at": "2026-01-01",
+    "license_review": "KOGL-Type-1"
+  },
+  {
+    "id": "mois-public-ai-adoption-release-2026",
+    "agent": "policy",
+    "agents": ["policy", "operations", "procurement", "finance"],
+    "title": "공공부문 AI 도입·활용 가이드 배포",
+    "publisher": "행정안전부",
+    "url": "https://www.mois.go.kr/frt/bbs/type010/commonSelectBoardArticle.do?bbsId=BBSMSTR_000000000008&nttId=126757",
+    "format": "html",
+    "filename": "policy/mois_public_ai_adoption_release_2026.html",
+    "published_at": "2026-06-10",
+    "license_review": "KOGL-Type-1"
+  },
+  {
+    "id": "pps-public-procurement-guide-2026",
+    "agent": "procurement",
+    "title": "공공조달 길잡이 안내",
+    "publisher": "조달청",
+    "url": "https://www.pps.go.kr/kor/bbs/view.do?bbsSn=2409230012&key=01325&orderBy=bbsOrdr+desc",
+    "format": "html",
+    "filename": "procurement/pps_public_procurement_guide_2026.html",
+    "published_at": "2026-04-01",
+    "license_review": "public-data-attribution"
+  },
+  {
+    "id": "mois-web-quality-guide-2024",
+    "agent": "operations",
+    "title": "전자정부 웹사이트 품질관리 가이드라인 개정 안내",
+    "publisher": "행정안전부",
+    "url": "https://www.mois.go.kr/frt/bbs/type013/commonSelectBoardArticle.do?bbsId=BBSMSTR_000000000006&nttId=110836",
+    "format": "html",
+    "filename": "operations/mois_web_quality_guide_2024.html",
+    "published_at": "2024-07-11",
+    "license_review": "KOGL-Type-1"
   }
 ]

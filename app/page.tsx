@@ -46,7 +46,10 @@ type RunResult = {
     minimizationRate: number;
     privacyRiskScore: number;
     groundedness: number;
+    relevance: number;
+    evidenceSupport: number;
     citationCoverage: number;
+    citationValidity: number;
     domainCoverage: number;
     answerCompleteness: number;
     qualityScore: number;
@@ -233,7 +236,10 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       minimizationRate: mode === "centralized" || mode === "managed" ? 0 : mode === "parallel" ? 66 : 78,
       privacyRiskScore: mode === "centralized" ? 85 : mode === "managed" ? 76 : mode === "parallel" ? 62 : Math.min(35, 8 + calls * 3),
       groundedness: mode === "proposed" ? 88 : mode === "managed" ? 82 : mode === "parallel" ? 76 : 68,
+      relevance: mode === "proposed" ? 90 : mode === "managed" ? 84 : mode === "parallel" ? 80 : 72,
+      evidenceSupport: mode === "proposed" ? 88 : mode === "managed" ? 82 : mode === "parallel" ? 76 : 68,
       citationCoverage: mode === "proposed" ? 92 : mode === "managed" ? 84 : mode === "parallel" ? 78 : 62,
+      citationValidity: mode === "proposed" ? 96 : 88,
       domainCoverage: 100,
       answerCompleteness: mode === "proposed" ? 90 : 86,
       qualityScore: mode === "proposed" ? 92 : mode === "managed" ? 86 : mode === "parallel" ? 82 : 74,
@@ -575,19 +581,19 @@ export default function Home() {
             <span>동일 근거·동일 모델 기반 자동 품질지표</span>
           </div>
           <div className="qualityHead">
-            <span>방식</span><span>근거 충실도</span><span>인용 커버리지</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
+            <span>방식</span><span>질의 관련성</span><span>근거 내용 일치</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
           </div>
           {comparison.map((row) => (
             <div className={row.id === "proposed" ? "qualityHighlight" : ""} key={`quality-${row.id}`}>
               <strong>{row.name}</strong>
-              <span>{row.measured ? `${row.metrics.groundedness}%` : "—"}</span>
-              <span>{row.measured ? `${row.metrics.citationCoverage}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.relevance}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.evidenceSupport}%` : "—"}</span>
               <span>{row.measured ? `${row.metrics.domainCoverage}%` : "—"}</span>
               <span>{row.measured ? `${row.metrics.answerCompleteness}%` : "—"}</span>
               <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
             </div>
           ))}
-          <p>자동 품질점수는 유효한 근거 ID 인용과 영역 충족을 평가합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
+          <p>정확한 근거 ID 표기는 감사·거버넌스 지표로 별도 유지합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
         </div>
         <div className="axSpecialization">
           <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>
