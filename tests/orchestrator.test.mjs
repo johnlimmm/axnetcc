@@ -124,6 +124,12 @@ test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => 
     assert.equal(result.metrics.rawDataLeavesEdge, false);
     assert.ok(result.metrics.minimizationRate > centralized.metrics.minimizationRate);
     assert.ok(result.metrics.privacyRiskScore < centralized.metrics.privacyRiskScore);
+    assert.ok(result.metrics.qualityScore >= 0 && result.metrics.qualityScore <= 100);
+    assert.ok(result.metrics.groundedness >= 0 && result.metrics.groundedness <= 100);
+    const managed = await orchestrate("예산 검토", "managed");
+    assert.equal(managed.metrics.calls, 2);
+    assert.equal(managed.metrics.rawDataLeavesEdge, true);
+    assert.ok(managed.metrics.privacyRiskScore > result.metrics.privacyRiskScore);
   } finally {
     delete process.env.LOCAL_LLM_BASE_URL;
     delete process.env.LOCAL_LLM_MODEL;

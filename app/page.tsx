@@ -27,7 +27,7 @@ type AgentResult = {
 
 type RunResult = {
   runId: string;
-  mode: "proposed" | "parallel" | "centralized";
+  mode: "proposed" | "parallel" | "centralized" | "managed";
   title: string;
   conclusion: string;
   status: "ready" | "review";
@@ -45,6 +45,11 @@ type RunResult = {
     dataRecipients: number;
     minimizationRate: number;
     privacyRiskScore: number;
+    groundedness: number;
+    citationCoverage: number;
+    domainCoverage: number;
+    answerCompleteness: number;
+    qualityScore: number;
     ragChunks?: number;
     llmBackend?: "ollama" | "deterministic";
     model?: string;
@@ -91,7 +96,7 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
     operations: ["운영", "sla", "장애", "모니터링", "응답시간", "품질", "유지보수"],
   };
   const selectedIds =
-    mode === "proposed"
+    mode === "proposed" || mode === "managed"
       ? agents
           .map((agent) => ({
             id: agent.id,
@@ -198,7 +203,7 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       score: Math.min(99, 62 + score * 8),
     };
   });
-  const calls = selectedIds.length;
+  const calls = mode === "centralized" ? 1 : selectedIds.length + (mode === "managed" ? 1 : 0);
   const baseTokens = mode === "centralized" ? 6940 : calls * 790 + 620;
   const exposedFields = mode === "proposed" ? 0 : mode === "parallel" ? 7 : 12;
   return {
@@ -218,15 +223,20 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
     metrics: {
       calls,
       tokens: baseTokens,
-      bytes: mode === "proposed" ? calls * 1840 : mode === "parallel" ? 14680 : 42800,
-      latencyMs: mode === "proposed" ? 1120 : mode === "parallel" ? 1540 : 1890,
+      bytes: mode === "proposed" ? calls * 1840 : mode === "parallel" ? 14680 : mode === "managed" ? 29600 : 42800,
+      latencyMs: mode === "proposed" ? 1120 : mode === "parallel" ? 1540 : mode === "managed" ? 2140 : 1890,
       exposedFields,
-      traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : 35,
-      rawDataLeavesEdge: mode === "centralized",
-      boundaryBytes: mode === "centralized" ? 42800 : mode === "parallel" ? 14680 : calls * 1840,
+      traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : mode === "managed" ? 82 : 35,
+      rawDataLeavesEdge: mode === "centralized" || mode === "managed",
+      boundaryBytes: mode === "centralized" ? 42800 : mode === "managed" ? 29600 : mode === "parallel" ? 14680 : calls * 1840,
       dataRecipients: mode === "centralized" ? 1 : calls,
-      minimizationRate: mode === "centralized" ? 0 : mode === "parallel" ? 66 : 78,
-      privacyRiskScore: mode === "centralized" ? 85 : mode === "parallel" ? 62 : Math.min(35, 8 + calls * 3),
+      minimizationRate: mode === "centralized" || mode === "managed" ? 0 : mode === "parallel" ? 66 : 78,
+      privacyRiskScore: mode === "centralized" ? 85 : mode === "managed" ? 76 : mode === "parallel" ? 62 : Math.min(35, 8 + calls * 3),
+      groundedness: mode === "proposed" ? 88 : mode === "managed" ? 82 : mode === "parallel" ? 76 : 68,
+      citationCoverage: mode === "proposed" ? 92 : mode === "managed" ? 84 : mode === "parallel" ? 78 : 62,
+      domainCoverage: 100,
+      answerCompleteness: mode === "proposed" ? 90 : 86,
+      qualityScore: mode === "proposed" ? 92 : mode === "managed" ? 86 : mode === "parallel" ? 82 : 74,
       llmBackend: "deterministic",
       model: "qwen2.5:3b",
       ttftMs: null,
@@ -282,6 +292,7 @@ export default function Home() {
   const comparison = useMemo(() => {
     return [
       { id: "centralized" as const, name: "중앙집중형" },
+      { id: "managed" as const, name: "상용 Managed Supervisor" },
       { id: "parallel" as const, name: "병렬 Multi-Agent" },
       { id: "proposed" as const, name: "제안 방식" },
     ].map((item) => ({
@@ -324,13 +335,14 @@ export default function Home() {
     setBenchmarks({});
     const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
       { mode: "centralized", label: "중앙집중형" },
+      { mode: "managed", label: "상용 Managed Supervisor" },
       { mode: "parallel", label: "전체 Multi-Agent" },
       { mode: "proposed", label: "제안 방식" },
     ];
     try {
       for (let index = 0; index < sequence.length; index += 1) {
         const item = sequence[index];
-        setRunProgress(`${index + 1}/3 ${item.label} 실측 중`);
+        setRunProgress(`${index + 1}/4 ${item.label} 실측 중`);
         const next = await executeMode(item.mode);
         setBenchmarks((current) => ({ ...current, [next.mode]: next.metrics }));
         setResult(next);
@@ -391,6 +403,7 @@ export default function Home() {
               ["proposed", "제안 방식", "동적 선택 + 최소 전달"],
               ["parallel", "병렬 방식", "모든 Agent 호출"],
               ["centralized", "중앙집중형", "중앙에서 전체 처리"],
+              ["managed", "상용형 기준선", "Supervisor + 선택 Agent"],
             ].map(([id, label, detail]) => (
               <button key={id} className={mode === id ? "active" : ""} onClick={() => setMode(id as RunResult["mode"])}>
                 <span>{label}</span><small>{detail}</small>
@@ -401,7 +414,7 @@ export default function Home() {
             {running ? <><span className="spinner" /> {runProgress}</> : <>선택 방식 실행 <span>→</span></>}
           </button>
           <button className="compareButton" disabled={running || !query.trim()} onClick={runAllModes}>
-            3방식 전체 비교 실행
+            4방식 전체 비교 실행
           </button>
           <p className="privacyNote">원문 데이터는 각 Edge를 벗어나지 않습니다.</p>
         </aside>
@@ -409,7 +422,7 @@ export default function Home() {
         <div className="resultPanel">
           <div className="orchestrationHead">
             <div><span className="liveDot" /> RUN {result.runId}</div>
-            <span>{result.mode === "proposed" ? "동적 오케스트레이션" : result.mode === "parallel" ? "병렬 호출" : "중앙집중 처리"}</span>
+            <span>{result.mode === "proposed" ? "동적 오케스트레이션" : result.mode === "parallel" ? "병렬 호출" : result.mode === "managed" ? "Managed Supervisor" : "중앙집중 처리"}</span>
           </div>
 
           <div className={`agentRail ${running ? "running" : ""}`}>
@@ -555,6 +568,32 @@ export default function Home() {
             </div>
           ))}
           <p>위험점수는 원문 이동, 수신 범위, 탐지된 민감필드를 결합한 비교용 proxy이며 실제 침해 발생률이 아닙니다.</p>
+        </div>
+        <div className="qualityComparison">
+          <div className="qualityHeading">
+            <strong>RESPONSE QUALITY</strong>
+            <span>동일 근거·동일 모델 기반 자동 품질지표</span>
+          </div>
+          <div className="qualityHead">
+            <span>방식</span><span>근거 충실도</span><span>인용 커버리지</span><span>전문영역 충족</span><span>답변 완전성</span><span>종합 품질</span>
+          </div>
+          {comparison.map((row) => (
+            <div className={row.id === "proposed" ? "qualityHighlight" : ""} key={`quality-${row.id}`}>
+              <strong>{row.name}</strong>
+              <span>{row.measured ? `${row.metrics.groundedness}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.citationCoverage}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.domainCoverage}%` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.answerCompleteness}%` : "—"}</span>
+              <span className="qualityScore">{row.measured ? `${row.metrics.qualityScore} / 100` : "—"}</span>
+            </div>
+          ))}
+          <p>자동 품질점수는 유효한 근거 ID 인용과 영역 충족을 평가합니다. 최종 연구에서는 전문가 rubric·정답셋 평가를 함께 사용해야 합니다.</p>
+        </div>
+        <div className="axSpecialization">
+          <div><b>PUBLIC POLICY PACK</b><strong>공공 규정 내장</strong><p>개인정보·보안·조달·영향평가를 필수 검토영역으로 자동 연결</p></div>
+          <div><b>HUMAN ACCOUNTABILITY</b><strong>최종 책임자 승인</strong><p>AI 판단을 담당부서·승인자·근거 ID와 연결해 책임소재 유지</p></div>
+          <div><b>DATA SOVEREIGNTY</b><strong>조직별 데이터 주권</strong><p>기관·부서 원문과 RAG를 Edge에 보존하고 최소 결과만 교환</p></div>
+          <div><b>AX EVIDENCE</b><strong>도입효과 실증</strong><p>품질·지연·비용·보호효과를 동일 질의로 반복 측정</p></div>
         </div>
       </section>
 

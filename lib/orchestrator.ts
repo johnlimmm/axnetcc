@@ -2,7 +2,7 @@ import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./k
 import { generateLocalAnswer } from "./local-llm";
 import { ragStats, searchRag } from "./rag";
 
-export type RunMode = "proposed" | "parallel" | "centralized";
+export type RunMode = "proposed" | "parallel" | "centralized" | "managed";
 
 const sensitivePatterns = [
   { label: "주민등록번호", regex: /\b\d{6}-?[1-4]\d{6}\b/g },
@@ -113,7 +113,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
     ids.map((id) => [id, overlap(query, agentProfiles[id].keywords)]),
   ) as Record<AgentId, number>;
   const selected =
-    mode === "proposed"
+    mode === "proposed" || mode === "managed"
       ? ids.filter((id) => scores[id] > 0)
       : ids;
   if (!selected.length) selected.push("tech");
@@ -196,6 +196,30 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
   }));
 
   const selectedResults = agentResults.filter((result) => result.selected);
+  const managedSupervisor =
+    mode === "managed"
+      ? await generateLocalAnswer({
+          agent: "tech",
+          agentName: "Managed Platform Supervisor",
+          responsibility: "중앙 Supervisor가 전문 Agent 응답과 조직 데이터를 통합",
+          query,
+          evidence: selectedResults.flatMap((result) =>
+            result.evidence.map((item) => ({
+              id: item.id,
+              agent: result.id as AgentId,
+              title: item.title,
+              section: item.sourceType,
+              text: item.excerpt,
+              sourceType: "public" as const,
+              classification: "public" as const,
+              effectiveDate: item.effectiveDate ?? "",
+              sourceUrl: item.sourceUrl,
+              tags: [],
+            })),
+          ),
+          fallback: selectedResults.map((result) => result.summary).join(" "),
+        })
+      : null;
   const evidenceCount = selectedResults.reduce((sum, result) => sum + result.evidence.length, 0);
   const requiresSecurity = /개인|민감|내부|보안|민원|데이터/i.test(query);
   const requiresLegal = /법|계약|책임|위탁|개인/i.test(query);
@@ -224,9 +248,33 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
   const privacyRiskScore =
     mode === "centralized"
       ? Math.min(100, 75 + inputFiltered.length * 10)
+      : mode === "managed"
+        ? Math.min(100, 65 + selected.length * 3 + inputFiltered.length * 6)
       : mode === "parallel"
         ? Math.min(100, 30 + selected.length * 4 + inputFiltered.length * 5)
         : Math.min(100, 8 + selected.length * 3 + inputFiltered.length * 4);
+  const validEvidenceIds = new Set(selectedResults.flatMap((result) => result.evidence.map((item) => item.id)));
+  const citations = selectedResults.flatMap((result) =>
+    [...result.summary.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]),
+  );
+  const validCitations = citations.filter((id) => validEvidenceIds.has(id));
+  const citationCoverage = Math.round(
+    selectedResults.filter((result) => result.evidence.some((item) => result.summary.includes(`[${item.id}]`))).length /
+      Math.max(selectedResults.length, 1) * 100,
+  );
+  const groundedness = Math.round(validCitations.length / Math.max(citations.length, 1) * 100);
+  const domainCoverage = Math.round((selected.length - missing.length) / Math.max(selected.length, 1) * 100);
+  const answerCompleteness = Math.round(
+    selectedResults.filter((result) => result.summary.trim().length >= 40 && result.evidence.length > 0).length /
+      Math.max(selectedResults.length, 1) * 100,
+  );
+  const qualityScore = Math.round(
+    groundedness * 0.35 + citationCoverage * 0.25 + domainCoverage * 0.25 + answerCompleteness * 0.15,
+  );
+  const inferenceResults = [
+    ...selectedResults.map((result) => result.inference),
+    ...(managedSupervisor ? [managedSupervisor.metrics] : []),
+  ];
 
   return {
     runId: `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -243,7 +291,7 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
       { label: "민감정보", status: "pass", detail: inputFiltered.length ? `${inputFiltered.join("·")} 입력을 마스킹했습니다.` : "직접 식별자가 발견되지 않았습니다." },
     ],
     metrics: {
-      calls: mode === "centralized" ? 1 : selected.length,
+      calls: mode === "centralized" ? 1 : selected.length + (mode === "managed" ? 1 : 0),
       tokens,
       bytes,
       latencyMs: selectedResults.some((result) => result.inference.backend === "ollama")
@@ -251,23 +299,28 @@ export async function orchestrate(rawQuery: string, mode: RunMode = "proposed") 
         : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
-      rawDataLeavesEdge: mode === "centralized",
-      boundaryBytes,
-      dataRecipients: mode === "centralized" ? 1 : selected.length,
-      minimizationRate,
+      rawDataLeavesEdge: mode === "centralized" || mode === "managed",
+      boundaryBytes: mode === "managed" ? centralizedSourceBytes + distributedPayloadBytes : boundaryBytes,
+      dataRecipients: mode === "centralized" ? 1 : selected.length + (mode === "managed" ? 1 : 0),
+      minimizationRate: mode === "managed" ? 0 : minimizationRate,
       privacyRiskScore,
+      groundedness,
+      citationCoverage,
+      domainCoverage,
+      answerCompleteness,
+      qualityScore,
       ragChunks: ragStats.chunks,
-      llmBackend: selectedResults.every((result) => result.inference.backend === "ollama") ? "ollama" : "deterministic",
+      llmBackend: inferenceResults.every((result) => result.backend === "ollama") ? "ollama" : "deterministic",
       model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
       ttftMs: (() => {
-        const values = selectedResults
-          .map((result) => result.inference.ttftMs)
+        const values = inferenceResults
+          .map((result) => result.ttftMs)
           .filter((value): value is number => value !== null);
         return values.length ? Math.min(...values) : null;
       })(),
       tpotMs: (() => {
-        const values = selectedResults
-          .map((result) => result.inference.tpotMs)
+        const values = inferenceResults
+          .map((result) => result.tpotMs)
           .filter((value): value is number => value !== null);
         return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : null;
       })(),
