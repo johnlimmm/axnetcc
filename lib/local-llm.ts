@@ -20,8 +20,38 @@ type OllamaChunk = {
   eval_duration?: number;
 };
 
-function configured() {
-  return Boolean(process.env.LOCAL_LLM_BASE_URL);
+const inferenceQueues = new Map<string, Promise<void>>();
+
+async function acquireInferenceSlot(endpoint: string) {
+  const previous = inferenceQueues.get(endpoint) ?? Promise.resolve();
+  let release = () => {};
+  const next = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  inferenceQueues.set(endpoint, next);
+  await previous;
+  return () => {
+    release();
+    if (inferenceQueues.get(endpoint) === next) {
+      inferenceQueues.delete(endpoint);
+    }
+  };
+}
+
+function agentEnvironmentKey(agent: AgentId, suffix: "BASE_URL" | "MODEL") {
+  return `LOCAL_LLM_${agent.toUpperCase()}_${suffix}`;
+}
+
+function resolveAgentRuntime(agent: AgentId) {
+  const baseUrl =
+    process.env[agentEnvironmentKey(agent, "BASE_URL")] ??
+    process.env.LOCAL_LLM_BASE_URL ??
+    "";
+  const model =
+    process.env[agentEnvironmentKey(agent, "MODEL")] ??
+    process.env.LOCAL_LLM_MODEL ??
+    "qwen2.5:3b";
+  return { baseUrl: baseUrl.replace(/\/+$/, ""), model };
 }
 
 export async function generateLocalAnswer(input: {
@@ -32,8 +62,8 @@ export async function generateLocalAnswer(input: {
   evidence: KnowledgeChunk[];
   fallback: string;
 }): Promise<{ text: string; metrics: LocalLlmMetrics }> {
-  const model = process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b";
-  if (!configured()) {
+  const { baseUrl, model } = resolveAgentRuntime(input.agent);
+  if (!baseUrl) {
     return {
       text: input.fallback,
       metrics: {
@@ -50,6 +80,7 @@ export async function generateLocalAnswer(input: {
     };
   }
 
+  const releaseInferenceSlot = await acquireInferenceSlot(baseUrl);
   const startedAt = performance.now();
   const contentTimes: number[] = [];
   const controller = new AbortController();
@@ -58,7 +89,6 @@ export async function generateLocalAnswer(input: {
     Number(process.env.LOCAL_LLM_TIMEOUT_MS ?? 90_000),
   );
   try {
-    const baseUrl = process.env.LOCAL_LLM_BASE_URL!.replace(/\/+$/, "");
     const response = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -70,8 +100,8 @@ export async function generateLocalAnswer(input: {
         options: {
           temperature: 0.1,
           seed: 42,
-          num_predict: 120,
-          num_ctx: 8192,
+          num_predict: 64,
+          num_ctx: 2048,
         },
         messages: [
           {
@@ -156,5 +186,6 @@ export async function generateLocalAnswer(input: {
     };
   } finally {
     clearTimeout(timeout);
+    releaseInferenceSlot();
   }
 }

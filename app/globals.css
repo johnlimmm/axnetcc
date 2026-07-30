@@ -144,6 +144,9 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .miniLabel { font-size: 9px; color: var(--muted); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .evidenceBody p { font-size: 12px; line-height: 1.55; color: #4d576c; }.evidenceBody p.question { color: var(--ink); background: #f3f6fd; padding: 12px; border-left: 2px solid var(--blue); }
 .evidenceBody p.selectionReason { margin: 5px 0 14px; color: var(--blue); font-size: 10px; }
+.agentRuntime { display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 2px; padding: 6px 8px; border: 1px solid #e2e6ee; background: #f7f8fb; color: var(--muted); font-size: 8px; }
+.agentRuntime.connected { border-color: #bde9dc; background: #effbf7; color: #13836a; }
+.agentRuntime span { font-weight: 900; letter-spacing: .08em; }.agentRuntime strong { color: var(--ink); font-size: 9px; }.agentRuntime small { color: inherit; }
 .sources > div { display: grid; grid-template-columns: auto 1fr; gap: 2px 9px; padding: 8px 0; border-bottom: 1px solid #edf0f5; }
 .sources b { color: var(--blue); font-size: 8px; }.sources strong, .sources a { color: var(--ink); font-size: 10px; font-weight: 700; text-decoration: none; }.sources a:hover { color: var(--blue); text-decoration: underline; }.sources small { grid-column: 2; color: var(--muted); font-size: 9px; }
 .owner { display: flex; justify-content: space-between; font-size: 10px !important; }.owner span { color: var(--muted); }

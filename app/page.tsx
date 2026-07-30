@@ -16,6 +16,13 @@ type AgentResult = {
   responsibility: string;
   filteredFields: string[];
   latencyMs: number;
+  inference?: {
+    backend: "ollama" | "deterministic";
+    model: string;
+    ttftMs: number | null;
+    tbtMs: number | null;
+    fallbackReason?: string;
+  };
 };
 
 type RunResult = {
@@ -183,7 +190,7 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
   const baseTokens = mode === "centralized" ? 6940 : calls * 790 + 620;
   const exposedFields = mode === "proposed" ? 0 : mode === "parallel" ? 7 : 12;
   return {
-    runId: `RUN-${Date.now().toString().slice(-6)}`,
+    runId: "RUN-PREVIEW",
     mode,
     title: "신규 AI 서비스 도입 종합 검토",
     conclusion:
@@ -388,6 +395,15 @@ export default function Home() {
                   </>
                 )}
                 <span className="miniLabel">Edge 응답 요약</span>
+                <div className={`agentRuntime ${selectedResult.inference?.backend === "ollama" ? "connected" : ""}`}>
+                  <span>{selectedResult.inference?.backend === "ollama" ? "LOCAL LLM" : "FALLBACK"}</span>
+                  <strong>{selectedResult.inference?.model ?? result.metrics.model ?? "qwen2.5:3b"}</strong>
+                  <small>
+                    {selectedResult.inference?.ttftMs != null
+                      ? `TTFT ${selectedResult.inference.ttftMs} ms`
+                      : selectedResult.selected ? "추론 대기 또는 fallback" : "미호출"}
+                  </small>
+                </div>
                 <p>{selectedResult.summary}</p>
               </div>
               <div className="sources">
