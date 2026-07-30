@@ -8,6 +8,7 @@ type AgentResult = {
   shortName: string;
   color: string;
   selected: boolean;
+  selectionReason?: string;
   score: number;
   question: string;
   summary: string;
@@ -39,9 +40,13 @@ type RunResult = {
 
 const agents = [
   { id: "tech", name: "기술검토 Agent", shortName: "기술", color: "#5B8CFF", detail: "아키텍처·운용·성능" },
+  { id: "data", name: "데이터거버넌스 Agent", shortName: "데이터", color: "#31B7C2", detail: "품질·수명주기·메타데이터" },
   { id: "security", name: "보안 Agent", shortName: "보안", color: "#45D6B5", detail: "정보보호·접근권한" },
   { id: "legal", name: "법무 Agent", shortName: "법무", color: "#AA88FF", detail: "법령·계약·책임" },
+  { id: "policy", name: "정책·윤리 Agent", shortName: "정책", color: "#D57BEA", detail: "공공성·투명성·영향평가" },
   { id: "finance", name: "재무 Agent", shortName: "재무", color: "#FFB25B", detail: "예산·조달·비용" },
+  { id: "procurement", name: "조달·계약 Agent", shortName: "조달", color: "#F58B55", detail: "발주·경쟁성·종속성" },
+  { id: "operations", name: "운영·품질 Agent", shortName: "운영", color: "#84B65A", detail: "SLA·장애·품질측정" },
 ];
 
 const exampleRequests = [
@@ -54,9 +59,13 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
   const lower = query.toLowerCase();
   const keywords: Record<string, string[]> = {
     tech: ["ai", "기술", "시스템", "서비스", "클라우드", "구축", "운영", "성능"],
+    data: ["데이터셋", "데이터 품질", "학습데이터", "수집", "정제", "메타데이터", "가명정보"],
     security: ["보안", "개인정보", "데이터", "접근", "민원", "내부", "클라우드"],
     legal: ["법", "책임", "계약", "규정", "민원", "개인정보", "외주"],
+    policy: ["정책", "윤리", "공정성", "편향", "투명성", "영향평가", "공공성"],
     finance: ["예산", "비용", "조달", "타당성", "계약", "운영비"],
+    procurement: ["조달", "발주", "입찰", "규격서", "사업자", "카탈로그", "계약"],
+    operations: ["운영", "sla", "장애", "모니터링", "응답시간", "품질", "유지보수"],
   };
   const selectedIds =
     mode === "proposed"
@@ -83,6 +92,15 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       filteredFields: ["담당자 휴대전화", "서버 관리계정"],
       latencyMs: 286,
     },
+    data: {
+      id: "data",
+      question: "데이터 출처·품질·갱신·폐기 기준은 무엇입니까?",
+      summary: "데이터 출처와 이용조건을 확인하고 품질, 최신성, 메타데이터 및 폐기 기준을 수명주기 전체에 적용해야 합니다.",
+      evidence: [{ id: "DATA-GOV-01", title: "공공 AI 데이터 관리 기준", excerpt: "출처·품질·갱신주기 기록" }],
+      responsibility: "데이터 관리부서 품질·수명주기 검토",
+      filteredFields: [],
+      latencyMs: 301,
+    },
     security: {
       id: "security",
       question: "개인정보와 내부정보를 보호하기 위한 필수 통제 및 반출 제한은 무엇입니까?",
@@ -107,6 +125,15 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       filteredFields: ["계약 상대방 개인주소"],
       latencyMs: 318,
     },
+    policy: {
+      id: "policy",
+      question: "공공성·투명성·편향 및 영향평가 기준은 무엇입니까?",
+      summary: "정책 목적과 권리 영향을 명시하고 설명가능성, 편향 점검, 이의제기 절차를 운영해야 합니다.",
+      evidence: [{ id: "POLICY-AI-01", title: "공공 AI 도입 원칙", excerpt: "투명성·책임성·영향평가" }],
+      responsibility: "AI 정책담당 공공성·영향평가 검토",
+      filteredFields: [],
+      latencyMs: 329,
+    },
     finance: {
       id: "finance",
       question: "시범도입과 운영 단계의 비용항목 및 조달상 확인사항은 무엇입니까?",
@@ -118,6 +145,24 @@ function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult 
       responsibility: "재무·구매팀 예산 타당성 검토",
       filteredFields: ["개별 인건비 단가"],
       latencyMs: 254,
+    },
+    procurement: {
+      id: "procurement",
+      question: "발주 방식과 경쟁성, 사업자 종속 위험은 무엇입니까?",
+      summary: "측정 가능한 규격과 경쟁성, 데이터 이전·계약 종료 조건을 명시해야 합니다.",
+      evidence: [{ id: "PROC-CAT-01", title: "디지털서비스 계약 안내", excerpt: "카탈로그 계약과 평가 절차" }],
+      responsibility: "구매·계약부서 발주·경쟁성 검토",
+      filteredFields: [],
+      latencyMs: 276,
+    },
+    operations: {
+      id: "operations",
+      question: "SLA·장애대응·품질측정과 운영 전환 기준은 무엇입니까?",
+      summary: "응답시간·가용성·정확성 지표와 장애 대응 및 운영 전환 게이트를 정의해야 합니다.",
+      evidence: [{ id: "OPS-SLA-01", title: "AI 서비스 운영 기준", excerpt: "SLA·모니터링·운영 전환 조건" }],
+      responsibility: "서비스 운영부서 SLA·품질 검토",
+      filteredFields: [],
+      latencyMs: 297,
     },
   };
 
@@ -282,6 +327,7 @@ export default function Home() {
                   key={agent.id}
                   className={`${agent.selected ? "selected" : ""} ${activeAgent === agent.id ? "focused" : ""}`}
                   onClick={() => setActiveAgent(agent.id)}
+                  title={agent.selectionReason ?? (agent.selected ? "질의와 역할이 일치했습니다." : "이번 질의에서는 선택되지 않았습니다.")}
                   style={{ "--agent": agent.color } as React.CSSProperties}
                 >
                   <i>{agent.shortName.slice(0, 1)}</i>
@@ -325,6 +371,12 @@ export default function Home() {
               <div>
                 <span className="miniLabel">전달된 최소 질의</span>
                 <p className="question">“{selectedResult.question}”</p>
+                {selectedResult.selectionReason && (
+                  <>
+                    <span className="miniLabel">선택 근거</span>
+                    <p className="selectionReason">{selectedResult.selectionReason}</p>
+                  </>
+                )}
                 <span className="miniLabel">Edge 응답 요약</span>
                 <p>{selectedResult.summary}</p>
               </div>
@@ -354,7 +406,7 @@ export default function Home() {
           <p>동일한 요청을 세 방식으로 실행한 비교값입니다.</p>
         </div>
         <div className="metricRow">
-          <Metric label="Agent 호출" value={`${result.metrics.calls} / 4`} note={`${4 - result.metrics.calls}회 불필요 호출 방지`} />
+          <Metric label="Agent 호출" value={`${result.metrics.calls} / ${result.agents.length}`} note={`${result.agents.length - result.metrics.calls}회 불필요 호출 방지`} />
           <Metric label="추정 토큰" value={result.metrics.tokens.toLocaleString()} note="질의·응답 전체" />
           <Metric label="Core–Edge 전송량" value={`${(result.metrics.bytes / 1024).toFixed(1)} KB`} note="원문 제외" />
           <Metric label="처리 지연" value={`${(result.metrics.latencyMs / 1000).toFixed(2)} s`} note="End-to-end" />

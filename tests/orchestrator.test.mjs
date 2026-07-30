@@ -77,3 +77,10 @@ test("golden-set queries return the expected specialist agents", async () => {
   }
 });
 
+test("selects only relevant agents in proposed mode", async () => {
+  const result = await orchestrate("3년 예산과 총소유비용을 산정해 주세요.");
+  const selected = result.agents.filter((agent) => agent.selected).map((agent) => agent.id);
+  assert.deepEqual(selected, ["finance"]);
+  assert.equal(result.agents.length, 8);
+  assert.ok(result.agents.find((agent) => agent.id === "security")?.selectionReason.includes("발견되지 않았"));
+});
