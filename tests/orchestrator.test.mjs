@@ -29,7 +29,7 @@ async function orchestrate(query, mode = "proposed") {
   return response.json();
 }
 
-test("serves the finished Korean governance workspace", async () => {
+test("serves the finished AXNetCC v2 SAEA workspace", async () => {
   const runtime = await worker();
   const response = await runtime.fetch(
     new Request("http://localhost/", { headers: { accept: "text/html" } }),
@@ -38,8 +38,9 @@ test("serves the finished Korean governance workspace", async () => {
   );
   const html = await response.text();
   assert.equal(response.status, 200);
-  assert.match(html, /MNC FLOW/);
-  assert.match(html, /분산된 전문성은 연결하고/);
+  assert.match(html, /AXNETCC v2/);
+  assert.match(html, /Security-Aware Evidence Acquisition/);
+  assert.match(html, /근거는 필요한 형태로만/);
   assert.doesNotMatch(html, /Your site is taking shape|codex-preview/);
 });
 
@@ -84,6 +85,49 @@ test("selects only relevant agents in proposed mode", async () => {
   assert.deepEqual(selected, ["finance"]);
   assert.equal(result.agents.length, 8);
   assert.ok(result.agents.find((agent) => agent.id === "security")?.selectionReason.includes("발견되지 않았"));
+  assert.deepEqual(result.routerDecision.selected, ["finance"]);
+  assert.ok(result.routerDecision.predictedCoverage >= result.routerDecision.policy.minimumCoverage);
+  assert.ok(result.routerDecision.objectiveCost > 0);
+  assert.equal(result.agentOutputs.length, 1);
+  assert.deepEqual(Object.keys(result.agentOutputs[0]).sort(), [
+    "agentId",
+    "confidence",
+    "decision",
+    "disclosureLevel",
+    "evidenceHandles",
+    "requiredActions",
+    "unresolvedConflicts",
+  ]);
+  assert.equal(result.agentOutputs[0].disclosureLevel, "minimal");
+  assert.equal(result.metrics.boundaryExposure.rawBytes, 0);
+  assert.equal(result.metrics.boundaryExposure.retrievedBytes, 0);
+  assert.equal(result.metrics.boundaryExposure.sensitiveEntityLeakage, 0);
+  assert.ok(result.metrics.qualityPerDisclosedKb > 0);
+});
+
+test("enforces coupled coverage for confidential and procurement decisions", async () => {
+  const confidential = await orchestrate(
+    "주민등록번호가 포함된 민원 AI의 개인정보 처리와 책임을 결정해 주세요.",
+  );
+  const confidentialAgents = new Set(
+    confidential.agents.filter((agent) => agent.selected).map((agent) => agent.id),
+  );
+  assert.equal(confidential.routerDecision.policy.classification, "confidential");
+  assert.equal(confidential.routerDecision.policy.purpose, "decision");
+  assert.ok(confidentialAgents.has("security"));
+  assert.ok(confidentialAgents.has("legal"));
+  assert.equal(confidential.metrics.boundaryExposure.sensitiveEntityLeakage, 0);
+
+  const procurement = await orchestrate(
+    "상용 LLM 본사업 발주와 규격서, 3년 예산을 결정해 주세요.",
+  );
+  const procurementAgents = new Set(
+    procurement.agents.filter((agent) => agent.selected).map((agent) => agent.id),
+  );
+  assert.ok(procurementAgents.has("tech"));
+  assert.ok(procurementAgents.has("procurement"));
+  assert.ok(procurementAgents.has("finance"));
+  assert.equal(procurement.metrics.boundaryExposure.unnecessaryAgentAccesses, 0);
 });
 
 test("uses an Ollama-compatible local model and records TTFT/TPOT", async () => {

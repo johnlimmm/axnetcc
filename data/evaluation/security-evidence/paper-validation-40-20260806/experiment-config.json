@@ -1,0 +1,41 @@
+{
+  "runId": "paper-validation-40-20260806",
+  "mode": "validation",
+  "datasetPath": "data/evaluation/ax-golden-set-40.jsonl",
+  "datasetSha256": "16612553e21258e0749b4c5d6c5f551e3b159042fabc4ad7afa654b2ee57ffdc",
+  "corpusSha256": "385587a8ec4feca076f24b158f91eaa0e4dcd2ff3665b01559cbc46abdfd8521",
+  "scenariosSha256": "51c84e9c3fb22beaedcb8afdf1697de87daa3f611197e5cac769d3fc50ab2712",
+  "securityManifestSha256": "0336d1815221f527e36f784250bf4b89dec6020aa743ee19b9f2f07e0545f2f0",
+  "queries": 40,
+  "methods": [
+    "raw-central",
+    "always-local",
+    "fixed-sanitized",
+    "network-only",
+    "security-only",
+    "axnetcc-saea",
+    "oracle-feasible"
+  ],
+  "scenarios": [
+    "normal",
+    "interdepartmental",
+    "low-bandwidth",
+    "lossy",
+    "owner-overload",
+    "mixed"
+  ],
+  "repetitions": 1,
+  "profileSeeds": [
+    17,
+    29,
+    43
+  ],
+  "ablations": [],
+  "ablationRepetitions": 0,
+  "concurrency": 24,
+  "totalTraces": 12222,
+  "bootstrapSeed": 20260806,
+  "bootstrapResamples": 10000,
+  "actualHttp": true,
+  "syntheticProfile": true
+}

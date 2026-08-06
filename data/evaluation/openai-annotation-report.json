@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-07-30T16:28:37.208Z",
+  "rows": 240,
+  "models": {
+    "annotatorA": "gpt-5.4-mini-2026-03-17",
+    "annotatorB": "gpt-5-mini-2025-08-07",
+    "adjudicator": "gpt-5.4-mini-2026-03-17"
+  },
+  "directAgreement": {
+    "exactAgreementRate": 0.1875,
+    "microPrecision": 0.8354430379746836,
+    "microRecall": 0.7578288100208769,
+    "microF1": 0.7947454844006568
+  },
+  "finalVsOriginalProvisional": {
+    "exactAgreementRate": 0.21666666666666667,
+    "microPrecision": 0.7346723044397463,
+    "microRecall": 0.9242021276595744,
+    "microF1": 0.8186101295641931
+  },
+  "adjudicationRate": 0.85,
+  "groundedEligibilityRate": 0.9416666666666667,
+  "groundedEligibleRows": 226,
+  "humanReviewRequiredRows": 14,
+  "usage": {
+    "calls": 684,
+    "promptTokens": 2313200,
+    "completionTokens": 1007882,
+    "totalTokens": 3321082
+  },
+  "interpretation": [
+    "Low direct agreement means two commercial LLM calls cannot be described as two human experts.",
+    "Adjudicated labels are suitable for development and for selecting a human-audit sample, not yet a confirmatory gold test.",
+    "All confirmatory rows remain false until a preregistered human audit is completed."
+  ]
+}

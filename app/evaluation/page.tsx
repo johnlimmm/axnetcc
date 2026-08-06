@@ -1,139 +1,117 @@
-const results = [
-  { name: "Single Centralized RAG", quality: 81.6, deviation: 5.1, correctness: 79.5, groundedness: 82.2, completeness: 83.1, ttft: "18.36초", tpot: "110.9ms", latency: "57.0초", bytes: "52,788B", leaves: "전송" },
-  { name: "All-Agent Aggregation", quality: 81.3, deviation: 4.9, correctness: 79.3, groundedness: 80.9, completeness: 83.3, ttft: "5.69초", tpot: "157.4ms", latency: "59.6초", bytes: "6,718B", leaves: "미전송" },
-  { name: "MasRouter-inspired", quality: 74.1, deviation: 5.5, correctness: 75.2, groundedness: 74.5, completeness: 72.3, ttft: "2.21초", tpot: "133.4ms", latency: "58.9초", bytes: "1,426B", leaves: "전송" },
-  { name: "RemoteRAG-inspired", quality: 70.0, deviation: 10.3, correctness: 71.9, groundedness: 68.1, completeness: 69.7, ttft: "4.58초", tpot: "104.0ms", latency: "60.0초", bytes: "4,649B", leaves: "전송" },
-  { name: "제안 방식", quality: 76.5, deviation: 4.7, correctness: 77.1, groundedness: 75.3, completeness: 76.7, ttft: "3.78초", tpot: "152.2ms", latency: "59.2초", bytes: "3,479B", leaves: "미전송" },
+import Link from "next/link";
+
+const acquisitionMain = [
+  { name: "Raw central", completion: 0.997, violation: 0.923, coverage: 0.997, raw: "3,357.199 B" },
+  { name: "Always local", completion: 0.722, violation: 0, coverage: 0.906, raw: "0 B" },
+  { name: "Fixed sanitized", completion: 0.859, violation: 0, coverage: 0.952, raw: "0 B" },
+  { name: "Network only", completion: 0, violation: 0, coverage: 0, raw: "0 B" },
+  { name: "Security only", completion: 0.738, violation: 0, coverage: 0.910, raw: "332.166 B" },
+  { name: "AXNetCC-SAEA", completion: 0.860, violation: 0, coverage: 0.860, raw: "115.329 B" },
+  { name: "Oracle feasible", completion: 0.861, violation: 0, coverage: 0.861, raw: "115.329 B" },
 ];
 
-const fixedResults = [
-  { name: "Single Centralized RAG", quality: 58.5, ci: "55.4–62.2", f1: 46.5, concept: 14.4, retrieval: 51.2, bytes: "50,503B", leaves: "전송" },
-  { name: "All-Agent Aggregation", quality: 81.5, ci: "79.1–83.9", f1: 46.5, concept: 75.0, retrieval: 51.2, bytes: "6,324B", leaves: "미전송" },
-  { name: "MasRouter-inspired", quality: 62.0, ci: "55.9–68.0", f1: 57.4, concept: 50.0, retrieval: 35.6, bytes: "1,149B", leaves: "전송" },
-  { name: "RemoteRAG-inspired", quality: 49.9, ci: "45.2–54.9", f1: 57.4, concept: 14.4, retrieval: 37.5, bytes: "4,004B", leaves: "전송" },
-  { name: "제안 방식", quality: 70.6, ci: "64.7–76.4", f1: 64.6, concept: 62.5, retrieval: 42.5, bytes: "2,507B", leaves: "미전송" },
+const acquisitionValidation = [
+  { name: "Raw central", completion: 0.759, violation: 0.675, coverage: 0.891, raw: "3,502.363 B" },
+  { name: "Always local", completion: 0.645, violation: 0, coverage: 0.827, raw: "0 B" },
+  { name: "Fixed sanitized", completion: 0.739, violation: 0, coverage: 0.879, raw: "0 B" },
+  { name: "Network only", completion: 0, violation: 0, coverage: 0, raw: "0 B" },
+  { name: "Security only", completion: 0.681, violation: 0, coverage: 0.854, raw: "1,260.022 B" },
+  { name: "AXNetCC-SAEA", completion: 0.723, violation: 0, coverage: 0.685, raw: "276.167 B" },
+  { name: "Oracle feasible", completion: 0.743, violation: 0, coverage: 0.705, raw: "285.949 B" },
 ];
+
+const routerResults = [
+  { name: "Static", f1: 0.604, exact: 0.175, fanout: 2.17 },
+  { name: "Top-k", f1: 0.599, exact: 0.150, fanout: 2.20 },
+  { name: "Threshold", f1: 0.578, exact: 0.150, fanout: 1.48 },
+  { name: "MasRouter adapted", f1: 0.300, exact: 0.025, fanout: 2.60 },
+  { name: "RouteLLM-MF adapted", f1: 0.337, exact: 0.075, fanout: 2.13 },
+  { name: "IRT-Router adapted", f1: 0.353, exact: 0, fanout: 2.65 },
+  { name: "AXNetCC proposed", f1: 0.665, exact: 0.250, fanout: 3.20 },
+];
+
+function AcquisitionTable({ rows }: { rows: typeof acquisitionMain }) {
+  return <div className="evaluationTableWrap"><div className="evaluationTable acquisitionTable">
+    <div className="evaluationTableHead"><span>방식</span><span>Evidence completion</span><span>Policy violation</span><span>Runtime coverage</span><span>Raw boundary bytes</span></div>
+    {rows.map((row) => <div key={row.name} className={row.name === "AXNetCC-SAEA" ? "evaluationHighlight" : ""}>
+      <strong>{row.name}</strong><span>{row.completion.toFixed(3)}</span><b className={row.violation ? "riskValue" : "safeValue"}>{row.violation.toFixed(3)}</b><span>{row.coverage.toFixed(3)}</span><span>{row.raw}</span>
+    </div>)}
+  </div></div>;
+}
 
 export default function EvaluationPage() {
-  return (
-    <main className="aboutPage evaluationPage">
-      <header className="topbar">
-        <a className="brand" href="/">
-          <span className="brandMark">M</span>
-          <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
-        </a>
-        <nav className="navLinks" aria-label="주요 페이지">
-          <a className="aboutLink" href="/about">서비스 소개</a>
-          <a className="aboutLink" href="/">실행 화면</a>
-        </nav>
-      </header>
+  return <main className="aboutPage evaluationPage">
+    <header className="topbar">
+      <Link className="brand" href="/"><span className="brandMark">A</span><div><strong>AXNETCC v2</strong><small>Security-Aware Evidence Acquisition</small></div></Link>
+      <nav className="navLinks" aria-label="주요 페이지"><Link className="aboutLink" href="/about">연구 소개</Link><Link className="aboutLink" href="/">실행 화면</Link></nav>
+    </header>
 
-      <section className="aboutHero evaluationHero">
-        <span className="eyebrow">REPEATED COMPARATIVE EVALUATION</span>
-        <h1>문헌 기반 baseline보다 높은 품질,<br />원문은 데이터 경계 안에.</h1>
-        <p>5개 공공·기업 AX 복합 질의를 다섯 방식에 각각 3회 적용했습니다. 총 75개 실제 응답을 동일한 상용 LLM 블라인드 평가자로 채점하고, 품질·속도·데이터 이동을 함께 비교했습니다.</p>
-        <div className="evaluationSummary">
-          <div><span>총 평가 실행</span><strong>75</strong><small>5질의 × 5방식 × 3회</small></div>
-          <div><span>품질 유지율</span><strong>93.8%</strong><small>최고 품질 방식 대비</small></div>
-          <div><span>전송량 절감</span><strong>48.2%</strong><small>전체 Multi-Agent 대비</small></div>
-          <div><span>문헌 baseline 우위</span><strong>+2.4</strong><small>MasRouter-inspired 대비</small></div>
+    <section className="aboutHero evaluationHero">
+      <span className="eyebrow">PAPER-GRADE EVALUATION / ACTUAL HTTP</span>
+      <h1>보안 경계를 지키면서,<br />필요한 근거는 끝까지 전달합니다.</h1>
+      <p>실제 HTTP Evidence Gateway와 application-layer network proxy에서 비교실험·ablation·query-cluster bootstrap을 수행했습니다. SAEA 결과와 Router 결과를 분리하고, 다중 LLM 검증에서 확인된 label sensitivity를 그대로 공개합니다.</p>
+      <div className="evaluationSummary">
+        <div><span>MAIN JOBS</span><strong>24,624</strong><small>49,248 raw HTTP traces</small></div>
+        <div><span>VALIDATION JOBS</span><strong>5,040</strong><small>40-query · 12,222 traces</small></div>
+        <div><span>SAEA VIOLATION</span><strong>0.000</strong><small>main + validation</small></div>
+        <div><span>TRANSPORT FAILURE</span><strong>0</strong><small>validator confirmed</small></div>
+      </div>
+    </section>
+
+    <section className="evaluationBody">
+      <article>
+        <div className="evaluationSectionHead"><span>01</span><div><h2>Main acquisition study</h2><p>6개 fixed-role golden query, 7개 방식, 6개 network scenario, 3개 security-profile seed, 방식별 30회 반복입니다.</p></div></div>
+        <AcquisitionTable rows={acquisitionMain} />
+        <p className="evaluationClaim">AXNetCC-SAEA는 policy violation 0을 유지하면서 completion 0.860을 기록해 oracle-feasible 0.861에 근접했습니다. Raw central은 completion 0.997이지만 policy violation 0.923과 평균 3,357 B의 raw 경계 전송을 동반했습니다.</p>
+      </article>
+
+      <article>
+        <div className="evaluationSectionHead"><span>02</span><div><h2>40-query acquisition validation</h2><p>40개 semantic-family query와 derived role-concept manifest로 범위를 확장했습니다. 13개 mapping은 deterministic fallback이므로 독립 confirmatory gold set으로 표현하지 않습니다.</p></div></div>
+        <AcquisitionTable rows={acquisitionValidation} />
+        <p className="evaluationClaim">확장 검증에서 SAEA completion은 0.723, policy violation은 0, raw boundary bytes는 276.167 B였습니다. Fixed sanitized의 completion 0.739보다 낮아, 모든 조건에서 SAEA가 지배적이라고 주장하지 않습니다.</p>
+      </article>
+
+      <article>
+        <div className="evaluationSectionHead"><span>03</span><div><h2>근거 전달의 네 가지 선택</h2><p>각 부서의 고정 Agent가 근거를 소유하고, Core는 보안 허용성·필수 개념 coverage·network 비용을 만족하는 전달 형태만 선택합니다.</p></div></div>
+        <div className="evidenceModeGrid">
+          <section><b>RAW</b><strong>원문 전달</strong><p>public 또는 owner-local처럼 정책이 허용하고 coverage가 필요한 경우에만 사용합니다.</p></section>
+          <section><b>SANITIZED</b><strong>민감필드 제거</strong><p>직접 식별자·내부 IP·계좌·secret 패턴을 제거하고 근거 handle을 유지합니다.</p></section>
+          <section><b>LOCAL-SUMMARY</b><strong>소유부서 요약</strong><p>원문은 부서에 남기고 필수 개념과 evidence ID가 포함된 최소 요약을 전송합니다.</p></section>
+          <section><b>METADATA-ONLY</b><strong>내용 미전달</strong><p>content 없이 canonical ID, 소유부서, 민감도, 유효일자만 전달합니다.</p></section>
         </div>
-      </section>
+      </article>
 
-      <section className="evaluationBody">
-        <article>
-          <div className="evaluationSectionHead">
-            <span>01</span>
-            <div><h2>반복평가 결과</h2><p>모든 수치는 15개 응답의 평균이며, 종합 품질 옆 ± 값은 반복 변동을 나타내는 표준편차입니다.</p></div>
-          </div>
-          <div className="evaluationTableWrap">
-            <div className="evaluationTable">
-              <div className="evaluationTableHead"><span>방식</span><span>종합 품질</span><span>정확성</span><span>근거충실도</span><span>완전성</span><span>TTFT</span><span>TPOT</span><span>원문 외부 전송</span></div>
-              {results.map((result) => (
-                <div key={result.name} className={result.name === "제안 방식" ? "evaluationHighlight" : ""}>
-                  <strong>{result.name}</strong>
-                  <span>{result.quality} <small>±{result.deviation}</small></span>
-                  <span>{result.correctness}</span>
-                  <span>{result.groundedness}</span>
-                  <span>{result.completeness}</span>
-                  <span>{result.ttft}</span>
-                  <span>{result.tpot}</span>
-                  <b className={result.leaves === "미전송" ? "safeValue" : "riskValue"}>{result.leaves}</b>
-                </div>
-              ))}
-            </div>
-          </div>
-        </article>
+      <article>
+        <div className="evaluationSectionHead"><span>04</span><div><h2>Router baseline과 최신기법 adapter</h2><p>기존 static/top-k/threshold와 MasRouter, RouteLLM-MF, IRT-Router의 공개 핵심 메커니즘을 AX 역할선택 문제에 맞춘 adapter를 함께 비교했습니다.</p></div></div>
+        <div className="evaluationTableWrap"><div className="evaluationTable routerTable">
+          <div className="evaluationTableHead"><span>방식</span><span>Macro-F1</span><span>Exact match</span><span>평균 fan-out</span></div>
+          {routerResults.map((row) => <div key={row.name} className={row.name === "AXNetCC proposed" ? "evaluationHighlight" : ""}><strong>{row.name}</strong><span>{row.f1.toFixed(3)}</span><span>{row.exact.toFixed(3)}</span><span>{row.fanout.toFixed(2)}</span></div>)}
+        </div></div>
+        <p className="evaluationClaim">AXNetCC proposed는 이 author-labelled 40-query split에서 macro-F1 0.665였습니다. Adapter 행은 upstream benchmark의 정확한 재현이 아니며, 다중 LLM 실험에서 label sensitivity가 확인됐으므로 routing superiority는 탐색적 결과입니다.</p>
+      </article>
 
-        <article>
-          <div className="evaluationSectionHead">
-            <span>02</span>
-            <div><h2>40문항 고정 정답 평가</h2><p>정답 Agent·필수 개념·관련 공식 문서군을 사전 라벨링한 40개 AX 문항을 다섯 방식으로 실행한 200개 결과입니다.</p></div>
-          </div>
-          <div className="evaluationTableWrap">
-            <div className="evaluationTable">
-              <div className="evaluationTableHead"><span>방식</span><span>객관 품질</span><span>95% CI</span><span>Agent F1</span><span>개념 Recall</span><span>문서군 Recall@K</span><span>Core 전송량</span><span>원문 외부 전송</span></div>
-              {fixedResults.map((result) => (
-                <div key={result.name} className={result.name === "제안 방식" ? "evaluationHighlight" : ""}>
-                  <strong>{result.name}</strong>
-                  <span>{result.quality}</span>
-                  <span>{result.ci}</span>
-                  <span>{result.f1}</span>
-                  <span>{result.concept}</span>
-                  <span>{result.retrieval}</span>
-                  <span>{result.bytes}</span>
-                  <b className={result.leaves === "미전송" ? "safeValue" : "riskValue"}>{result.leaves}</b>
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="evaluationClaim">정답 기반 평가에서 제안 방식은 최고 객관 품질의 86.6%를 유지했습니다. Agent Micro-F1은 64.6으로 MasRouter-inspired의 57.4보다 높았고, 제안 방식과 두 inspired baseline의 품질 차이 95% 신뢰구간은 각각 +4.9~+12.8점, +16.2~+25.5점이었습니다.</p>
-        </article>
+      <article>
+        <div className="evaluationSectionHead"><span>05</span><div><h2>Qwen · Llama · Gemma · OpenAI 교차검증</h2><p>같은 순서의 40개 query를 기존 label과 방식 이름을 숨긴 채 네 모델 계열에 제시했습니다.</p></div></div>
+        <div className="judgeGrid">
+          <section><span>LOCAL PAIRWISE JACCARD</span><strong>0.267</strong><small>95% bootstrap CI [0.230, 0.309]</small></section>
+          <section><span>LOCAL FLEISS&apos; KAPPA</span><strong>0.041</strong><small>8개 binary role decision</small></section>
+          <section><span>OPENAI ↔ AUTHOR F1</span><strong>0.815</strong><small>precision 0.732 · recall 0.918</small></section>
+          <section><span>4-MODEL KAPPA</span><strong>0.123</strong><small>model-family sensitivity</small></section>
+        </div>
+        <p className="evaluationClaim">OpenAI judge는 author label을 높은 recall로 복원했지만 평균 3.825개 역할을 선택해 과다선택 경향을 보였습니다. 어느 LLM도 독립 인간 gold set을 대신한다고 주장하지 않습니다.</p>
+      </article>
 
-        <article>
-          <div className="evaluationSectionHead">
-            <span>03</span>
-            <div><h2>무엇이 더 좋은가</h2><p>제안 방식은 절대 품질 1위가 아니라, 공공기관과 기업 AX에서 중요한 품질·보호·속도의 균형을 목표로 합니다.</p></div>
-          </div>
-          <div className="tradeoffGrid">
-            <section><b>QUALITY</b><strong>76.5점</strong><p>MasRouter-inspired보다 2.4점, RemoteRAG-inspired보다 6.5점 높고 최고 품질의 93.8%를 유지했습니다.</p></section>
-            <section><b>DATA</b><strong>3,479B</strong><p>전체 Multi-Agent보다 48.2%, 중앙집중형보다 93.4% 적은 데이터만 Core로 전달합니다.</p></section>
-            <section><b>RESPONSIVENESS</b><strong>3.78초</strong><p>중앙집중형보다 TTFT가 79.4% 짧으며, E2E는 All-Agent와 유사했습니다.</p></section>
-            <section><b>BOUNDARY</b><strong>원문 미전송</strong><p>MasRouter·RemoteRAG-inspired와 달리 조직 원문을 Core 또는 원격 검색 경계로 보내지 않습니다.</p></section>
-          </div>
-          <p className="evaluationClaim">결론: 제안 방식은 문헌 기반 routing·privacy RAG baseline보다 높은 품질을 보이면서 원문 비이동을 유지했고, 전체 Agent 실행 대비 Core 전송량을 절반가량 줄였습니다.</p>
-        </article>
+      <article>
+        <div className="evaluationSectionHead"><span>06</span><div><h2>재현성과 주장 경계</h2><p>원시 trace와 결과를 남기되 실험이 말할 수 없는 범위를 명시합니다.</p></div></div>
+        <ul className="limitations">
+          <li><strong>재현 단위</strong><span>통계 sampling unit은 HTTP trace가 아니라 unique query입니다. P95도 query-method cluster 안에서 먼저 계산합니다.</span></li>
+          <li><strong>무결성</strong><span>Main과 validation validator 통과, transport failure 0, paper artifact manifest 47/47 SHA-256 일치입니다.</span></li>
+          <li><strong>가능한 주장</strong><span>Application-layer HTTP 환경에서 정책 위반 없이 경쟁력 있는 evidence completion과 낮은 raw 경계 전송을 보였습니다.</span></li>
+          <li><strong>불가능한 주장</strong><span>물리 KOREN·packet-level 측정, 실제 기관 비밀정보 검증, 법적 준수 보장, 독립 전문가 gold validation은 주장하지 않습니다.</span></li>
+        </ul>
+      </article>
+    </section>
 
-        <article>
-          <div className="evaluationSectionHead">
-            <span>04</span>
-            <div><h2>실험 설계와 산식</h2><p>결과를 재현할 수 있도록 비교 조건과 계산 기준을 고정했습니다.</p></div>
-          </div>
-          <div className="methodGrid">
-            <div><b>질의 구성</b><p>개인정보·클라우드·법무·예산, RAG 데이터·접근통제·SLA, 조달·종속성·검수, 환각·편향·책임, 로컬·외부 LLM 비교 등 5개 복합 질의</p></div>
-            <div><b>반복 조건</b><p>각 질의를 중앙집중형·전체 Agent·MasRouter-inspired·RemoteRAG-inspired·제안 방식에 3회씩 적용해 방식당 15개 응답을 확보</p></div>
-            <div><b>품질 평가</b><p>방식 이름을 평가 프롬프트에서 제외한 상용 LLM 블라인드 평가로 정확성·근거충실도·완전성을 0~100점으로 채점</p></div>
-            <div><b>품질 유지율</b><code>제안 방식 평균 품질 ÷ 최고 방식 평균 품질 × 100</code></div>
-            <div><b>전송량 절감률</b><code>(비교 방식 전송량 − 제안 방식 전송량) ÷ 비교 방식 전송량 × 100</code></div>
-            <div><b>속도 측정</b><p>TTFT는 요청부터 첫 토큰까지, TPOT는 첫 토큰 이후 토큰당 평균 생성시간, E2E는 전체 응답 완료시간으로 측정</p></div>
-          </div>
-        </article>
-
-        <article>
-          <div className="evaluationSectionHead">
-            <span>05</span>
-            <div><h2>해석 시 주의사항</h2><p>이 결과가 말할 수 있는 범위와 아직 확장해야 할 부분을 구분합니다.</p></div>
-          </div>
-          <ul className="limitations">
-            <li><strong>현재 결론</strong><span>75개 실제 응답 평가에서는 최고 품질의 93.8%, 40문항 고정 정답 평가에서는 86.6%를 유지했습니다. 두 평가 모두 inspired baseline보다 높은 품질과 원문 비이동을 보였습니다.</span></li>
-            <li><strong>재현 범위</strong><span>MasRouter의 학습 controller와 RemoteRAG의 DistanceDP 전체를 재현한 것이 아니라, 공개된 핵심 메커니즘을 동일 로컬 환경에 맞춘 inspired baseline입니다.</span></li>
-            <li><strong>라벨 한계</strong><span>40문항 정답은 저자 라벨이며 독립 전문가 합의평가는 아닙니다. Recall@K는 특정 페이지가 아니라 관련 공식 문서군 기준입니다.</span></li>
-            <li><strong>다음 검증</strong><span>외부 전문가 2인 이상의 독립 라벨과 합의도, 미사용 기관 데이터셋, routing·retrieval 구성요소 ablation을 추가해야 합니다.</span></li>
-          </ul>
-        </article>
-      </section>
-
-      <footer><span>MNC Lab. · Korea University</span><div className="footerLinks"><a href="/about">서비스 소개</a><a href="/">MNC FLOW 실행 화면</a></div></footer>
-    </main>
-  );
+    <footer><span>AXNetCC v2 · paper-full-v4-20260806</span><div className="footerLinks"><Link href="/about">연구 소개</Link><Link href="/">실행 화면</Link></div></footer>
+  </main>;
 }

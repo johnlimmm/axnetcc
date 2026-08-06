@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "derivedFrom": ["data/rag-corpus.json", "data/manifest.jsonl"],
+  "syntheticProfile": true,
+  "defaults": {
+    "canonicalId": "sourceSha256",
+    "ownerDepartment": "agent",
+    "securityLevel": "public",
+    "effectiveDate": "publishedAt",
+    "concepts": "title-section-text-derived"
+  },
+  "rules": [
+    { "sourceType": "synthetic-internal", "securityLevel": "internal" },
+    { "idPrefix": "SEC-DATA", "securityLevel": "personal" },
+    { "idPrefix": "SEC-", "securityLevel": "confidential" }
+  ],
+  "conceptAliases": {
+    "\uac1c\uc778\uc815\ubcf4": ["privacy", "PII", "\uac1c\uc778 \uc815\ubcf4"],
+    "\ucd5c\uc18c\ucc98\ub9ac": ["\ucd5c\uc18c \ucc98\ub9ac", "\ucd5c\uc18c\uc218\uc9d1", "\ucd5c\uc18c \uc218\uc9d1"],
+    "\uc811\uadfc\ud1b5\uc81c": ["RBAC", "authorization", "\uc811\uadfc \ud1b5\uc81c", "\uad8c\ud55c"],
+    "\ucd5c\uc885 \uac80\ud1a0": ["\ucd5c\uc885 \uac80\uc99d", "\ub2f4\ub2f9\uc790 \uac80\ud1a0"],
+    "\uc6d0\ubb38 \ubcf4\uc874": ["\uc6d0\ubb38", "\uc6d0\ubcf8 \ubcf4\uc874", "\uc6d0\ubcf8"],
+    "\uac10\uc0ac \ub85c\uadf8": ["audit log", "\uac10\uc0ac", "\ub85c\uadf8"],
+    "\uc7ac\uc704\ud0c1": ["subprocessor", "\uc7ac \uc704\ud0c1"],
+    "\uc0ad\uc81c": ["\ud3d0\uae30", "deletion"],
+    "TCO": ["total cost", "budget", "\ube44\uc6a9"],
+    "P95": ["95th percentile", "\uc751\ub2f5\uc2dc\uac04"],
+    "\ud544\uc218 \ud56d\ubaa9 \ud3ec\ud568\ub960": ["\ud544\uc218 \ud56d\ubaa9", "\ud3ec\ud568\ub960"],
+    "\uadfc\uac70 \uc5f0\uacb0\ub960": ["\uadfc\uac70 \uc5f0\uacb0", "evidence linkage"],
+    "\ub9c8\uc2a4\ud0b9": ["redaction", "\ube44\uc2dd\ubcc4", "\uac00\ub9bc"],
+    "PoC \ubd84\ub9ac": ["PoC", "\ubcf8\uc0ac\uc5c5 \ubd84\ub9ac"],
+    "\uc885\uc18d\uc131": ["vendor lock-in", "lock-in", "\uc885\uc18d"],
+    "\ube44\uc6a9 \uc0c1\ud55c": ["\ube44\uc6a9", "\uc0c1\ud55c", "cost cap"]
+  },
+  "roleCoverageThresholds": {
+    "tech": 0.7,
+    "data": 0.75,
+    "security": 0.8,
+    "legal": 0.8,
+    "policy": 0.7,
+    "finance": 0.7,
+    "procurement": 0.75,
+    "operations": 0.75
+  },
+  "queryRoleRequiredConcepts": {
+    "Q001": {
+      "security": ["최소처리", "접근통제"],
+      "legal": ["최소처리", "접근통제", "최종 검토"],
+      "tech": ["최소처리", "접근통제", "최종 검토"]
+    },
+    "Q002": {
+      "tech": ["RAG", "원문 보존", "감사 로그"],
+      "security": ["RAG", "원문 보존", "감사 로그"]
+    },
+    "Q003": {
+      "legal": ["재위탁", "삭제", "TCO"],
+      "finance": ["삭제", "TCO"]
+    },
+    "Q004": { "tech": ["P95", "필수 항목 포함률", "근거 연결률"] },
+    "Q005": {
+      "security": ["마스킹", "최소처리"],
+      "legal": ["마스킹", "최소처리"]
+    },
+    "Q006": {
+      "finance": ["PoC 분리", "종속성", "비용 상한"],
+      "tech": ["PoC 분리", "종속성", "비용 상한"]
+    }
+  },
+  "syntheticSecurityProfiles": {
+    "17": {
+      "Q001": { "security": "confidential", "legal": "confidential", "tech": "internal" },
+      "Q002": { "tech": "internal", "security": "confidential" },
+      "Q003": { "legal": "confidential", "finance": "internal" },
+      "Q004": { "tech": "public" },
+      "Q005": { "security": "personal", "legal": "personal" },
+      "Q006": { "finance": "internal", "tech": "public" }
+    },
+    "29": {
+      "Q001": { "security": "personal", "legal": "personal", "tech": "confidential" },
+      "Q002": { "tech": "confidential", "security": "confidential" },
+      "Q003": { "legal": "personal", "finance": "confidential" },
+      "Q004": { "tech": "internal" },
+      "Q005": { "security": "personal", "legal": "personal" },
+      "Q006": { "finance": "confidential", "tech": "internal" }
+    },
+    "43": {
+      "Q001": { "security": "internal", "legal": "internal", "tech": "public" },
+      "Q002": { "tech": "internal", "security": "internal" },
+      "Q003": { "legal": "internal", "finance": "internal" },
+      "Q004": { "tech": "public" },
+      "Q005": { "security": "personal", "legal": "personal" },
+      "Q006": { "finance": "internal", "tech": "public" }
+    }
+  }
+}

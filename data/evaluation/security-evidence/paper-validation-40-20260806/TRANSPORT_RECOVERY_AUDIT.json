@@ -1,0 +1,383 @@
+{
+  "status": "rerun-complete",
+  "criterion": "job contains at least one final HTTP status 599 after retries",
+  "removedCompletedJobKeys": [
+    "primary:AX027:network-only:lossy:17:0",
+    "primary:AX034:axnetcc-saea:mixed:29:0",
+    "primary:AX019:axnetcc-saea:mixed:43:0",
+    "primary:AX040:raw-central:owner-overload:29:0",
+    "primary:AX018:axnetcc-saea:low-bandwidth:43:0",
+    "primary:AX018:always-local:owner-overload:17:0",
+    "primary:AX010:raw-central:owner-overload:29:0",
+    "primary:AX040:raw-central:normal:17:0",
+    "primary:AX017:network-only:interdepartmental:43:0",
+    "primary:AX012:fixed-sanitized:mixed:17:0",
+    "primary:AX010:axnetcc-saea:mixed:29:0",
+    "primary:AX034:axnetcc-saea:interdepartmental:17:0",
+    "primary:AX008:always-local:owner-overload:29:0",
+    "primary:AX025:raw-central:interdepartmental:29:0",
+    "primary:AX001:security-only:mixed:17:0",
+    "primary:AX033:security-only:owner-overload:29:0",
+    "primary:AX009:axnetcc-saea:low-bandwidth:29:0",
+    "primary:AX039:axnetcc-saea:mixed:43:0",
+    "primary:AX012:always-local:low-bandwidth:17:0",
+    "primary:AX022:raw-central:low-bandwidth:17:0",
+    "primary:AX006:network-only:owner-overload:17:0",
+    "primary:AX028:fixed-sanitized:normal:17:0",
+    "primary:AX038:raw-central:mixed:29:0",
+    "primary:AX031:raw-central:lossy:29:0",
+    "primary:AX040:axnetcc-saea:low-bandwidth:43:0",
+    "primary:AX021:network-only:interdepartmental:17:0",
+    "primary:AX018:always-local:owner-overload:29:0",
+    "primary:AX028:security-only:normal:43:0",
+    "primary:AX012:security-only:low-bandwidth:29:0",
+    "primary:AX001:always-local:normal:43:0",
+    "primary:AX029:always-local:mixed:29:0",
+    "primary:AX001:raw-central:mixed:17:0",
+    "primary:AX019:raw-central:low-bandwidth:29:0",
+    "primary:AX008:raw-central:mixed:29:0",
+    "primary:AX011:fixed-sanitized:owner-overload:17:0"
+  ],
+  "affectedTraces": {
+    "primary:AX027:network-only:lossy:17:0": [
+      {
+        "traceId": "c41d87c7a359d759",
+        "role": "security",
+        "elapsedMs": 7142.522,
+        "retries": 3
+      },
+      {
+        "traceId": "20a67b45b5527745",
+        "role": "operations",
+        "elapsedMs": 6717.954,
+        "retries": 3
+      }
+    ],
+    "primary:AX034:axnetcc-saea:mixed:29:0": [
+      {
+        "traceId": "9c15c82fd2f8e334",
+        "role": "procurement",
+        "elapsedMs": 11336.252,
+        "retries": 3
+      },
+      {
+        "traceId": "c26f2a2e4402fc9f",
+        "role": "legal",
+        "elapsedMs": 10979.847,
+        "retries": 3
+      }
+    ],
+    "primary:AX019:axnetcc-saea:mixed:43:0": [
+      {
+        "traceId": "24f1f7d95468f8b6",
+        "role": "operations",
+        "elapsedMs": 11610.394,
+        "retries": 3
+      }
+    ],
+    "primary:AX040:raw-central:owner-overload:29:0": [
+      {
+        "traceId": "fd6e0aeda8e00614",
+        "role": "tech",
+        "elapsedMs": 5912.139,
+        "retries": 3
+      }
+    ],
+    "primary:AX018:axnetcc-saea:low-bandwidth:43:0": [
+      {
+        "traceId": "fec384738a42887c",
+        "role": "operations",
+        "elapsedMs": 9601.995,
+        "retries": 3
+      },
+      {
+        "traceId": "0df7bfdc1a09c4f1",
+        "role": "legal",
+        "elapsedMs": 9382.755,
+        "retries": 3
+      }
+    ],
+    "primary:AX018:always-local:owner-overload:17:0": [
+      {
+        "traceId": "da3004f1d5e7bcef",
+        "role": "legal",
+        "elapsedMs": 10119.494,
+        "retries": 3
+      }
+    ],
+    "primary:AX010:raw-central:owner-overload:29:0": [
+      {
+        "traceId": "005efcf710dfa0ec",
+        "role": "finance",
+        "elapsedMs": 12795.682,
+        "retries": 3
+      }
+    ],
+    "primary:AX040:raw-central:normal:17:0": [
+      {
+        "traceId": "3d8639a1d28a42f9",
+        "role": "finance",
+        "elapsedMs": 13089.643,
+        "retries": 3
+      },
+      {
+        "traceId": "868d0c44243c7b91",
+        "role": "tech",
+        "elapsedMs": 12858.967,
+        "retries": 3
+      }
+    ],
+    "primary:AX017:network-only:interdepartmental:43:0": [
+      {
+        "traceId": "b5a71e22ecbbecf7",
+        "role": "security",
+        "elapsedMs": 5521.339,
+        "retries": 3
+      }
+    ],
+    "primary:AX012:fixed-sanitized:mixed:17:0": [
+      {
+        "traceId": "22ab784a9df2ebbb",
+        "role": "security",
+        "elapsedMs": 6095.76,
+        "retries": 3
+      }
+    ],
+    "primary:AX010:axnetcc-saea:mixed:29:0": [
+      {
+        "traceId": "95ed454061e40024",
+        "role": "finance",
+        "elapsedMs": 5589.46,
+        "retries": 3
+      }
+    ],
+    "primary:AX034:axnetcc-saea:interdepartmental:17:0": [
+      {
+        "traceId": "16f9386f4992f7cf",
+        "role": "procurement",
+        "elapsedMs": 5154.562,
+        "retries": 3
+      }
+    ],
+    "primary:AX008:always-local:owner-overload:29:0": [
+      {
+        "traceId": "124c44c743e6b838",
+        "role": "policy",
+        "elapsedMs": 5906.054,
+        "retries": 3
+      }
+    ],
+    "primary:AX025:raw-central:interdepartmental:29:0": [
+      {
+        "traceId": "7f83fa40a8dcc1dc",
+        "role": "finance",
+        "elapsedMs": 5726.64,
+        "retries": 3
+      }
+    ],
+    "primary:AX001:security-only:mixed:17:0": [
+      {
+        "traceId": "64fd93cf73bc880e",
+        "role": "tech",
+        "elapsedMs": 9017.498,
+        "retries": 3
+      }
+    ],
+    "primary:AX033:security-only:owner-overload:29:0": [
+      {
+        "traceId": "b23253be399c5bff",
+        "role": "operations",
+        "elapsedMs": 8402.358,
+        "retries": 3
+      }
+    ],
+    "primary:AX009:axnetcc-saea:low-bandwidth:29:0": [
+      {
+        "traceId": "39591fdf40d3c33b",
+        "role": "operations",
+        "elapsedMs": 8074.91,
+        "retries": 3
+      }
+    ],
+    "primary:AX039:axnetcc-saea:mixed:43:0": [
+      {
+        "traceId": "38d7bbdcf6239c80",
+        "role": "policy",
+        "elapsedMs": 8707.922,
+        "retries": 3
+      }
+    ],
+    "primary:AX012:always-local:low-bandwidth:17:0": [
+      {
+        "traceId": "f8d279a8ec6026eb",
+        "role": "data",
+        "elapsedMs": 8319.066,
+        "retries": 3
+      }
+    ],
+    "primary:AX022:raw-central:low-bandwidth:17:0": [
+      {
+        "traceId": "53e113d4ea70b35d",
+        "role": "data",
+        "elapsedMs": 8621.615,
+        "retries": 3
+      }
+    ],
+    "primary:AX006:network-only:owner-overload:17:0": [
+      {
+        "traceId": "c359bb792b09a877",
+        "role": "finance",
+        "elapsedMs": 8855.211,
+        "retries": 3
+      },
+      {
+        "traceId": "ef217c5e0aa161f0",
+        "role": "tech",
+        "elapsedMs": 8715.748,
+        "retries": 3
+      }
+    ],
+    "primary:AX028:fixed-sanitized:normal:17:0": [
+      {
+        "traceId": "2d33e1422133b089",
+        "role": "operations",
+        "elapsedMs": 7784.723,
+        "retries": 3
+      }
+    ],
+    "primary:AX038:raw-central:mixed:29:0": [
+      {
+        "traceId": "0563b4721ad6b546",
+        "role": "finance",
+        "elapsedMs": 8938.207,
+        "retries": 3
+      }
+    ],
+    "primary:AX031:raw-central:lossy:29:0": [
+      {
+        "traceId": "512d6fce593ee083",
+        "role": "tech",
+        "elapsedMs": 7128.888,
+        "retries": 3
+      }
+    ],
+    "primary:AX040:axnetcc-saea:low-bandwidth:43:0": [
+      {
+        "traceId": "aca65df9281072e1",
+        "role": "tech",
+        "elapsedMs": 5302.469,
+        "retries": 3
+      }
+    ],
+    "primary:AX021:network-only:interdepartmental:17:0": [
+      {
+        "traceId": "5acd13800cd2816b",
+        "role": "legal",
+        "elapsedMs": 6737.771,
+        "retries": 3
+      }
+    ],
+    "primary:AX018:always-local:owner-overload:29:0": [
+      {
+        "traceId": "49b4345eb29b307b",
+        "role": "procurement",
+        "elapsedMs": 10806.063,
+        "retries": 3
+      },
+      {
+        "traceId": "2b4a11b645065983",
+        "role": "operations",
+        "elapsedMs": 10509.256,
+        "retries": 3
+      }
+    ],
+    "primary:AX028:security-only:normal:43:0": [
+      {
+        "traceId": "41813c1cc7286593",
+        "role": "operations",
+        "elapsedMs": 10929.451,
+        "retries": 3
+      }
+    ],
+    "primary:AX012:security-only:low-bandwidth:29:0": [
+      {
+        "traceId": "7e5cb46738240b3c",
+        "role": "data",
+        "elapsedMs": 10864.922,
+        "retries": 3
+      },
+      {
+        "traceId": "80b137d8a9d0549d",
+        "role": "legal",
+        "elapsedMs": 10755.69,
+        "retries": 3
+      }
+    ],
+    "primary:AX001:always-local:normal:43:0": [
+      {
+        "traceId": "c09736fa5411f031",
+        "role": "tech",
+        "elapsedMs": 7718.421,
+        "retries": 3
+      }
+    ],
+    "primary:AX029:always-local:mixed:29:0": [
+      {
+        "traceId": "028c1de1974891e8",
+        "role": "security",
+        "elapsedMs": 9340.44,
+        "retries": 3
+      },
+      {
+        "traceId": "22067632a6dd0763",
+        "role": "legal",
+        "elapsedMs": 9241.653,
+        "retries": 3
+      }
+    ],
+    "primary:AX001:raw-central:mixed:17:0": [
+      {
+        "traceId": "f3431f64a92360e0",
+        "role": "legal",
+        "elapsedMs": 8131.787,
+        "retries": 3
+      }
+    ],
+    "primary:AX019:raw-central:low-bandwidth:29:0": [
+      {
+        "traceId": "10cd698e59950f90",
+        "role": "operations",
+        "elapsedMs": 10646.495,
+        "retries": 3
+      }
+    ],
+    "primary:AX008:raw-central:mixed:29:0": [
+      {
+        "traceId": "f869c9b7b0cb6ad1",
+        "role": "policy",
+        "elapsedMs": 11121.063,
+        "retries": 3
+      },
+      {
+        "traceId": "f84383d914ba5369",
+        "role": "legal",
+        "elapsedMs": 10982.811,
+        "retries": 3
+      }
+    ],
+    "primary:AX011:fixed-sanitized:owner-overload:17:0": [
+      {
+        "traceId": "63e5f53a98519a99",
+        "role": "data",
+        "elapsedMs": 10862.389,
+        "retries": 3
+      }
+    ]
+  },
+  "originalCompletedJobCount": 5040,
+  "retainedCompletedJobCount": 5005,
+  "backup": "completed-jobs.pre-transport-recovery.jsonl",
+  "generatedAt": "2026-08-06T05:42:30.381Z",
+  "remainingFinalTransportFailures": 0,
+  "completedAt": "2026-08-06T05:50:43.771Z"
+}

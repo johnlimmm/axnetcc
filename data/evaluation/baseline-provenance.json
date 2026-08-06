@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-07-30T15:00:00.000Z",
+  "evaluationPolicy": "All learned adapters are trained only on each 5-fold training split (32 queries) and evaluated on the disjoint fold (8 queries). No original benchmark checkpoint is reported as an AX result.",
+  "baselines": {
+    "masRouterAdapted": {
+      "paper": "MasRouter: Learning to Route LLMs for Multi-Agent Systems, ACL 2025",
+      "officialRepository": "https://github.com/yanweiyue/masrouter",
+      "inspectedCommit": "e005f7696fe0c0412563f6cd67f4cd3712fa2822",
+      "officialComponentsInspected": [
+        "NumDeterminer",
+        "RoleAllocation",
+        "CollabDeterminer"
+      ],
+      "axMapping": "NumDeterminer is mapped to training-neighbor agent-count prediction; RoleAllocation is mapped to sequential role selection using query-role similarity and learned role co-occurrence history.",
+      "deviations": [
+        "The official VAE/RL controller is not trained because the AX set has only 32 training queries per fold.",
+        "Collaboration topology and LLM-brand routing are held constant so that only expert-role selection is compared.",
+        "This is an architecture-preserving AX adapter, not the original checkpoint result."
+      ]
+    },
+    "routeLlmMfAdapted": {
+      "paper": "RouteLLM: Learning to Route LLMs with Preference Data, 2024",
+      "officialRepository": "https://github.com/lm-sys/RouteLLM",
+      "inspectedCommit": "0b64fdafe049e596a3f5657c219329f24af24198",
+      "officialComponentsInspected": [
+        "MFModel",
+        "MatrixFactorizationRouter",
+        "threshold calibration"
+      ],
+      "axMapping": "Candidate LLM embeddings are replaced by expert-role embeddings. Positive roles are preferred over negative roles for each query and trained with pairwise logistic matrix-factorization loss; thresholds are calibrated inside each training fold.",
+      "deviations": [
+        "Hashed Korean query features replace OpenAI text-embedding-3-small to keep the comparison local and reproducible.",
+        "The task is multilabel expert selection rather than strong-versus-weak LLM selection.",
+        "This is a preference-MF AX adapter, not a claim of reproducing RouteLLM benchmark scores."
+      ]
+    },
+    "irtRouterAdapted": {
+      "paper": "IRT-Router: Effective and Interpretable Multi-LLM Routing via Item Response Theory, ACL 2025",
+      "officialRepository": "https://github.com/Mercidaiha/IRT-Router",
+      "inspectedCommit": "e8f258ced4ec3c40d795403603acd8c1cdfb994d",
+      "officialComponentsInspected": [
+        "MIRTNet",
+        "irt2pl",
+        "query difficulty and discrimination"
+      ],
+      "axMapping": "LLM ability parameters are mapped to expert-role ability vectors. Query features generate item discrimination and difficulty, and binary role relevance is learned through a multidimensional 2PL objective.",
+      "deviations": [
+        "Hashed Korean features replace BERT embeddings.",
+        "The upstream LFS evaluation data was unavailable because the repository LFS budget was exceeded.",
+        "This is a MIRT-structured AX adapter, not the original 20-LLM/12-dataset reproduction."
+      ]
+    }
+  }
+}

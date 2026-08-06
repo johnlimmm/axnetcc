@@ -1,0 +1,6 @@
+{
+  "seed": 20260806,
+  "resamples": 10000,
+  "cluster": "queryId",
+  "comparisons": []
+}

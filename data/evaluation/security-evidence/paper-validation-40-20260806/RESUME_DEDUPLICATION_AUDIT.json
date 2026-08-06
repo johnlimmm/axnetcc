@@ -1,0 +1,9 @@
+{
+  "policy": "last-observation-per-deterministic-traceId",
+  "rationale": "A trace may be appended immediately before a forced termination prevents its completed-job key from being appended. The resumed, completed execution is the last observation.",
+  "checkpointTraceCount": 12317,
+  "finalizedTraceCount": 12222,
+  "removedResumeDuplicates": 95,
+  "checkpointPreserved": true,
+  "generatedAt": "2026-08-06T05:50:43.750Z"
+}

@@ -1,0 +1,27 @@
+{
+  "evaluation": "40-query deterministic ablation; author labels",
+  "variants": {
+    "boundaryConstrained": {
+      "objectiveQuality": 70.7,
+      "agentMicroF1": 65.2,
+      "averageBoundaryBytes": 1859,
+      "qualityRetention": 86.7,
+      "selectedAsDefault": true
+    },
+    "broadComplexityHybrid": {
+      "objectiveQuality": 68.4,
+      "agentMicroF1": 63.9,
+      "averageBoundaryBytes": 1753,
+      "qualityRetention": 83.9,
+      "selectedAsDefault": false
+    },
+    "conservativeComplexityHybrid": {
+      "objectiveQuality": 69.3,
+      "agentMicroF1": 65.2,
+      "averageBoundaryBytes": 1779,
+      "qualityRetention": 85.0,
+      "selectedAsDefault": false
+    }
+  },
+  "decision": "Keep boundary-constrained routing as the default. The conservative hybrid saves only 80 bytes per query while reducing objective quality by 1.4 points. Hybrid remains reproducible with ENABLE_LIGHTWEIGHT_HYBRID=true."
+}

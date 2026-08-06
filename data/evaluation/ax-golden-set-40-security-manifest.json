@@ -1,0 +1,684 @@
+{
+  "version": 1,
+  "derivedFrom": "data/evaluation/ax-golden-set-40.jsonl",
+  "sourceSha256": "16612553e21258e0749b4c5d6c5f551e3b159042fabc4ad7afa654b2ee57ffdc",
+  "method": "For each required concept, retain every expected role whose labelled relevant document or role corpus matches under the fixed alias matcher. Never drop an unmatched concept; assign it to every expected role and record it in forcedAssignments.",
+  "queryRoleRequiredConcepts": {
+    "AX001": {
+      "tech": [
+        "원문",
+        "접근통제",
+        "책임"
+      ],
+      "security": [
+        "원문",
+        "접근통제",
+        "최소처리",
+        "책임"
+      ],
+      "legal": [
+        "원문",
+        "최소처리"
+      ]
+    },
+    "AX002": {
+      "tech": [
+        "RAG",
+        "접근통제",
+        "원문"
+      ],
+      "security": [
+        "접근통제",
+        "감사"
+      ]
+    },
+    "AX003": {
+      "legal": [
+        "위탁",
+        "재위탁",
+        "삭제",
+        "개인정보"
+      ],
+      "security": [
+        "위탁",
+        "개인정보"
+      ]
+    },
+    "AX004": {
+      "tech": [
+        "PoC",
+        "P95",
+        "운영 전환"
+      ],
+      "operations": [
+        "모니터링"
+      ]
+    },
+    "AX005": {
+      "security": [
+        "마스킹",
+        "개인정보"
+      ],
+      "legal": [
+        "마스킹",
+        "최소처리",
+        "개인정보"
+      ]
+    },
+    "AX006": {
+      "procurement": [
+        "종속성"
+      ],
+      "finance": [
+        "종속성",
+        "경쟁성",
+        "비용"
+      ],
+      "tech": [
+        "종속성",
+        "PoC",
+        "비용"
+      ]
+    },
+    "AX007": {
+      "data": [
+        "출처",
+        "라벨링",
+        "메타데이터",
+        "갱신"
+      ]
+    },
+    "AX008": {
+      "policy": [
+        "편향",
+        "설명가능성",
+        "책임"
+      ],
+      "legal": [
+        "설명가능성",
+        "이의제기"
+      ]
+    },
+    "AX009": {
+      "operations": [
+        "SLA",
+        "가용성",
+        "장애"
+      ],
+      "tech": [
+        "SLA",
+        "응답시간",
+        "가용성"
+      ]
+    },
+    "AX010": {
+      "finance": [
+        "TCO",
+        "운영비",
+        "모델",
+        "비용 상한"
+      ]
+    },
+    "AX011": {
+      "legal": [
+        "처리 근거",
+        "목적",
+        "출처",
+        "안전조치"
+      ],
+      "data": [
+        "처리 근거",
+        "목적",
+        "출처",
+        "안전조치"
+      ],
+      "security": [
+        "목적",
+        "출처",
+        "안전조치"
+      ]
+    },
+    "AX012": {
+      "data": [
+        "결합",
+        "영향평가"
+      ],
+      "legal": [
+        "가명정보",
+        "결합",
+        "재식별",
+        "영향평가"
+      ],
+      "security": [
+        "결합",
+        "영향평가"
+      ],
+      "policy": [
+        "결합",
+        "영향평가"
+      ]
+    },
+    "AX013": {
+      "procurement": [
+        "디지털서비스",
+        "계약"
+      ],
+      "legal": [
+        "계약"
+      ],
+      "finance": [
+        "경쟁성",
+        "예산"
+      ]
+    },
+    "AX014": {
+      "tech": [
+        "클라우드",
+        "보안",
+        "비용",
+        "성능"
+      ],
+      "security": [
+        "보안"
+      ],
+      "finance": [
+        "보안",
+        "비용"
+      ]
+    },
+    "AX015": {
+      "legal": [
+        "최종 책임",
+        "인간 검토",
+        "투명성",
+        "이의제기"
+      ],
+      "policy": [
+        "최종 책임",
+        "인간 검토",
+        "투명성"
+      ]
+    },
+    "AX016": {
+      "tech": [
+        "RAG",
+        "근거",
+        "검색",
+        "품질"
+      ],
+      "operations": [
+        "RAG"
+      ],
+      "data": [
+        "품질"
+      ]
+    },
+    "AX017": {
+      "security": [
+        "최소권한",
+        "접근통제",
+        "감사로그"
+      ],
+      "operations": [
+        "최소권한",
+        "접근통제",
+        "모니터링"
+      ]
+    },
+    "AX018": {
+      "procurement": [
+        "제안요청서",
+        "검수",
+        "데이터 이전",
+        "종료"
+      ],
+      "operations": [
+        "제안요청서",
+        "검수",
+        "데이터 이전",
+        "종료"
+      ],
+      "legal": [
+        "검수",
+        "데이터 이전",
+        "종료"
+      ]
+    },
+    "AX019": {
+      "operations": [
+        "모니터링",
+        "정확도",
+        "장애"
+      ],
+      "tech": [
+        "정확도",
+        "업데이트"
+      ]
+    },
+    "AX020": {
+      "operations": [
+        "장애",
+        "대체"
+      ],
+      "tech": [
+        "대체"
+      ],
+      "policy": [
+        "대체",
+        "담당자",
+        "권리"
+      ]
+    },
+    "AX021": {
+      "legal": [
+        "이용조건",
+        "출처",
+        "계약"
+      ],
+      "data": [
+        "저작권",
+        "이용조건",
+        "출처"
+      ]
+    },
+    "AX022": {
+      "data": [
+        "공공데이터",
+        "표준화",
+        "품질"
+      ],
+      "policy": [
+        "공공데이터",
+        "품질",
+        "책임"
+      ]
+    },
+    "AX023": {
+      "security": [
+        "레드팀",
+        "프롬프트",
+        "공격"
+      ],
+      "tech": [
+        "프롬프트",
+        "공격",
+        "검증"
+      ]
+    },
+    "AX024": {
+      "policy": [
+        "편향",
+        "차별",
+        "영향평가",
+        "공공성"
+      ]
+    },
+    "AX025": {
+      "finance": [
+        "예산",
+        "비용"
+      ],
+      "operations": [
+        "사용량",
+        "모니터링"
+      ]
+    },
+    "AX026": {
+      "procurement": [
+        "수의계약",
+        "경쟁성",
+        "사유",
+        "계약"
+      ],
+      "legal": [
+        "경쟁성",
+        "사유",
+        "계약"
+      ]
+    },
+    "AX027": {
+      "security": [
+        "마스킹",
+        "반출",
+        "최소처리"
+      ],
+      "operations": [
+        "마스킹",
+        "반출",
+        "장애",
+        "최소처리"
+      ]
+    },
+    "AX028": {
+      "data": [
+        "갱신",
+        "최신성",
+        "폐기"
+      ],
+      "operations": [
+        "최신성",
+        "폐기",
+        "모니터링"
+      ]
+    },
+    "AX029": {
+      "security": [
+        "개인정보"
+      ],
+      "legal": [
+        "개인정보",
+        "영향평가",
+        "투명성",
+        "안전조치"
+      ],
+      "policy": [
+        "개인정보"
+      ]
+    },
+    "AX030": {
+      "operations": [
+        "복구시간",
+        "SLA"
+      ],
+      "procurement": [
+        "복구시간",
+        "SLA",
+        "공급자",
+        "계약 종료"
+      ],
+      "legal": [
+        "복구시간",
+        "SLA",
+        "계약 종료"
+      ]
+    },
+    "AX031": {
+      "tech": [
+        "성과지표",
+        "품질",
+        "PoC"
+      ],
+      "operations": [
+        "성과지표",
+        "품질",
+        "PoC"
+      ],
+      "finance": [
+        "성과지표",
+        "품질",
+        "예산",
+        "PoC"
+      ]
+    },
+    "AX032": {
+      "tech": [
+        "RAG",
+        "구축",
+        "품질",
+        "운영"
+      ]
+    },
+    "AX033": {
+      "data": [
+        "메타데이터",
+        "버전",
+        "로그"
+      ],
+      "operations": [
+        "메타데이터",
+        "버전",
+        "로그"
+      ],
+      "security": [
+        "메타데이터",
+        "버전",
+        "감사",
+        "로그"
+      ]
+    },
+    "AX034": {
+      "procurement": [
+        "계약 종료",
+        "데이터 이전",
+        "산출물"
+      ],
+      "legal": [
+        "계약 종료",
+        "데이터 이전",
+        "삭제",
+        "산출물"
+      ],
+      "data": [
+        "데이터 이전",
+        "산출물"
+      ]
+    },
+    "AX035": {
+      "policy": [
+        "설명가능성",
+        "승인",
+        "책임"
+      ],
+      "legal": [
+        "설명가능성",
+        "승인"
+      ],
+      "operations": [
+        "설명가능성",
+        "승인",
+        "모니터링"
+      ]
+    },
+    "AX036": {
+      "security": [
+        "권한",
+        "기밀",
+        "분리"
+      ],
+      "data": [
+        "권한",
+        "기밀",
+        "분리"
+      ],
+      "tech": [
+        "권한",
+        "기밀",
+        "분리",
+        "RAG"
+      ]
+    },
+    "AX037": {
+      "operations": [
+        "정확성",
+        "근거",
+        "검수"
+      ],
+      "tech": [
+        "정확성",
+        "근거",
+        "응답시간",
+        "검수"
+      ]
+    },
+    "AX038": {
+      "finance": [
+        "유지보수",
+        "비용",
+        "책임"
+      ],
+      "security": [
+        "유지보수",
+        "보안 패치",
+        "책임"
+      ],
+      "operations": [
+        "유지보수",
+        "책임"
+      ]
+    },
+    "AX039": {
+      "legal": [
+        "목적 제한",
+        "계약"
+      ],
+      "data": [
+        "목적 제한",
+        "품질"
+      ],
+      "policy": [
+        "목적 제한",
+        "품질",
+        "책임"
+      ]
+    },
+    "AX040": {
+      "operations": [
+        "가용성",
+        "공공성",
+        "운영비",
+        "확장"
+      ],
+      "policy": [
+        "가용성",
+        "공공성",
+        "운영비",
+        "확장"
+      ],
+      "finance": [
+        "가용성",
+        "운영비",
+        "확장"
+      ],
+      "tech": [
+        "가용성",
+        "공공성",
+        "운영비",
+        "확장"
+      ]
+    }
+  },
+  "forcedAssignments": [
+    {
+      "queryId": "AX001",
+      "concept": "*",
+      "roles": [
+        "security"
+      ],
+      "reason": "Role had no corpus-matched concept; full query concept set retained."
+    },
+    {
+      "queryId": "AX008",
+      "concept": "설명가능성",
+      "roles": [
+        "policy",
+        "legal"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX015",
+      "concept": "최종 책임",
+      "roles": [
+        "legal",
+        "policy"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX015",
+      "concept": "인간 검토",
+      "roles": [
+        "legal",
+        "policy"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX017",
+      "concept": "최소권한",
+      "roles": [
+        "security",
+        "operations"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX018",
+      "concept": "데이터 이전",
+      "roles": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX021",
+      "concept": "이용조건",
+      "roles": [
+        "legal",
+        "data"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX026",
+      "concept": "경쟁성",
+      "roles": [
+        "procurement",
+        "legal"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX030",
+      "concept": "복구시간",
+      "roles": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX031",
+      "concept": "성과지표",
+      "roles": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX034",
+      "concept": "데이터 이전",
+      "roles": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX035",
+      "concept": "설명가능성",
+      "roles": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    },
+    {
+      "queryId": "AX039",
+      "concept": "목적 제한",
+      "roles": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "reason": "No lexical/alias support in role corpus; retained for every required role rather than dropped."
+    }
+  ]
+}

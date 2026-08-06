@@ -1,0 +1,367 @@
+{
+  "seed": 20260806,
+  "resamples": 10000,
+  "cluster": "queryId",
+  "comparisons": [
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": -0.6728395061728394,
+      "ci95": [
+        -0.8425925925925926,
+        -0.5030864197530863
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.15625
+    },
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.1419753086419753,
+      "ci95": [
+        -0.3132716049382716,
+        0.004629629629629613
+      ],
+      "pairedPermutationP": 0.3125,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.1419753086419753,
+      "ci95": [
+        -0.3132716049382716,
+        0.0030864197530864335
+      ],
+      "pairedPermutationP": 0.3125,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 722.1114999999994,
+      "ci95": [
+        56.57683333333231,
+        1280.9161666666662
+      ],
+      "pairedPermutationP": 0.125,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -1916.905864197531,
+      "ci95": [
+        -3246.671296296296,
+        -700.8564814814814
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.15625
+    },
+    {
+      "baseline": "without-policy-constraint",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -3591.8492798353905,
+      "ci95": [
+        -7608.856481481482,
+        -11.229938271605041
+      ],
+      "pairedPermutationP": 0.15625,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": 0.8518518518518517,
+      "ci95": [
+        0.6851851851851851,
+        0.9938271604938271
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.15625
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": 0.8518518518518517,
+      "ci95": [
+        0.6851851851851851,
+        0.9938271604938271
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.15625
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 377.6239999999995,
+      "ci95": [
+        -60.010333333333314,
+        833.7509999999993
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 115.32921810699588,
+      "ci95": [
+        0,
+        345.9876543209877
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-coverage-constraint",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 4414.268004115226,
+      "ci95": [
+        1974.0169753086423,
+        7286.332818930041
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.15625
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.006172839506172849,
+      "ci95": [
+        -0.012345679012345678,
+        -0.0015432098765432167
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.006172839506172849,
+      "ci95": [
+        -0.012345679012345678,
+        -0.0015432098765432167
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 575.4363333333328,
+      "ci95": [
+        106.26116666666621,
+        1285.544666666666
+      ],
+      "pairedPermutationP": 0.09375,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-sensitivity-criterion",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -126.63168724279876,
+      "ci95": [
+        -236.95370370370438,
+        -28.064814814814856
+      ],
+      "pairedPermutationP": 0.09375,
+      "holmAdjustedP": 0.375
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.0030864197530864335,
+      "ci95": [
+        -0.015432098765432112,
+        0.009259259259259226
+      ],
+      "pairedPermutationP": 0.875,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.0030864197530864335,
+      "ci95": [
+        -0.015432098765432112,
+        0.009259259259259226
+      ],
+      "pairedPermutationP": 0.875,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 767.4014999999996,
+      "ci95": [
+        195.41849999999917,
+        1309.4638333333332
+      ],
+      "pairedPermutationP": 0.09375,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -0.0030864197530983497,
+      "ci95": [
+        -0.00925925925929505,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "without-network-criterion",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -128.6167695473254,
+      "ci95": [
+        -353.7016460905361,
+        52.100308641975744
+      ],
+      "pairedPermutationP": 0.40625,
+      "holmAdjustedP": 0.5
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.0015432098765432167,
+      "ci95": [
+        -0.01080246913580248,
+        0.007716049382716046
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.0015432098765432167,
+      "ci95": [
+        -0.01080246913580248,
+        0.009259259259259226
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 496.6616666666666,
+      "ci95": [
+        -110.23466666666657,
+        1183.5444999999997
+      ],
+      "pairedPermutationP": 0.21875,
+      "holmAdjustedP": 0.46875
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -0.002057613168725917,
+      "ci95": [
+        -0.006172839506177752,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "weighted-objective",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -117.80452674897136,
+      "ci95": [
+        -234.45473251028884,
+        -10.541666666666515
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 0.5
+    }
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "generatedAt": "2026-07-30T15:22:45.555Z",
+  "protocol": {
+    "unitOfAnalysis": "unique query",
+    "pairedPermutationIterations": 100000,
+    "familyWiseErrorCorrection": "Holm across router baselines",
+    "exactMatchTest": "two-sided exact McNemar",
+    "paretoObjectives": [
+      "maximize quality",
+      "minimize cross-boundary bytes"
+    ],
+    "caveat": "Author labels and 40 queries limit external validity; p-values do not remove this limitation."
+  },
+  "routerTests": [
+    {
+      "baseline": "random",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 37.4,
+      "winTieLoss": {
+        "wins": 30,
+        "ties": 4,
+        "losses": 6
+      },
+      "pairedPermutationPValue": 0.00000999990000099999,
+      "pairedEffectSizeDz": 0.891,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 10,
+        "baselineOnlyExact": 0
+      },
+      "exactMcNemarPValue": 0.001953125,
+      "approximateQueriesFor80PercentPower": 10,
+      "pairedPermutationHolmPValue": 0.00008999910000899992
+    },
+    {
+      "baseline": "static",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 6.06,
+      "winTieLoss": {
+        "wins": 17,
+        "ties": 16,
+        "losses": 7
+      },
+      "pairedPermutationPValue": 0.10991890081099188,
+      "pairedEffectSizeDz": 0.203,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 5,
+        "baselineOnlyExact": 2
+      },
+      "exactMcNemarPValue": 0.453125,
+      "approximateQueriesFor80PercentPower": 192,
+      "pairedPermutationHolmPValue": 0.23803761962380376
+    },
+    {
+      "baseline": "topk",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 6.56,
+      "winTieLoss": {
+        "wins": 18,
+        "ties": 15,
+        "losses": 7
+      },
+      "pairedPermutationPValue": 0.08499915000849992,
+      "pairedEffectSizeDz": 0.223,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 6,
+        "baselineOnlyExact": 2
+      },
+      "exactMcNemarPValue": 0.2890625,
+      "approximateQueriesFor80PercentPower": 158,
+      "pairedPermutationHolmPValue": 0.23803761962380376
+    },
+    {
+      "baseline": "threshold",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 8.74,
+      "winTieLoss": {
+        "wins": 17,
+        "ties": 14,
+        "losses": 9
+      },
+      "pairedPermutationPValue": 0.05950940490595094,
+      "pairedEffectSizeDz": 0.25,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 4,
+        "baselineOnlyExact": 0
+      },
+      "exactMcNemarPValue": 0.125,
+      "approximateQueriesFor80PercentPower": 126,
+      "pairedPermutationHolmPValue": 0.23803761962380376
+    },
+    {
+      "baseline": "learned",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 19.91,
+      "winTieLoss": {
+        "wins": 26,
+        "ties": 5,
+        "losses": 9
+      },
+      "pairedPermutationPValue": 0.000919990800091999,
+      "pairedEffectSizeDz": 0.544,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 10,
+        "baselineOnlyExact": 1
+      },
+      "exactMcNemarPValue": 0.01171875,
+      "approximateQueriesFor80PercentPower": 27,
+      "pairedPermutationHolmPValue": 0.004599954000459995
+    },
+    {
+      "baseline": "costAware",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 8.74,
+      "winTieLoss": {
+        "wins": 17,
+        "ties": 14,
+        "losses": 9
+      },
+      "pairedPermutationPValue": 0.05950940490595094,
+      "pairedEffectSizeDz": 0.25,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 4,
+        "baselineOnlyExact": 0
+      },
+      "exactMcNemarPValue": 0.125,
+      "approximateQueriesFor80PercentPower": 126,
+      "pairedPermutationHolmPValue": 0.23803761962380376
+    },
+    {
+      "baseline": "masRouterAdapted",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 36.52,
+      "winTieLoss": {
+        "wins": 30,
+        "ties": 1,
+        "losses": 9
+      },
+      "pairedPermutationPValue": 0.00005999940000599994,
+      "pairedEffectSizeDz": 0.793,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 10,
+        "baselineOnlyExact": 1
+      },
+      "exactMcNemarPValue": 0.01171875,
+      "approximateQueriesFor80PercentPower": 13,
+      "pairedPermutationHolmPValue": 0.0003599964000359997
+    },
+    {
+      "baseline": "routeLlmMfAdapted",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 32.83,
+      "winTieLoss": {
+        "wins": 27,
+        "ties": 6,
+        "losses": 7
+      },
+      "pairedPermutationPValue": 0.00001999980000199998,
+      "pairedEffectSizeDz": 0.855,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 8,
+        "baselineOnlyExact": 1
+      },
+      "exactMcNemarPValue": 0.0390625,
+      "approximateQueriesFor80PercentPower": 11,
+      "pairedPermutationHolmPValue": 0.00013999860001399987
+    },
+    {
+      "baseline": "irtRouterAdapted",
+      "nQueries": 40,
+      "meanPairedMacroF1DifferencePoints": 31.19,
+      "winTieLoss": {
+        "wins": 32,
+        "ties": 3,
+        "losses": 5
+      },
+      "pairedPermutationPValue": 0.00000999990000099999,
+      "pairedEffectSizeDz": 0.78,
+      "exactMatchDiscordance": {
+        "proposedOnlyExact": 10,
+        "baselineOnlyExact": 0
+      },
+      "exactMcNemarPValue": 0.001953125,
+      "approximateQueriesFor80PercentPower": 13,
+      "pairedPermutationHolmPValue": 0.00008999910000899992
+    }
+  ],
+  "routerPareto": [
+    {
+      "method": "random",
+      "macroF1": 29.1,
+      "boundaryBytes": 804,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "learned"
+      ]
+    },
+    {
+      "method": "static",
+      "macroF1": 60.4,
+      "boundaryBytes": 1212,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "method": "topk",
+      "macroF1": 59.9,
+      "boundaryBytes": 1216,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "static"
+      ]
+    },
+    {
+      "method": "threshold",
+      "macroF1": 57.8,
+      "boundaryBytes": 845,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "method": "learned",
+      "macroF1": 46.6,
+      "boundaryBytes": 548,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "method": "costAware",
+      "macroF1": 57.8,
+      "boundaryBytes": 845,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "method": "masRouterAdapted",
+      "macroF1": 30,
+      "boundaryBytes": 871,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "threshold",
+        "learned",
+        "costAware",
+        "routeLlmMfAdapted"
+      ]
+    },
+    {
+      "method": "routeLlmMfAdapted",
+      "macroF1": 33.7,
+      "boundaryBytes": 848,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "threshold",
+        "learned",
+        "costAware"
+      ]
+    },
+    {
+      "method": "irtRouterAdapted",
+      "macroF1": 35.3,
+      "boundaryBytes": 1053,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "threshold",
+        "learned",
+        "costAware"
+      ]
+    },
+    {
+      "method": "proposed",
+      "macroF1": 66.5,
+      "boundaryBytes": 1900,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    }
+  ],
+  "endToEndPareto": [
+    {
+      "mode": "centralized",
+      "objectiveQuality": 58.5,
+      "boundaryBytes": 50503,
+      "rawDataLeavesEdge": true,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "parallel",
+        "masrouter",
+        "proposed"
+      ]
+    },
+    {
+      "mode": "parallel",
+      "objectiveQuality": 81.5,
+      "boundaryBytes": 4663,
+      "rawDataLeavesEdge": false,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "mode": "masrouter",
+      "objectiveQuality": 62,
+      "boundaryBytes": 1149,
+      "rawDataLeavesEdge": true,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    },
+    {
+      "mode": "remoterag",
+      "objectiveQuality": 49.9,
+      "boundaryBytes": 4004,
+      "rawDataLeavesEdge": true,
+      "paretoOptimal": false,
+      "dominatedBy": [
+        "masrouter",
+        "proposed"
+      ]
+    },
+    {
+      "mode": "proposed",
+      "objectiveQuality": 70.7,
+      "boundaryBytes": 1829,
+      "rawDataLeavesEdge": false,
+      "paretoOptimal": true,
+      "dominatedBy": []
+    }
+  ]
+}

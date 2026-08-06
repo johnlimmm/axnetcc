@@ -1,0 +1,2 @@
+data/evaluation/security-evidence/**/raw-traces.jsonl filter=lfs diff=lfs merge=lfs -text
+data/evaluation/security-evidence/**/request-level-results.csv filter=lfs diff=lfs merge=lfs -text

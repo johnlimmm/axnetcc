@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T13:34:34.625Z",
+  "generatedAt": "2026-07-30T14:49:50.017Z",
   "cases": 40,
   "modes": [
     "centralized",
@@ -56,7 +56,7 @@
       "retrievalMrr": 41.8,
       "citationValidity": 100,
       "privacyPassRate": 100,
-      "averageBoundaryBytes": 6324,
+      "averageBoundaryBytes": 4663,
       "rawDataLeavesEdge": false,
       "qualityRetention": 100
     },
@@ -102,52 +102,52 @@
     },
     "proposed": {
       "n": 40,
-      "objectiveQuality": 70.6,
+      "objectiveQuality": 70.7,
       "objectiveQualityCi95": [
-        64.7,
-        76.4
+        64.9,
+        76.5
       ],
-      "agentMacroF1": 64.9,
-      "agentMicroPrecision": 56.6,
-      "agentMicroRecall": 75.3,
-      "agentMicroF1": 64.6,
+      "agentMacroF1": 66.5,
+      "agentMicroPrecision": 57.8,
+      "agentMicroRecall": 76.3,
+      "agentMicroF1": 65.8,
       "requiredConceptRecall": 62.5,
       "retrievalRecallAtK": 42.5,
       "retrievalMrr": 41.4,
       "citationValidity": 100,
       "privacyPassRate": 100,
-      "averageBoundaryBytes": 2507,
+      "averageBoundaryBytes": 1829,
       "rawDataLeavesEdge": false,
-      "qualityRetention": 86.6
+      "qualityRetention": 86.7
     }
   },
   "pairedComparisons": {
     "centralized": {
-      "proposedMinusBaseline": 12,
+      "proposedMinusBaseline": 12.2,
       "ci95": [
-        6.6,
-        17.4
+        6.7,
+        17.5
       ]
     },
     "parallel": {
-      "proposedMinusBaseline": -10.9,
+      "proposedMinusBaseline": -10.8,
       "ci95": [
-        -16.1,
-        -6.3
+        -16,
+        -6.2
       ]
     },
     "masrouter": {
-      "proposedMinusBaseline": 8.6,
+      "proposedMinusBaseline": 8.8,
       "ci95": [
-        4.9,
-        12.8
+        5,
+        12.9
       ]
     },
     "remoterag": {
-      "proposedMinusBaseline": 20.7,
+      "proposedMinusBaseline": 20.8,
       "ci95": [
         16.2,
-        25.5
+        25.6
       ]
     }
   },
@@ -241,7 +241,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9333333333333333,
-      "boundaryBytes": 6396,
+      "boundaryBytes": 4702,
       "rawDataLeavesEdge": false
     },
     {
@@ -343,7 +343,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9333333333333333,
-      "boundaryBytes": 2352,
+      "boundaryBytes": 1714,
       "rawDataLeavesEdge": false
     },
     {
@@ -443,7 +443,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6331,
+      "boundaryBytes": 4662,
       "rawDataLeavesEdge": false
     },
     {
@@ -539,7 +539,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 1526,
+      "boundaryBytes": 1115,
       "rawDataLeavesEdge": false
     },
     {
@@ -635,7 +635,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6318,
+      "boundaryBytes": 4657,
       "rawDataLeavesEdge": false
     },
     {
@@ -742,7 +742,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 3211,
+      "boundaryBytes": 2376,
       "rawDataLeavesEdge": false
     },
     {
@@ -840,7 +840,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6126,
+      "boundaryBytes": 4628,
       "rawDataLeavesEdge": false
     },
     {
@@ -935,7 +935,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 1489,
+      "boundaryBytes": 1121,
       "rawDataLeavesEdge": false
     },
     {
@@ -1025,7 +1025,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6481,
+      "boundaryBytes": 4613,
       "rawDataLeavesEdge": false
     },
     {
@@ -1121,7 +1121,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 1701,
+      "boundaryBytes": 1196,
       "rawDataLeavesEdge": false
     },
     {
@@ -1217,7 +1217,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 6333,
+      "boundaryBytes": 4694,
       "rawDataLeavesEdge": false
     },
     {
@@ -1318,7 +1318,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 2375,
+      "boundaryBytes": 1771,
       "rawDataLeavesEdge": false
     },
     {
@@ -1412,7 +1412,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 6296,
+      "boundaryBytes": 4664,
       "rawDataLeavesEdge": false
     },
     {
@@ -1514,7 +1514,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 3146,
+      "boundaryBytes": 2319,
       "rawDataLeavesEdge": false
     },
     {
@@ -1610,7 +1610,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6364,
+      "boundaryBytes": 4726,
       "rawDataLeavesEdge": false
     },
     {
@@ -1715,7 +1715,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 3149,
+      "boundaryBytes": 2319,
       "rawDataLeavesEdge": false
     },
     {
@@ -1803,7 +1803,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 6179,
+      "boundaryBytes": 4596,
       "rawDataLeavesEdge": false
     },
     {
@@ -1896,7 +1896,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9,
-      "boundaryBytes": 1490,
+      "boundaryBytes": 1100,
       "rawDataLeavesEdge": false
     },
     {
@@ -1992,7 +1992,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.825,
-      "boundaryBytes": 6424,
+      "boundaryBytes": 4674,
       "rawDataLeavesEdge": false
     },
     {
@@ -2085,7 +2085,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.825,
-      "boundaryBytes": 1461,
+      "boundaryBytes": 1067,
       "rawDataLeavesEdge": false
     },
     {
@@ -2175,7 +2175,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.6916666666666667,
-      "boundaryBytes": 6440,
+      "boundaryBytes": 4719,
       "rawDataLeavesEdge": false
     },
     {
@@ -2277,7 +2277,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.4708333333333333,
-      "boundaryBytes": 2358,
+      "boundaryBytes": 1714,
       "rawDataLeavesEdge": false
     },
     {
@@ -2371,7 +2371,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.6375,
-      "boundaryBytes": 6382,
+      "boundaryBytes": 4673,
       "rawDataLeavesEdge": false
     },
     {
@@ -2450,12 +2450,12 @@
       "domain": "pseudonymized-data",
       "difficulty": "advanced",
       "mode": "proposed",
-      "truePositive": 3,
+      "truePositive": 4,
       "falsePositive": 1,
-      "falseNegative": 1,
-      "precision": 0.75,
-      "recall": 0.75,
-      "f1": 0.75,
+      "falseNegative": 0,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
       "conceptRecall": 0.25,
       "retrievalRecallAtK": 0.5,
       "reciprocalRank": 0.25,
@@ -2468,6 +2468,8 @@
         "kisa-ai-security-guide-pdf-2026:security:page:222:1",
         "kisa-ai-security-guide-pdf-2026:security:page:43:1",
         "kisa-ai-security-guide-pdf-2026:security:page:66:1",
+        "pipc-pseudonymization-pdf-2026:legal:page:200:1",
+        "pipc-generative-ai-privacy-pdf-2025:legal:page:50:1",
         "pipc-pseudonymization-pdf-2026:legal:page:56:1"
       ],
       "relevantDocumentFamilies": [
@@ -2478,8 +2480,8 @@
       ],
       "citationValidity": 1,
       "privacyPass": 1,
-      "objectiveQuality": 0.5875,
-      "boundaryBytes": 3152,
+      "objectiveQuality": 0.6375,
+      "boundaryBytes": 2882,
       "rawDataLeavesEdge": false
     },
     {
@@ -2571,7 +2573,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8458333333333333,
-      "boundaryBytes": 6259,
+      "boundaryBytes": 4563,
       "rawDataLeavesEdge": false
     },
     {
@@ -2672,7 +2674,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 2271,
+      "boundaryBytes": 1668,
       "rawDataLeavesEdge": false
     },
     {
@@ -2766,7 +2768,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8458333333333333,
-      "boundaryBytes": 6166,
+      "boundaryBytes": 4627,
       "rawDataLeavesEdge": false
     },
     {
@@ -2876,7 +2878,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7583333333333333,
-      "boundaryBytes": 2985,
+      "boundaryBytes": 2251,
       "rawDataLeavesEdge": false
     },
     {
@@ -2972,7 +2974,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 6387,
+      "boundaryBytes": 4719,
       "rawDataLeavesEdge": false
     },
     {
@@ -3068,7 +3070,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.44999999999999996,
-      "boundaryBytes": 1516,
+      "boundaryBytes": 1110,
       "rawDataLeavesEdge": false
     },
     {
@@ -3164,7 +3166,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8666666666666667,
-      "boundaryBytes": 6351,
+      "boundaryBytes": 4669,
       "rawDataLeavesEdge": false
     },
     {
@@ -3259,7 +3261,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7999999999999999,
-      "boundaryBytes": 1524,
+      "boundaryBytes": 1122,
       "rawDataLeavesEdge": false
     },
     {
@@ -3357,7 +3359,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8,
-      "boundaryBytes": 6321,
+      "boundaryBytes": 4719,
       "rawDataLeavesEdge": false
     },
     {
@@ -3456,7 +3458,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.6124999999999999,
-      "boundaryBytes": 2284,
+      "boundaryBytes": 1701,
       "rawDataLeavesEdge": false
     },
     {
@@ -3550,7 +3552,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.6916666666666667,
-      "boundaryBytes": 6380,
+      "boundaryBytes": 4678,
       "rawDataLeavesEdge": false
     },
     {
@@ -3659,7 +3661,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.5583333333333333,
-      "boundaryBytes": 3229,
+      "boundaryBytes": 2376,
       "rawDataLeavesEdge": false
     },
     {
@@ -3753,7 +3755,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 6409,
+      "boundaryBytes": 4645,
       "rawDataLeavesEdge": false
     },
     {
@@ -3849,7 +3851,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 1547,
+      "boundaryBytes": 1118,
       "rawDataLeavesEdge": false
     },
     {
@@ -3947,7 +3949,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8458333333333333,
-      "boundaryBytes": 6143,
+      "boundaryBytes": 4603,
       "rawDataLeavesEdge": false
     },
     {
@@ -4049,7 +4051,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.625,
-      "boundaryBytes": 2362,
+      "boundaryBytes": 1763,
       "rawDataLeavesEdge": false
     },
     {
@@ -4149,7 +4151,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 6397,
+      "boundaryBytes": 4672,
       "rawDataLeavesEdge": false
     },
     {
@@ -4257,7 +4259,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 3921,
+      "boundaryBytes": 2870,
       "rawDataLeavesEdge": false
     },
     {
@@ -4349,7 +4351,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 6311,
+      "boundaryBytes": 4641,
       "rawDataLeavesEdge": false
     },
     {
@@ -4455,7 +4457,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.625,
-      "boundaryBytes": 3996,
+      "boundaryBytes": 2906,
       "rawDataLeavesEdge": false
     },
     {
@@ -4545,7 +4547,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7374999999999999,
-      "boundaryBytes": 6257,
+      "boundaryBytes": 4686,
       "rawDataLeavesEdge": false
     },
     {
@@ -4641,7 +4643,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7374999999999999,
-      "boundaryBytes": 1478,
+      "boundaryBytes": 1102,
       "rawDataLeavesEdge": false
     },
     {
@@ -4737,7 +4739,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 6148,
+      "boundaryBytes": 4641,
       "rawDataLeavesEdge": false
     },
     {
@@ -4829,7 +4831,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.25,
-      "boundaryBytes": 1490,
+      "boundaryBytes": 1121,
       "rawDataLeavesEdge": false
     },
     {
@@ -4923,7 +4925,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 6378,
+      "boundaryBytes": 4670,
       "rawDataLeavesEdge": false
     },
     {
@@ -5019,7 +5021,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.625,
-      "boundaryBytes": 1457,
+      "boundaryBytes": 1068,
       "rawDataLeavesEdge": false
     },
     {
@@ -5119,7 +5121,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 6456,
+      "boundaryBytes": 4699,
       "rawDataLeavesEdge": false
     },
     {
@@ -5224,7 +5226,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 3159,
+      "boundaryBytes": 2305,
       "rawDataLeavesEdge": false
     },
     {
@@ -5322,7 +5324,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 6441,
+      "boundaryBytes": 4671,
       "rawDataLeavesEdge": false
     },
     {
@@ -5421,7 +5423,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.625,
-      "boundaryBytes": 2386,
+      "boundaryBytes": 1725,
       "rawDataLeavesEdge": false
     },
     {
@@ -5513,7 +5515,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8,
-      "boundaryBytes": 6358,
+      "boundaryBytes": 4662,
       "rawDataLeavesEdge": false
     },
     {
@@ -5609,7 +5611,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.25,
-      "boundaryBytes": 1566,
+      "boundaryBytes": 1138,
       "rawDataLeavesEdge": false
     },
     {
@@ -5697,7 +5699,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 6392,
+      "boundaryBytes": 4707,
       "rawDataLeavesEdge": false
     },
     {
@@ -5809,7 +5811,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 3967,
+      "boundaryBytes": 2909,
       "rawDataLeavesEdge": false
     },
     {
@@ -5909,7 +5911,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 6266,
+      "boundaryBytes": 4632,
       "rawDataLeavesEdge": false
     },
     {
@@ -6031,7 +6033,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 4715,
+      "boundaryBytes": 3485,
       "rawDataLeavesEdge": false
     },
     {
@@ -6129,7 +6131,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 6181,
+      "boundaryBytes": 4636,
       "rawDataLeavesEdge": false
     },
     {
@@ -6228,7 +6230,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666666,
-      "boundaryBytes": 1413,
+      "boundaryBytes": 1066,
       "rawDataLeavesEdge": false
     },
     {
@@ -6322,7 +6324,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 6490,
+      "boundaryBytes": 4733,
       "rawDataLeavesEdge": false
     },
     {
@@ -6393,24 +6395,18 @@
       "difficulty": "basic",
       "mode": "proposed",
       "truePositive": 1,
-      "falsePositive": 2,
+      "falsePositive": 0,
       "falseNegative": 0,
-      "precision": 0.3333333333333333,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.5,
+      "f1": 1,
       "conceptRecall": 0.75,
       "retrievalRecallAtK": 1,
       "reciprocalRank": 1,
       "evidenceIds": [
         "nia-ai-guide-2026:tech:page:33:1",
         "nia-ai-guide-2026:tech:page:14:1",
-        "nia-ai-guide-2026:tech:page:5:1",
-        "pipc-generative-ai-privacy-2025:security:document:2",
-        "kisa-ai-security-guide-pdf-2026:security:page:43:1",
-        "kisa-ai-security-guide-pdf-2026:security:page:66:1",
-        "pipc-generative-ai-privacy-2025:legal:document:2",
-        "pipc-generative-ai-privacy-pdf-2025:legal:page:6:1",
-        "pipc-generative-ai-privacy-pdf-2025:legal:page:28:1"
+        "nia-ai-guide-2026:tech:page:5:1"
       ],
       "relevantDocumentFamilies": [
         "nia-ai-guide-2026:tech"
@@ -6418,7 +6414,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 2365,
+      "boundaryBytes": 509,
       "rawDataLeavesEdge": false
     },
     {
@@ -6518,7 +6514,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 6398,
+      "boundaryBytes": 4706,
       "rawDataLeavesEdge": false
     },
     {
@@ -6616,7 +6612,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.25,
-      "boundaryBytes": 1497,
+      "boundaryBytes": 1098,
       "rawDataLeavesEdge": false
     },
     {
@@ -6714,7 +6710,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8666666666666667,
-      "boundaryBytes": 6244,
+      "boundaryBytes": 4629,
       "rawDataLeavesEdge": false
     },
     {
@@ -6827,7 +6823,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7999999999999999,
-      "boundaryBytes": 3944,
+      "boundaryBytes": 2916,
       "rawDataLeavesEdge": false
     },
     {
@@ -6929,7 +6925,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 6285,
+      "boundaryBytes": 4705,
       "rawDataLeavesEdge": false
     },
     {
@@ -7027,7 +7023,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.4708333333333333,
-      "boundaryBytes": 1470,
+      "boundaryBytes": 1099,
       "rawDataLeavesEdge": false
     },
     {
@@ -7129,7 +7125,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7791666666666667,
-      "boundaryBytes": 6314,
+      "boundaryBytes": 4661,
       "rawDataLeavesEdge": false
     },
     {
@@ -7228,7 +7224,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.7124999999999999,
-      "boundaryBytes": 1521,
+      "boundaryBytes": 1115,
       "rawDataLeavesEdge": false
     },
     {
@@ -7326,7 +7322,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 6414,
+      "boundaryBytes": 4673,
       "rawDataLeavesEdge": false
     },
     {
@@ -7422,7 +7418,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8125,
-      "boundaryBytes": 1540,
+      "boundaryBytes": 1121,
       "rawDataLeavesEdge": false
     },
     {
@@ -7514,7 +7510,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8458333333333333,
-      "boundaryBytes": 6186,
+      "boundaryBytes": 4580,
       "rawDataLeavesEdge": false
     },
     {
@@ -7627,7 +7623,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.8458333333333333,
-      "boundaryBytes": 3849,
+      "boundaryBytes": 2847,
       "rawDataLeavesEdge": false
     },
     {
@@ -7721,7 +7717,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.9125,
-      "boundaryBytes": 6232,
+      "boundaryBytes": 4626,
       "rawDataLeavesEdge": false
     },
     {
@@ -7843,7 +7839,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.6458333333333333,
-      "boundaryBytes": 4730,
+      "boundaryBytes": 3508,
       "rawDataLeavesEdge": false
     },
     {
@@ -7947,7 +7943,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 6317,
+      "boundaryBytes": 4657,
       "rawDataLeavesEdge": false
     },
     {
@@ -8070,7 +8066,7 @@
       "citationValidity": 1,
       "privacyPass": 1,
       "objectiveQuality": 0.725,
-      "boundaryBytes": 4698,
+      "boundaryBytes": 3453,
       "rawDataLeavesEdge": false
     }
   ]

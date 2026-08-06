@@ -1,0 +1,8 @@
+{
+  "normal": { "latencyMs": 8, "jitterMs": 2, "bandwidthBytesPerSecond": 10000000, "lossRate": 0, "timeoutMs": 3000, "ownerProcessingMultiplier": 1 },
+  "interdepartmental": { "latencyMs": 35, "jitterMs": 8, "bandwidthBytesPerSecond": 2000000, "lossRate": 0.005, "timeoutMs": 3000, "ownerProcessingMultiplier": 1 },
+  "low-bandwidth": { "latencyMs": 45, "jitterMs": 10, "bandwidthBytesPerSecond": 32000, "lossRate": 0, "timeoutMs": 5000, "ownerProcessingMultiplier": 1 },
+  "lossy": { "latencyMs": 30, "jitterMs": 20, "bandwidthBytesPerSecond": 1000000, "lossRate": 0.12, "timeoutMs": 1500, "ownerProcessingMultiplier": 1 },
+  "owner-overload": { "latencyMs": 12, "jitterMs": 4, "bandwidthBytesPerSecond": 5000000, "lossRate": 0, "timeoutMs": 5000, "ownerProcessingMultiplier": 5 },
+  "mixed": { "latencyMs": 70, "jitterMs": 30, "bandwidthBytesPerSecond": 64000, "lossRate": 0.05, "timeoutMs": 3500, "ownerProcessingMultiplier": 2.5 }
+}

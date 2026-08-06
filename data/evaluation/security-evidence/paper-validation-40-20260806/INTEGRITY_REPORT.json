@@ -1,0 +1,29 @@
+{
+  "valid": true,
+  "checkedAt": "2026-08-06T10:08:44.607Z",
+  "runId": "paper-validation-40-20260806",
+  "expectedJobs": 5040,
+  "traces": 12222,
+  "uniqueQueries": 40,
+  "profileLevels": {
+    "17": [
+      "internal",
+      "personal",
+      "public"
+    ],
+    "29": [
+      "confidential",
+      "internal",
+      "personal",
+      "public"
+    ],
+    "43": [
+      "confidential",
+      "internal",
+      "personal"
+    ]
+  },
+  "policyViolations": 1207,
+  "transportFailures": 0,
+  "failures": []
+}

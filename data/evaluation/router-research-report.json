@@ -1,0 +1,8449 @@
+{
+  "generatedAt": "2026-07-30T14:59:17.005Z",
+  "evaluation": "5-fold cross-validated router-only comparison; query-cluster bootstrap; author labels",
+  "cases": 40,
+  "folds": 5,
+  "methods": [
+    "random",
+    "static",
+    "topk",
+    "threshold",
+    "learned",
+    "costAware",
+    "masRouterAdapted",
+    "routeLlmMfAdapted",
+    "irtRouterAdapted",
+    "proposed",
+    "oracle"
+  ],
+  "summaries": {
+    "random": {
+      "n": 40,
+      "microPrecision": 33,
+      "microRecall": 29.9,
+      "microF1": 31.4,
+      "macroF1": 29.1,
+      "macroF1ClusterBootstrapCi95": [
+        19.9,
+        38.4
+      ],
+      "exactMatchRate": 0,
+      "hammingLoss": 39.7,
+      "averageFanout": 2.2,
+      "averageBoundaryBytes": 804
+    },
+    "static": {
+      "n": 40,
+      "microPrecision": 63.2,
+      "microRecall": 56.7,
+      "microF1": 59.8,
+      "macroF1": 60.4,
+      "macroF1ClusterBootstrapCi95": [
+        52.2,
+        68.8
+      ],
+      "exactMatchRate": 17.5,
+      "hammingLoss": 23.1,
+      "averageFanout": 2.17,
+      "averageBoundaryBytes": 1212
+    },
+    "topk": {
+      "n": 40,
+      "microPrecision": 62.5,
+      "microRecall": 56.7,
+      "microF1": 59.5,
+      "macroF1": 59.9,
+      "macroF1ClusterBootstrapCi95": [
+        51.8,
+        68
+      ],
+      "exactMatchRate": 15,
+      "hammingLoss": 23.4,
+      "averageFanout": 2.2,
+      "averageBoundaryBytes": 1216
+    },
+    "threshold": {
+      "n": 40,
+      "microPrecision": 76.3,
+      "microRecall": 46.4,
+      "microF1": 57.7,
+      "macroF1": 57.8,
+      "macroF1ClusterBootstrapCi95": [
+        49.1,
+        66.1
+      ],
+      "exactMatchRate": 15,
+      "hammingLoss": 20.6,
+      "averageFanout": 1.48,
+      "averageBoundaryBytes": 845
+    },
+    "learned": {
+      "n": 40,
+      "microPrecision": 77.5,
+      "microRecall": 32,
+      "microF1": 45.3,
+      "macroF1": 46.6,
+      "macroF1ClusterBootstrapCi95": [
+        37.8,
+        54.5
+      ],
+      "exactMatchRate": 2.5,
+      "hammingLoss": 23.4,
+      "averageFanout": 1,
+      "averageBoundaryBytes": 548
+    },
+    "costAware": {
+      "n": 40,
+      "microPrecision": 76.3,
+      "microRecall": 46.4,
+      "microF1": 57.7,
+      "macroF1": 57.8,
+      "macroF1ClusterBootstrapCi95": [
+        49.1,
+        66.1
+      ],
+      "exactMatchRate": 15,
+      "hammingLoss": 20.6,
+      "averageFanout": 1.48,
+      "averageBoundaryBytes": 845
+    },
+    "masRouterAdapted": {
+      "n": 40,
+      "microPrecision": 29.8,
+      "microRecall": 32,
+      "microF1": 30.8,
+      "macroF1": 30,
+      "macroF1ClusterBootstrapCi95": [
+        21.8,
+        38.3
+      ],
+      "exactMatchRate": 2.5,
+      "hammingLoss": 43.4,
+      "averageFanout": 2.6,
+      "averageBoundaryBytes": 871
+    },
+    "routeLlmMfAdapted": {
+      "n": 40,
+      "microPrecision": 38.8,
+      "microRecall": 34,
+      "microF1": 36.3,
+      "macroF1": 33.7,
+      "macroF1ClusterBootstrapCi95": [
+        24.3,
+        43.4
+      ],
+      "exactMatchRate": 7.5,
+      "hammingLoss": 36.3,
+      "averageFanout": 2.13,
+      "averageBoundaryBytes": 848
+    },
+    "irtRouterAdapted": {
+      "n": 40,
+      "microPrecision": 36.8,
+      "microRecall": 40.2,
+      "microF1": 38.4,
+      "macroF1": 35.3,
+      "macroF1ClusterBootstrapCi95": [
+        27,
+        43.5
+      ],
+      "exactMatchRate": 0,
+      "hammingLoss": 39.1,
+      "averageFanout": 2.65,
+      "averageBoundaryBytes": 1053
+    },
+    "proposed": {
+      "n": 40,
+      "microPrecision": 57.8,
+      "microRecall": 76.3,
+      "microF1": 65.8,
+      "macroF1": 66.5,
+      "macroF1ClusterBootstrapCi95": [
+        57.2,
+        75.5
+      ],
+      "exactMatchRate": 25,
+      "hammingLoss": 24.1,
+      "averageFanout": 3.2,
+      "averageBoundaryBytes": 1900
+    },
+    "oracle": {
+      "n": 40,
+      "microPrecision": 100,
+      "microRecall": 100,
+      "microF1": 100,
+      "macroF1": 100,
+      "macroF1ClusterBootstrapCi95": [
+        100,
+        100
+      ],
+      "exactMatchRate": 100,
+      "hammingLoss": 0,
+      "averageFanout": 2.42,
+      "averageBoundaryBytes": 1220
+    }
+  },
+  "pairedComparisons": {
+    "random": {
+      "macroF1Difference": 37.4,
+      "queryClusterBootstrapCi95": [
+        24.8,
+        50.3
+      ],
+      "boundaryByteDifference": 1096
+    },
+    "static": {
+      "macroF1Difference": 6.1,
+      "queryClusterBootstrapCi95": [
+        -1.3,
+        13
+      ],
+      "boundaryByteDifference": 688
+    },
+    "topk": {
+      "macroF1Difference": 6.6,
+      "queryClusterBootstrapCi95": [
+        -0.7,
+        13.6
+      ],
+      "boundaryByteDifference": 684
+    },
+    "threshold": {
+      "macroF1Difference": 8.7,
+      "queryClusterBootstrapCi95": [
+        0,
+        17.4
+      ],
+      "boundaryByteDifference": 1055
+    },
+    "learned": {
+      "macroF1Difference": 19.9,
+      "queryClusterBootstrapCi95": [
+        9.1,
+        30.8
+      ],
+      "boundaryByteDifference": 1352
+    },
+    "costAware": {
+      "macroF1Difference": 8.7,
+      "queryClusterBootstrapCi95": [
+        0,
+        17.4
+      ],
+      "boundaryByteDifference": 1055
+    },
+    "masRouterAdapted": {
+      "macroF1Difference": 36.5,
+      "queryClusterBootstrapCi95": [
+        21.7,
+        50.5
+      ],
+      "boundaryByteDifference": 1029
+    },
+    "routeLlmMfAdapted": {
+      "macroF1Difference": 32.8,
+      "queryClusterBootstrapCi95": [
+        21.2,
+        43.6
+      ],
+      "boundaryByteDifference": 1052
+    },
+    "irtRouterAdapted": {
+      "macroF1Difference": 31.2,
+      "queryClusterBootstrapCi95": [
+        18.7,
+        43.3
+      ],
+      "boundaryByteDifference": 847
+    }
+  },
+  "byDifficulty": {
+    "basic": {
+      "random": {
+        "n": 11,
+        "macroF1": 8.2,
+        "recall": 9.1,
+        "averageFanout": 2.36
+      },
+      "static": {
+        "n": 11,
+        "macroF1": 57.9,
+        "recall": 72.7,
+        "averageFanout": 2.36
+      },
+      "topk": {
+        "n": 11,
+        "macroF1": 57.9,
+        "recall": 72.7,
+        "averageFanout": 2.36
+      },
+      "threshold": {
+        "n": 11,
+        "macroF1": 71.2,
+        "recall": 72.7,
+        "averageFanout": 1.55
+      },
+      "learned": {
+        "n": 11,
+        "macroF1": 51.5,
+        "recall": 40.9,
+        "averageFanout": 1
+      },
+      "costAware": {
+        "n": 11,
+        "macroF1": 71.2,
+        "recall": 72.7,
+        "averageFanout": 1.55
+      },
+      "masRouterAdapted": {
+        "n": 11,
+        "macroF1": 17.9,
+        "recall": 27.3,
+        "averageFanout": 2.45
+      },
+      "routeLlmMfAdapted": {
+        "n": 11,
+        "macroF1": 40,
+        "recall": 45.5,
+        "averageFanout": 2.09
+      },
+      "irtRouterAdapted": {
+        "n": 11,
+        "macroF1": 28.8,
+        "recall": 36.4,
+        "averageFanout": 2.36
+      },
+      "proposed": {
+        "n": 11,
+        "macroF1": 63.3,
+        "recall": 72.7,
+        "averageFanout": 2.18
+      },
+      "oracle": {
+        "n": 11,
+        "macroF1": 100,
+        "recall": 100,
+        "averageFanout": 1.64
+      }
+    },
+    "advanced": {
+      "random": {
+        "n": 27,
+        "macroF1": 36.4,
+        "recall": 33.3,
+        "averageFanout": 2.11
+      },
+      "static": {
+        "n": 27,
+        "macroF1": 59.3,
+        "recall": 53.4,
+        "averageFanout": 2.07
+      },
+      "topk": {
+        "n": 27,
+        "macroF1": 58.5,
+        "recall": 53.4,
+        "averageFanout": 2.11
+      },
+      "threshold": {
+        "n": 27,
+        "macroF1": 51.6,
+        "recall": 42,
+        "averageFanout": 1.48
+      },
+      "learned": {
+        "n": 27,
+        "macroF1": 43.1,
+        "recall": 30.2,
+        "averageFanout": 1
+      },
+      "costAware": {
+        "n": 27,
+        "macroF1": 51.6,
+        "recall": 42,
+        "averageFanout": 1.48
+      },
+      "masRouterAdapted": {
+        "n": 27,
+        "macroF1": 33.8,
+        "recall": 33.6,
+        "averageFanout": 2.67
+      },
+      "routeLlmMfAdapted": {
+        "n": 27,
+        "macroF1": 33.6,
+        "recall": 32.1,
+        "averageFanout": 2.15
+      },
+      "irtRouterAdapted": {
+        "n": 27,
+        "macroF1": 37.5,
+        "recall": 38.6,
+        "averageFanout": 2.74
+      },
+      "proposed": {
+        "n": 27,
+        "macroF1": 66,
+        "recall": 76.5,
+        "averageFanout": 3.67
+      },
+      "oracle": {
+        "n": 27,
+        "macroF1": 100,
+        "recall": 100,
+        "averageFanout": 2.78
+      }
+    },
+    "adversarial": {
+      "random": {
+        "n": 2,
+        "macroF1": 45,
+        "recall": 50,
+        "averageFanout": 2.5
+      },
+      "static": {
+        "n": 2,
+        "macroF1": 90,
+        "recall": 100,
+        "averageFanout": 2.5
+      },
+      "topk": {
+        "n": 2,
+        "macroF1": 90,
+        "recall": 100,
+        "averageFanout": 2.5
+      },
+      "threshold": {
+        "n": 2,
+        "macroF1": 66.7,
+        "recall": 50,
+        "averageFanout": 1
+      },
+      "learned": {
+        "n": 2,
+        "macroF1": 66.7,
+        "recall": 50,
+        "averageFanout": 1
+      },
+      "costAware": {
+        "n": 2,
+        "macroF1": 66.7,
+        "recall": 50,
+        "averageFanout": 1
+      },
+      "masRouterAdapted": {
+        "n": 2,
+        "macroF1": 45,
+        "recall": 50,
+        "averageFanout": 2.5
+      },
+      "routeLlmMfAdapted": {
+        "n": 2,
+        "macroF1": 0,
+        "recall": 0,
+        "averageFanout": 2
+      },
+      "irtRouterAdapted": {
+        "n": 2,
+        "macroF1": 41.7,
+        "recall": 50,
+        "averageFanout": 3
+      },
+      "proposed": {
+        "n": 2,
+        "macroF1": 90,
+        "recall": 100,
+        "averageFanout": 2.5
+      },
+      "oracle": {
+        "n": 2,
+        "macroF1": 100,
+        "recall": 100,
+        "averageFanout": 2
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "tech",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 686
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1149
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1149
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1792
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1792
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "finance",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 364
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1003
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1003
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "legal",
+        "security",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1792
+    },
+    {
+      "id": "AX001",
+      "fold": 0,
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1792
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "finance",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 772
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "procurement",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1334
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "procurement",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1334
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 742
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 742
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 742
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.75,
+      "boundaryBytes": 535
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 360
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 361
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "procurement",
+        "tech",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1844
+    },
+    {
+      "id": "AX006",
+      "fold": 0,
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1844
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "data",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 687
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1150
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1150
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 357
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "policy",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 997
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "policy",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1462
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "legal",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1792
+    },
+    {
+      "id": "AX011",
+      "fold": 0,
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "legal",
+        "data",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1460
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "finance",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 360
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1162
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1162
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1162
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 620
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1162
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "policy",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 535
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1339
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "policy",
+        "tech",
+        "security"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1522
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1162
+    },
+    {
+      "id": "AX016",
+      "fold": 0,
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "operations",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1339
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "policy",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 688
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1184
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1184
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 930
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "finance",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 747
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "finance",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1365
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "legal",
+        "data",
+        "tech",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 2952
+    },
+    {
+      "id": "AX021",
+      "fold": 0,
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "legal",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1226
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "data",
+        "procurement"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 844
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1299
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1299
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 667
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 667
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 667
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1299
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 694
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1326
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "procurement",
+        "legal",
+        "tech",
+        "finance"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 2385
+    },
+    {
+      "id": "AX026",
+      "fold": 0,
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1299
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "policy",
+        "procurement"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 364
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1072
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1072
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "finance"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 564
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "finance"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 564
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 692
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1072
+    },
+    {
+      "id": "AX031",
+      "fold": 0,
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1255
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1154
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1154
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1154
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1007
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 644
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1337
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1154
+    },
+    {
+      "id": "AX036",
+      "fold": 0,
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "data",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1331
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "security",
+        "tech",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1338
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1338
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "finance",
+        "tech",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 874
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "finance",
+        "tech",
+        "security",
+        "data"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1512
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX002",
+      "fold": 1,
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "procurement",
+        "security",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1007
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "data",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1888
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "data",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1888
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "data",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1250
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "data",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1250
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1428
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 715
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "finance",
+        "tech"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1531
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "data",
+        "security",
+        "operations",
+        "tech"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 1,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 2422
+    },
+    {
+      "id": "AX007",
+      "fold": 1,
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 608
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "tech",
+        "data",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.5,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1749
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "data",
+        "policy",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.5,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1749
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "data",
+        "policy",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.5,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1749
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 602
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 602
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 602
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "security",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.75,
+      "f1": 0.8571428571428571,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1866
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 785
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 806
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "data",
+        "security",
+        "tech",
+        "policy",
+        "legal"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 3013
+    },
+    {
+      "id": "AX012",
+      "fold": 1,
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "data",
+        "legal",
+        "security",
+        "policy"
+      ],
+      "fanout": 4,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 2463
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "policy",
+        "tech",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1318
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "security",
+        "policy",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1777
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "security",
+        "policy",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1777
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 643
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 643
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 643
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 540
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 821
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 362
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1777
+    },
+    {
+      "id": "AX017",
+      "fold": 1,
+      "domain": "access-control",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 826
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "tech",
+        "data",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1317
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "data",
+        "tech",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1778
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "data",
+        "tech",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1778
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "data",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1138
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 596
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "data",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1138
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1879
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "finance",
+        "data"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 2040
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech",
+        "legal",
+        "operations",
+        "data"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.2,
+      "recall": 0.5,
+      "f1": 0.28571428571428575,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 3045
+    },
+    {
+      "id": "AX022",
+      "fold": 1,
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "data",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 775
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "random",
+      "selected": [
+        "operations",
+        "tech",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1339
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "static",
+      "selected": [
+        "security",
+        "operations",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1802
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "topk",
+      "selected": [
+        "security",
+        "operations",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1802
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "threshold",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 644
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "learned",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 644
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "costAware",
+      "selected": [
+        "security"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 644
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1012
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 543
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1192
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "operations",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1802
+    },
+    {
+      "id": "AX027",
+      "fold": 1,
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1293
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "policy",
+        "operations",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 540
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "tech",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 869
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 869
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 510
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 510
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 537
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 874
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 510
+    },
+    {
+      "id": "AX032",
+      "fold": 1,
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 510
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "legal",
+        "procurement",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 542
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "tech",
+        "operations",
+        "procurement"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1344
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "operations",
+        "procurement"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1344
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 870
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 360
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX037",
+      "fold": 1,
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 361
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1184
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1184
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1458
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 619
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "legal",
+        "security",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 2488
+    },
+    {
+      "id": "AX003",
+      "fold": 2,
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1261
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "data",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 806
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "policy",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1269
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "policy",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1269
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1460
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 534
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "tech",
+        "security",
+        "data"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.2,
+      "recall": 0.5,
+      "f1": 0.28571428571428575,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 2176
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "policy",
+        "legal",
+        "tech"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 2444
+    },
+    {
+      "id": "AX008",
+      "fold": 2,
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "policy",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1269
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "data",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 741
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1120
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1120
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1120
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 612
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1120
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "security",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 537
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "finance",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 745
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 690
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "procurement",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1683
+    },
+    {
+      "id": "AX013",
+      "fold": 2,
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1353
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "policy",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 360
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1204
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1204
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1204
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 654
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1204
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1009
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 551
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1200
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "security",
+        "tech",
+        "procurement"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1": 0.5714285714285715,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 2496
+    },
+    {
+      "id": "AX018",
+      "fold": 2,
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1481
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "procurement",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 368
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 509
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 509
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 509
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 540
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 870
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 870
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX023",
+      "fold": 2,
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 731
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "data",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 728
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "data",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 728
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 178
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 178
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "data"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 178
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 998
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 728
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "policy",
+        "tech",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 907
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1193
+    },
+    {
+      "id": "AX028",
+      "fold": 2,
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "data",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 361
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "security",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 809
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "policy",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1138
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "policy",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1138
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 628
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 628
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 628
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "security",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 537
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech",
+        "security",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 869
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security",
+        "data"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1052
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1138
+    },
+    {
+      "id": "AX033",
+      "fold": 2,
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 542
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "policy",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 812
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1197
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1197
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 633
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 633
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 633
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "security",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1451
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1783
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "security",
+        "data"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 0.3333333333333333,
+      "f1": 0.28571428571428575,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1960
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "legal",
+        "operations",
+        "tech",
+        "finance"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 2947
+    },
+    {
+      "id": "AX038",
+      "fold": 2,
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1806
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "finance",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 362
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 651
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1342
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX004",
+      "fold": 3,
+      "domain": "poc",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1161
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 690
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 631
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1499
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX009",
+      "fold": 3,
+      "domain": "operations",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "data",
+        "procurement"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 362
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1152
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1152
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1152
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 588
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1152
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 819
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 588
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.75,
+      "boundaryBytes": 943
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 2303
+    },
+    {
+      "id": "AX014",
+      "fold": 3,
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1716
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "policy",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 361
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "operations",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 827
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 827
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 647
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 647
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 647
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "security",
+        "data",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1005
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 828
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1336
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX019",
+      "fold": 3,
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1155
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "procurement",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 834
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "procurement",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 834
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 185
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 185
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "procurement"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 185
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "legal",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 358
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX024",
+      "fold": 3,
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 180
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "security",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 822
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "tech",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1142
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "tech",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1142
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 508
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 508
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 508
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 819
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1279
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1930
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech",
+        "legal",
+        "operations",
+        "policy"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 3059
+    },
+    {
+      "id": "AX029",
+      "fold": 3,
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "legal",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1901
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "procurement",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 831
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1210
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1210
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1863
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1863
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "security",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1444
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 826
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.75,
+      "boundaryBytes": 1358
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "finance",
+        "procurement",
+        "legal",
+        "tech"
+      ],
+      "fanout": 5,
+      "exactMatch": 0,
+      "precision": 0.4,
+      "recall": 0.6666666666666666,
+      "f1": 0.5,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 3037
+    },
+    {
+      "id": "AX034",
+      "fold": 3,
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1455
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "procurement",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1171
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 818
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 818
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal",
+        "data",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1359
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 641
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal",
+        "data",
+        "tech"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1359
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1459
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 639
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "operations",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1279
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "legal",
+        "security",
+        "tech",
+        "operations",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 6,
+      "exactMatch": 0,
+      "precision": 0.16666666666666666,
+      "recall": 0.3333333333333333,
+      "f1": 0.2222222222222222,
+      "hammingLoss": 0.875,
+      "boundaryBytes": 3655
+    },
+    {
+      "id": "AX039",
+      "fold": 3,
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 997
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "random",
+      "selected": [
+        "finance",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 807
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "static",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1267
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1267
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 627
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 627
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 627
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 811
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 810
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1267
+    },
+    {
+      "id": "AX005",
+      "fold": 4,
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "method": "oracle",
+      "selected": [
+        "security",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1267
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 692
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1074
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1074
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1074
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "finance"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 564
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1074
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech",
+        "operations",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 875
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 694
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1074
+    },
+    {
+      "id": "AX010",
+      "fold": 4,
+      "domain": "finance",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "finance"
+      ],
+      "fanout": 1,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 564
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "operations",
+        "finance"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 364
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1149
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1149
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 639
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 639
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 639
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 691
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "tech",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 692
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "data",
+        "tech",
+        "security"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1507
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "legal",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1149
+    },
+    {
+      "id": "AX015",
+      "fold": 4,
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "legal",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 818
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "security",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1219
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "legal",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1197
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "legal",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1197
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 621
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 621
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 621
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "data",
+        "legal",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.75,
+      "boundaryBytes": 1440
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "data"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 798
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "data",
+        "security",
+        "policy"
+      ],
+      "fanout": 4,
+      "exactMatch": 0,
+      "precision": 0.25,
+      "recall": 0.3333333333333333,
+      "f1": 0.28571428571428575,
+      "hammingLoss": 0.625,
+      "boundaryBytes": 1619
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "legal",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1839
+    },
+    {
+      "id": "AX020",
+      "fold": 4,
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 933
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "random",
+      "selected": [
+        "policy",
+        "procurement"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 364
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "static",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1076
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "topk",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1076
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "threshold",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1076
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "learned",
+      "selected": [
+        "finance"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 566
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "costAware",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1076
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 179
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "tech"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 511
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "proposed",
+      "selected": [
+        "finance",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1076
+    },
+    {
+      "id": "AX025",
+      "fold": 4,
+      "domain": "finops",
+      "difficulty": "basic",
+      "method": "oracle",
+      "selected": [
+        "finance",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 749
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "procurement",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 1284
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 631
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "operations",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1140
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "legal",
+        "security"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1278
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1787
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "security"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1787
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "security",
+        "tech",
+        "legal",
+        "operations",
+        "finance",
+        "procurement"
+      ],
+      "fanout": 6,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 3634
+    },
+    {
+      "id": "AX030",
+      "fold": 4,
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 1920
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "policy",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "hammingLoss": 0.125,
+      "boundaryBytes": 807
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "policy",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "policy",
+        "tech"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "policy"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 629
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 363
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 184
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "legal",
+        "tech",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 872
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "tech",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 1139
+    },
+    {
+      "id": "AX035",
+      "fold": 4,
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "fanout": 3,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 990
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "random",
+      "selected": [
+        "finance",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1163
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "static",
+      "selected": [
+        "operations",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1290
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "topk",
+      "selected": [
+        "operations",
+        "legal"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1290
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "threshold",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 650
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "learned",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 650
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "costAware",
+      "selected": [
+        "operations"
+      ],
+      "fanout": 1,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "hammingLoss": 0.375,
+      "boundaryBytes": 650
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "masRouterAdapted",
+      "selected": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "fanout": 3,
+      "exactMatch": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "hammingLoss": 0.875,
+      "boundaryBytes": 1002
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "routeLlmMfAdapted",
+      "selected": [
+        "legal",
+        "policy"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333,
+      "hammingLoss": 0.5,
+      "boundaryBytes": 1238
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "irtRouterAdapted",
+      "selected": [
+        "tech",
+        "operations"
+      ],
+      "fanout": 2,
+      "exactMatch": 0,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 1160
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "proposed",
+      "selected": [
+        "operations",
+        "security",
+        "tech",
+        "legal",
+        "policy",
+        "finance"
+      ],
+      "fanout": 6,
+      "exactMatch": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "hammingLoss": 0.25,
+      "boundaryBytes": 3604
+    },
+    {
+      "id": "AX040",
+      "fold": 4,
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "method": "oracle",
+      "selected": [
+        "operations",
+        "policy",
+        "finance",
+        "tech"
+      ],
+      "fanout": 4,
+      "exactMatch": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "hammingLoss": 0,
+      "boundaryBytes": 2322
+    }
+  ]
+}

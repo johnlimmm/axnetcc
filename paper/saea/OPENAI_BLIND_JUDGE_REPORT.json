@@ -1,0 +1,77 @@
+{
+  "runId": "paper-openai-blind-40-20260806",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "completeCases": 40,
+  "localExactCandidateOverlapCases": 40,
+  "failures": 0,
+  "usage": {
+    "promptTokens": 13045,
+    "completionTokens": 1262,
+    "totalTokens": 14307
+  },
+  "meanElapsedMs": 1262.075,
+  "meanFanout": 3.825,
+  "meanConfidence": 0.9567500000000002,
+  "roleSelectionRate": {
+    "tech": 1,
+    "data": 0.325,
+    "security": 0.575,
+    "legal": 0.5,
+    "policy": 0.6,
+    "finance": 0.2,
+    "procurement": 0.225,
+    "operations": 0.4
+  },
+  "openaiVsAuthorProvisional": {
+    "exactAgreement": 0.2,
+    "meanJaccard": 0.6941666666666668,
+    "microPrecision": 0.7320261437908496,
+    "microRecall": 0.9180327868852459,
+    "microF1": 0.8145454545454546
+  },
+  "openaiVsLocalConsensus": {
+    "exactAgreement": 0,
+    "meanJaccard": 0.42666666666666664,
+    "microPrecision": 0.4444444444444444,
+    "microRecall": 0.8607594936708861,
+    "microF1": 0.5862068965517241
+  },
+  "pairwiseLocal": [
+    {
+      "localModel": "qwen2.5:3b",
+      "exactAgreement": 0,
+      "meanJaccard": 0.4454166666666667,
+      "microPrecision": 0.477124183006536,
+      "microRecall": 0.7934782608695652,
+      "microF1": 0.5959183673469388
+    },
+    {
+      "localModel": "llama3.1:8b",
+      "exactAgreement": 0,
+      "meanJaccard": 0.28583333333333333,
+      "microPrecision": 0.33986928104575165,
+      "microRecall": 0.6046511627906976,
+      "microF1": 0.4351464435146444
+    },
+    {
+      "localModel": "gemma3:4b",
+      "exactAgreement": 0.075,
+      "meanJaccard": 0.4912500000000001,
+      "microPrecision": 0.5620915032679739,
+      "microRecall": 0.7288135593220338,
+      "microF1": 0.6346863468634686
+    }
+  ],
+  "fourModelMacroFleissKappa": 0.12275665644916331,
+  "fourModelFleissKappaByRole": {
+    "tech": -0.13095238095238051,
+    "data": 0.12087912087912075,
+    "security": 0.19999999999999954,
+    "legal": 0.19653679653679643,
+    "policy": 0.008338967771016075,
+    "finance": 0.28513879733391917,
+    "procurement": 0.24255082149818977,
+    "operations": 0.05956112852664534
+  },
+  "interpretation": "A stronger OpenAI judge is compared with three local model families and author-provisional labels; no source is treated as human gold."
+}

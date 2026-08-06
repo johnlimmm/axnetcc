@@ -52,3 +52,15 @@ public/index-*.css
 __pycache__/
 *.py[cod]
 /paper/rendered/
+
+# superseded or interrupted security-evidence runs (kept locally)
+/data/evaluation/security-evidence/paper-full-20260806/
+/data/evaluation/security-evidence/paper-full-v2-20260806/
+/data/evaluation/security-evidence/paper-full-v3-20260806/
+/data/evaluation/security-evidence/security-evidence-*/
+/data/evaluation/security-evidence/paper-*-smoke*/
+/data/evaluation/security-evidence/paper-full-v4-20260806/raw-traces.checkpoint.jsonl
+/data/evaluation/security-evidence/paper-validation-40-20260806/raw-traces.checkpoint.jsonl
+/data/evaluation/multi-llm-annotation/smoke-*/
+/data/evaluation/multi-llm-annotation/paper-multillm-40-20260806/
+/data/evaluation/openai-blind-role/smoke-*/

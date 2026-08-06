@@ -1,0 +1,439 @@
+{
+  "seed": 20260806,
+  "resamples": 10000,
+  "cluster": "queryId",
+  "comparisons": [
+    {
+      "baseline": "raw-central",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": -0.9234567901234568,
+      "ci95": [
+        -0.9984567901234569,
+        -0.8112654320987654
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "raw-central",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.13672839506172837,
+      "ci95": [
+        -0.30370370370370364,
+        0.0026234567901234906
+      ],
+      "pairedPermutationP": 0.4375,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "raw-central",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.13672839506172837,
+      "ci95": [
+        -0.3040123456790123,
+        0.0026234567901234906
+      ],
+      "pairedPermutationP": 0.4375,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "raw-central",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": -72.76333333333348,
+      "ci95": [
+        -246.80916666666675,
+        117.98733333333303
+      ],
+      "pairedPermutationP": 0.46875,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "raw-central",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -3241.869753086419,
+      "ci95": [
+        -4214.373456790124,
+        -2105.451234567901
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "raw-central",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -6051.21044238683,
+      "ci95": [
+        -9611.64660493827,
+        -2546.261111111111
+      ],
+      "pairedPermutationP": 0.0625,
+      "holmAdjustedP": 0.3125
+    },
+    {
+      "baseline": "always-local",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "always-local",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.046159122085047265,
+      "ci95": [
+        -0.10156035665294666,
+        0.00015432098765433278
+      ],
+      "pairedPermutationP": 0.1875,
+      "holmAdjustedP": 0.9375
+    },
+    {
+      "baseline": "always-local",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": 0.13858024691358026,
+      "ci95": [
+        -0.0010802469135802184,
+        0.3058641975308642
+      ],
+      "pairedPermutationP": 0.375,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "always-local",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": -86.71916666666691,
+      "ci95": [
+        -170.44350000000017,
+        -5.545166666666925
+      ],
+      "pairedPermutationP": 0.125,
+      "holmAdjustedP": 0.625
+    },
+    {
+      "baseline": "always-local",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 115.32932098765433,
+      "ci95": [
+        0,
+        345.98796296296297
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "always-local",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -260.11851851851856,
+      "ci95": [
+        -1296.340586419753,
+        536.3516975308643
+      ],
+      "pairedPermutationP": 0.625,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.0913923182441697,
+      "ci95": [
+        -0.20245198902606076,
+        0.0013888888888889024
+      ],
+      "pairedPermutationP": 0.40625,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": 0.0010288065843621537,
+      "ci95": [
+        -0.0003600823045266932,
+        0.0023148148148148064
+      ],
+      "pairedPermutationP": 0.28125,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": -58.839666666666595,
+      "ci95": [
+        -246.41766666666658,
+        135.20400000000018
+      ],
+      "pairedPermutationP": 0.625,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 115.32932098765433,
+      "ci95": [
+        0,
+        345.98796296296297
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "fixed-sanitized",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -1476.4489711934154,
+      "ci95": [
+        -2950.388271604939,
+        -374.6322530864195
+      ],
+      "pairedPermutationP": 0.09375,
+      "holmAdjustedP": 0.375
+    },
+    {
+      "baseline": "network-only",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "network-only",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": 0.8602366255144034,
+      "ci95": [
+        0.6937242798353909,
+        0.9992283950617283
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "network-only",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": 0.8602366255144034,
+      "ci95": [
+        0.6937242798353909,
+        0.9992283950617283
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "network-only",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": -14.076000000000173,
+      "ci95": [
+        -173.9631666666669,
+        149.3728333333332
+      ],
+      "pairedPermutationP": 0.78125,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "network-only",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 115.32932098765433,
+      "ci95": [
+        0,
+        345.98796296296297
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "network-only",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 4602.505864197531,
+      "ci95": [
+        1975.1097222222222,
+        7752.838580246914
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "security-only",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "security-only",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.050188614540466026,
+      "ci95": [
+        -0.10641289437585517,
+        0.0029320987654321007
+      ],
+      "pairedPermutationP": 0.5,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "security-only",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": 0.12206790123456791,
+      "ci95": [
+        0.0021604938271604923,
+        0.2878086419753087
+      ],
+      "pairedPermutationP": 0.0625,
+      "holmAdjustedP": 0.3125
+    },
+    {
+      "baseline": "security-only",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": -13.090166666666846,
+      "ci95": [
+        -102.63583333333357,
+        73.02283333333314
+      ],
+      "pairedPermutationP": 0.8125,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "security-only",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -216.8364197530864,
+      "ci95": [
+        -650.5086419753087,
+        0
+      ],
+      "pairedPermutationP": 0.5,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "security-only",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -455.9130658436211,
+      "ci95": [
+        -1652.7910493827155,
+        430.2527777777779
+      ],
+      "pairedPermutationP": 0.5625,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "policyViolation",
+      "queries": 6,
+      "estimate": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "coverage",
+      "queries": 6,
+      "estimate": -0.0005658436213991461,
+      "ci95": [
+        -0.0011831275720164032,
+        -0.00010288065843620335
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "roleEvidenceComplete",
+      "queries": 6,
+      "estimate": -0.0005658436213991461,
+      "ci95": [
+        -0.0011316872427982922,
+        -0.00010288065843620335
+      ],
+      "pairedPermutationP": 0.25,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "p95LatencyMs",
+      "queries": 6,
+      "estimate": 4391.561666666666,
+      "ci95": [
+        4242.487,
+        4561.962166666667
+      ],
+      "pairedPermutationP": 0.03125,
+      "holmAdjustedP": 0.1875
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "rawCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": 0.00041152263374518344,
+      "ci95": [
+        0,
+        0.0012345679012355504
+      ],
+      "pairedPermutationP": 1,
+      "holmAdjustedP": 1
+    },
+    {
+      "baseline": "oracle-feasible",
+      "metric": "sensitivityWeightedCrossBoundaryBytes",
+      "queries": 6,
+      "estimate": -1.8825102880652669,
+      "ci95": [
+        -3.879681069958489,
+        -0.19953703703625555
+      ],
+      "pairedPermutationP": 0.1875,
+      "holmAdjustedP": 0.5625
+    }
+  ]
+}

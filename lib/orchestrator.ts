@@ -2,6 +2,10 @@ import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./k
 import { evaluateWithCommercialJudge } from "./commercial-judge";
 import { generateLocalAnswer } from "./local-llm";
 import { ragStats, searchRag } from "./rag";
+import {
+  routeWithBoundaryConstraints,
+  toMinimalAgentOutput,
+} from "./boundary-router";
 
 export type RunMode =
   | "proposed"
@@ -78,6 +82,13 @@ function lexicalCoverage(expected: string, actual: string) {
   );
 }
 
+function percentile(values: number[], quantile: number) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * quantile) - 1));
+  return sorted[index];
+}
+
 function enforceEvidenceCitation(summary: string, evidenceIds: string[]) {
   if (!evidenceIds.length) return summary;
   const valid = new Set(evidenceIds);
@@ -90,7 +101,10 @@ function enforceEvidenceCitation(summary: string, evidenceIds: string[]) {
 function retrieveInternal(query: string, agent: AgentId, limit = 2) {
   const queryTerms = new Set(terms(query));
   return knowledge
-    .filter((chunk) => chunk.agent === agent)
+    .filter((chunk) =>
+      chunk.agent === agent &&
+      agentProfiles[agent].allowedClasses.includes(chunk.classification)
+    )
     .map((chunk) => {
       const chunkTerms = terms(`${chunk.title} ${chunk.section} ${chunk.text} ${chunk.tags.join(" ")}`);
       const hit = chunkTerms.filter((term) => queryTerms.has(term)).length;
@@ -202,13 +216,16 @@ export async function orchestrate(
     ids.map((id) => [id, overlap(query, agentProfiles[id].keywords)]),
   ) as Record<AgentId, number>;
   const remoteRagQuery = perturbQueryForRemoteRag(query);
+  const boundaryRouting = routeWithBoundaryConstraints(query, scores);
   const selected =
     mode === "masrouter"
       ? selectMasRouterInspired(ids, scores)
       : mode === "remoterag"
         ? selectMasRouterInspired(ids, scores)
       : mode === "proposed" || mode === "managed"
-      ? ids.filter((id) => scores[id] > 0)
+      ? mode === "proposed"
+        ? [...boundaryRouting.selected]
+        : ids.filter((id) => scores[id] > 0)
       : ids;
   if (!selected.length) selected.push("tech");
 
@@ -279,7 +296,9 @@ export async function orchestrate(
       ...agentProfiles[id],
       selected: isSelected,
       selectionReason: scores[id] > 0
-        ? `질의의 ${agentProfiles[id].keywords.filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase())).slice(0, 3).join("·")} 신호와 역할이 일치합니다.`
+        ? mode === "proposed"
+          ? `${boundaryRouting.estimates.find((item) => item.id === id)?.probability ?? 0} 필요확률과 누락·호출 비용, 경계 정책을 함께 적용했습니다.`
+          : `질의의 ${agentProfiles[id].keywords.filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase())).slice(0, 3).join("·")} 신호와 역할이 일치합니다.`
         : "현재 질의에서 이 역할의 직접 검토 신호가 발견되지 않았습니다.",
       score: Math.min(99, 58 + scores[id] * 8),
       question: questionFor(id, query),
@@ -303,6 +322,14 @@ export async function orchestrate(
   }));
 
   const selectedResults = agentResults.filter((result) => result.selected);
+  const minimalOutputs = selectedResults.map((result) => ({
+    agentId: result.id,
+    ...toMinimalAgentOutput({
+      summary: result.summary,
+      score: result.score,
+      evidenceIds: result.evidence.map((item) => item.id),
+    }),
+  }));
   const managedSupervisor =
     mode === "managed"
       ? await generateLocalAnswer({
@@ -338,11 +365,7 @@ export async function orchestrate(
   const encoder = new TextEncoder();
   const bytes = encoder.encode(JSON.stringify(selectedResults)).length;
   const distributedPayloadBytes = encoder.encode(JSON.stringify(
-    selectedResults.map((result) => ({
-      question: result.question,
-      summary: result.summary,
-      evidenceIds: result.evidence.map((item) => item.id),
-    })),
+    minimalOutputs,
   )).length;
   const centralizedSourceBytes = encoder.encode(JSON.stringify(
     ids.flatMap((id) => retrieve(query, id, 3).map((item) => item.chunk)),
@@ -367,6 +390,38 @@ export async function orchestrate(
         : mode === "masrouter"
           ? masRouterBoundaryBytes
           : distributedPayloadBytes;
+  const rawBoundaryBytes =
+    mode === "centralized" || mode === "managed" ? centralizedSourceBytes : 0;
+  const retrievedBoundaryBytes =
+    mode === "remoterag" ? remoteRagBoundaryBytes : mode === "masrouter" ? masRouterBoundaryBytes : 0;
+  const summaryBoundaryBytes =
+    mode === "proposed" || mode === "parallel"
+      ? encoder.encode(JSON.stringify(minimalOutputs.map(({ decision, requiredActions }) => ({
+          decision,
+          requiredActions,
+        })))).length
+      : boundaryBytes;
+  const metadataBoundaryBytes =
+    mode === "proposed" || mode === "parallel"
+      ? Math.max(0, distributedPayloadBytes - summaryBoundaryBytes)
+      : 0;
+  const sensitiveEntityLeakage = sensitivePatterns.reduce((count, pattern) => {
+    pattern.regex.lastIndex = 0;
+    const hit = pattern.regex.test(JSON.stringify(minimalOutputs));
+    pattern.regex.lastIndex = 0;
+    return count + Number(hit);
+  }, 0);
+  const unnecessaryAgentAccesses = selected.filter((id) => !boundaryRouting.required.includes(id)).length;
+  const boundaryExposureScore = Math.round(
+    Math.min(100,
+      rawBoundaryBytes / Math.max(centralizedSourceBytes, 1) * 55 +
+      retrievedBoundaryBytes / Math.max(centralizedSourceBytes, 1) * 25 +
+      summaryBoundaryBytes / Math.max(centralizedSourceBytes, 1) * 12 +
+      metadataBoundaryBytes / Math.max(centralizedSourceBytes, 1) * 8 +
+      sensitiveEntityLeakage * 10 +
+      unnecessaryAgentAccesses * 4,
+    ),
+  );
   const minimizationRate =
     mode === "centralized"
       ? 0
@@ -457,6 +512,11 @@ export async function orchestrate(
         enabled: false,
         provider: "disabled",
       };
+  const agentLatencies = selectedResults.map((result) => result.latencyMs);
+  const endToEndLatency = selectedResults.some((result) => result.inference.backend === "ollama")
+    ? Date.now() - startedAt
+    : Date.now() - startedAt + Math.max(...agentLatencies);
+  const deadlineMs = mode === "proposed" ? boundaryRouting.policy.deadlineMs : 15_000;
 
   return {
     runId: `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -466,6 +526,8 @@ export async function orchestrate(
     conclusion: "제한적 시범 도입을 권고합니다. 원문 데이터의 조직 내 보존, 역할 기반 접근통제, 담당자 최종 검토를 선행조건으로 설정하고 PoC 이후 품질·보안·비용 지표를 재평가해야 합니다.",
     status: missing.length ? "review" : "ready",
     agents: agentResults,
+    routerDecision: mode === "proposed" ? boundaryRouting : null,
+    agentOutputs: minimalOutputs,
     checks: [
       { label: "필수 검토영역", status: missing.length ? "warn" : "pass", detail: missing.length ? `${missing.join("·")} 영역이 누락되었습니다.` : `${selected.length}개 필수 전문영역을 반영했습니다.` },
       { label: "근거 완전성", status: evidenceCount >= selected.length ? "pass" : "warn", detail: `${evidenceCount}개 근거 청크가 판단에 연결되었습니다.` },
@@ -476,9 +538,19 @@ export async function orchestrate(
       calls: mode === "centralized" ? 1 : selected.length + (mode === "managed" ? 1 : 0),
       tokens,
       bytes,
-      latencyMs: selectedResults.some((result) => result.inference.backend === "ollama")
-        ? Date.now() - startedAt
-        : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
+      latencyMs: endToEndLatency,
+      latencyDistribution: {
+        p50Ms: percentile(agentLatencies, 0.5),
+        p95Ms: percentile(agentLatencies, 0.95),
+        p99Ms: percentile(agentLatencies, 0.99),
+      },
+      timeToFirstValidAnswerMs: Math.min(...agentLatencies),
+      deadlineMs,
+      timeoutRate: Number(
+        (agentLatencies.filter((latency) => latency > deadlineMs).length /
+          Math.max(agentLatencies.length, 1)).toFixed(3),
+      ),
+      qualityUnderDeadline: endToEndLatency <= deadlineMs ? qualityScore : 0,
       exposedFields: 0,
       traceability: evidenceCount ? 100 : 0,
       rawDataLeavesEdge:
@@ -493,6 +565,18 @@ export async function orchestrate(
           : selected.length + (mode === "managed" ? 1 : 0),
       minimizationRate: mode === "managed" ? 0 : minimizationRate,
       privacyRiskScore,
+      boundaryExposureScore,
+      boundaryExposure: {
+        rawBytes: rawBoundaryBytes,
+        retrievedBytes: retrievedBoundaryBytes,
+        summaryBytes: summaryBoundaryBytes,
+        metadataBytes: metadataBoundaryBytes,
+        crossBoundaryTokens: Math.ceil(boundaryBytes / 4),
+        sensitiveEntityLeakage,
+        unnecessaryAgentAccesses,
+      },
+      qualityPerDisclosedKb: Number((qualityScore / Math.max(boundaryBytes / 1024, 0.001)).toFixed(2)),
+      agentFanOut: selected.length,
       queryProtection: mode === "remoterag" ? "deterministic-generalization" : "none",
       perturbedTerms: mode === "remoterag" ? remoteRagQuery.replaced : 0,
       groundedness,

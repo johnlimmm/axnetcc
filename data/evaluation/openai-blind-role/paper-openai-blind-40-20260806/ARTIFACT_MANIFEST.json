@@ -1,0 +1,26 @@
+{
+  "runId": "paper-openai-blind-40-20260806",
+  "generatedAt": "2026-08-06T10:00:57.515Z",
+  "artifacts": [
+    {
+      "name": "run-config.json",
+      "bytes": 1080,
+      "sha256": "a636f015c244fea20ebb5e73df6e514af52da37e3ff92d65fe0d0c34b6f2f777"
+    },
+    {
+      "name": "responses.jsonl",
+      "bytes": 30315,
+      "sha256": "44f53be9b4b7e8818a5bc2b1f46a1357e9a8dc3924b67413fe8497e726030b79"
+    },
+    {
+      "name": "OPENAI_CROSS_MODEL_REPORT.json",
+      "bytes": 2259,
+      "sha256": "fa103f7922958bd40953a776e070dc80a8c6b5ad5f733638d8afefb10212c86d"
+    },
+    {
+      "name": "OPENAI_CROSS_MODEL_REPORT.md",
+      "bytes": 517,
+      "sha256": "eb602717bda9b68e33fe5142cb316b799b640994e0aaf527d3f6173f97f087fc"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-07-30T15:57:54.861Z",
+  "rows": 240,
+  "sourcePilotCases": 40,
+  "purpose": "annotation candidate pool; not an independent benchmark",
+  "restrictions": [
+    "Do not report these 240 generated candidates as 240 independently authored test queries.",
+    "All labels and evidence spans are provisional until two independent annotators and adjudication are complete.",
+    "Split by semantic_family_id to prevent paraphrase/source-case leakage.",
+    "Only eligible_for_confirmatory_test=true rows may enter a confirmatory test."
+  ],
+  "distribution": {
+    "organization": {
+      "central-government": 80,
+      "local-government": 80,
+      "enterprise": 80
+    },
+    "taskAngle": {
+      "architecture-design": 40,
+      "compliance-audit": 40,
+      "incident-response": 40,
+      "contract-procurement": 40,
+      "performance-cost": 40,
+      "governance-scaleout": 40
+    },
+    "difficulty": {
+      "advanced": 131,
+      "adversarial": 60,
+      "basic": 49
+    },
+    "dataClass": {
+      "public": 80,
+      "internal": 120,
+      "confidential": 40
+    }
+  }
+}

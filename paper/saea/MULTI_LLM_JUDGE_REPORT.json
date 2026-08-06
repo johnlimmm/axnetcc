@@ -1,0 +1,149 @@
+{
+  "runId": "paper-multillm-aligned-40-20260806",
+  "candidates": 40,
+  "completeCases": 40,
+  "models": [
+    {
+      "model": "qwen2.5:3b",
+      "family": "qwen2",
+      "parameterSize": "3.1B",
+      "quantization": "Q4_K_M",
+      "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+      "size": 1929912432,
+      "modifiedAt": "2026-07-30T12:01:22.4930413+09:00"
+    },
+    {
+      "model": "llama3.1:8b",
+      "family": "llama",
+      "parameterSize": "8.0B",
+      "quantization": "Q4_K_M",
+      "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+      "size": 4920753328,
+      "modifiedAt": "2026-08-06T15:29:37.1126701+09:00"
+    },
+    {
+      "model": "gemma3:4b",
+      "family": "gemma3",
+      "parameterSize": "4.3B",
+      "quantization": "Q4_K_M",
+      "digest": "a2af6cc3eb7fa8be8504abaf9b04e88f17a119ec3f04a3addf55f92841195f5a",
+      "size": 3338801804,
+      "modifiedAt": "2026-08-06T15:45:55.7297557+09:00"
+    }
+  ],
+  "failures": {
+    "qwen2.5:3b": 0,
+    "llama3.1:8b": 0,
+    "gemma3:4b": 0
+  },
+  "modelSummaries": {
+    "qwen2.5:3b": {
+      "meanFanout": 2.3,
+      "meanConfidence": 0.8312500000000002,
+      "reviewRate": 0,
+      "meanElapsedMs": 17356.264999999996,
+      "roleSelectionRate": {
+        "tech": 0.775,
+        "data": 0.35,
+        "security": 0.4,
+        "legal": 0.175,
+        "policy": 0.1,
+        "finance": 0.125,
+        "procurement": 0.075,
+        "operations": 0.3
+      }
+    },
+    "llama3.1:8b": {
+      "meanFanout": 2.15,
+      "meanConfidence": 0.8000000000000004,
+      "reviewRate": 0,
+      "meanElapsedMs": 45093.687500000015,
+      "roleSelectionRate": {
+        "tech": 0.35,
+        "data": 0.3,
+        "security": 0.25,
+        "legal": 0.3,
+        "policy": 0.325,
+        "finance": 0.25,
+        "procurement": 0.15,
+        "operations": 0.225
+      }
+    },
+    "gemma3:4b": {
+      "meanFanout": 2.95,
+      "meanConfidence": 0.9287499999999996,
+      "reviewRate": 0,
+      "meanElapsedMs": 29885.340000000004,
+      "roleSelectionRate": {
+        "tech": 0.675,
+        "data": 0.425,
+        "security": 0.275,
+        "legal": 0.4,
+        "policy": 0.425,
+        "finance": 0.35,
+        "procurement": 0.225,
+        "operations": 0.175
+      }
+    }
+  },
+  "threeWayExactAgreement": 0,
+  "meanPairwiseJaccard": 0.2669444444444444,
+  "uncertainty": {
+    "threeWayExactAgreementCi95": [
+      0,
+      0
+    ],
+    "meanPairwiseJaccardCi95": [
+      0.23041666666666663,
+      0.30930555555555556
+    ],
+    "consensusVsAuthorExactCi95": [
+      0.025,
+      0.2
+    ],
+    "consensusVsAuthorJaccardCi95": [
+      0.45625,
+      0.5933333333333333
+    ]
+  },
+  "pairwise": [
+    {
+      "left": "qwen2.5:3b",
+      "right": "llama3.1:8b",
+      "exactAgreement": 0,
+      "meanJaccard": 0.20791666666666667
+    },
+    {
+      "left": "qwen2.5:3b",
+      "right": "gemma3:4b",
+      "exactAgreement": 0.05,
+      "meanJaccard": 0.32874999999999993
+    },
+    {
+      "left": "llama3.1:8b",
+      "right": "gemma3:4b",
+      "exactAgreement": 0,
+      "meanJaccard": 0.2641666666666667
+    }
+  ],
+  "fleissKappaByRole": {
+    "tech": -0.1458333333333336,
+    "data": 0.09392932648746573,
+    "security": 0.179420384239661,
+    "legal": 0.07226890756302494,
+    "policy": -0.06703146374829065,
+    "finance": 0.13603637741568722,
+    "procurement": 0.08496732026143722,
+    "operations": -0.024844720496894873
+  },
+  "macroFleissKappa": 0.04111409979859462,
+  "consensusVsAuthorProvisional": {
+    "exactAgreement": 0.1,
+    "meanJaccard": 0.5237499999999999,
+    "microPrecision": 0.8481012658227848,
+    "microRecall": 0.5491803278688525,
+    "microF1": 0.6666666666666666
+  },
+  "consensusReviewRate": 0,
+  "interpretation": "Multi-family local LLM consensus is an independent-model robustness check, not independent human ground truth."
+}

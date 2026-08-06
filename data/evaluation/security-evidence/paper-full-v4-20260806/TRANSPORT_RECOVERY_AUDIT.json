@@ -1,0 +1,92 @@
+{
+  "status": "rerun-complete",
+  "criterion": "job contains at least one final HTTP status 599 after retries",
+  "removedCompletedJobKeys": [
+    "primary:Q001:fixed-sanitized:interdepartmental:17:12",
+    "primary:Q002:network-only:low-bandwidth:29:2",
+    "primary:Q001:network-only:owner-overload:43:17",
+    "ablation:Q002:without-policy-constraint:normal:43:2",
+    "ablation:Q005:weighted-objective:owner-overload:43:0",
+    "ablation:Q003:without-network-criterion:interdepartmental:17:1"
+  ],
+  "affectedTraces": {
+    "primary:Q001:fixed-sanitized:interdepartmental:17:12": [
+      {
+        "traceId": "7ebf09a9394a354b",
+        "role": "security",
+        "elapsedMs": 10323.252,
+        "retries": 3
+      },
+      {
+        "traceId": "50e92fecb5d42f6b",
+        "role": "legal",
+        "elapsedMs": 10100.142,
+        "retries": 3
+      },
+      {
+        "traceId": "c315c4aaef7ae06a",
+        "role": "tech",
+        "elapsedMs": 9896.904,
+        "retries": 3
+      }
+    ],
+    "primary:Q002:network-only:low-bandwidth:29:2": [
+      {
+        "traceId": "bbc600ab36e95a1b",
+        "role": "security",
+        "elapsedMs": 8506.702,
+        "retries": 3
+      }
+    ],
+    "primary:Q001:network-only:owner-overload:43:17": [
+      {
+        "traceId": "da69d5a79d7f4b71",
+        "role": "security",
+        "elapsedMs": 7922.024,
+        "retries": 3
+      },
+      {
+        "traceId": "7b945e15c51cf754",
+        "role": "legal",
+        "elapsedMs": 7769.417,
+        "retries": 3
+      }
+    ],
+    "ablation:Q002:without-policy-constraint:normal:43:2": [
+      {
+        "traceId": "0776a09eef7540ed",
+        "role": "security",
+        "elapsedMs": 9853.604,
+        "retries": 3
+      }
+    ],
+    "ablation:Q005:weighted-objective:owner-overload:43:0": [
+      {
+        "traceId": "ea53066a5d3e5655",
+        "role": "security",
+        "elapsedMs": 9033.721,
+        "retries": 3
+      },
+      {
+        "traceId": "e46f57b28b9404a1",
+        "role": "legal",
+        "elapsedMs": 9200.979,
+        "retries": 3
+      }
+    ],
+    "ablation:Q003:without-network-criterion:interdepartmental:17:1": [
+      {
+        "traceId": "c23730d68e3151c3",
+        "role": "finance",
+        "elapsedMs": 9661.369,
+        "retries": 3
+      }
+    ]
+  },
+  "originalCompletedJobCount": 24624,
+  "retainedCompletedJobCount": 24618,
+  "backup": "completed-jobs.pre-transport-recovery.jsonl",
+  "generatedAt": "2026-08-06T05:12:11.745Z",
+  "remainingFinalTransportFailures": 0,
+  "completedAt": "2026-08-06T05:50:24.302Z"
+}

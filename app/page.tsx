@@ -38,12 +38,33 @@ type RunResult = {
   conclusion: string;
   status: "ready" | "review";
   agents: AgentResult[];
+  routerDecision?: {
+    selected: string[];
+    required: string[];
+    predictedCoverage: number;
+    objectiveCost: number;
+    adaptiveAdditions: string[];
+    strategy: "lightweight-threshold" | "boundary-constrained";
+    complexityScore: number;
+    rationale: string;
+    policy: {
+      classification: "public" | "internal" | "confidential";
+      purpose: "advice" | "decision" | "audit";
+      minimumCoverage: number;
+      maxAgents: number;
+    };
+  } | null;
   checks: { label: string; status: "pass" | "warn"; detail: string }[];
   metrics: {
     calls: number;
     tokens: number;
     bytes: number;
     latencyMs: number;
+    latencyDistribution?: { p50Ms: number; p95Ms: number; p99Ms: number };
+    timeToFirstValidAnswerMs?: number;
+    deadlineMs?: number;
+    timeoutRate?: number;
+    qualityUnderDeadline?: number;
     exposedFields: number;
     traceability: number;
     rawDataLeavesEdge: boolean;
@@ -51,6 +72,18 @@ type RunResult = {
     dataRecipients: number;
     minimizationRate: number;
     privacyRiskScore: number;
+    boundaryExposureScore?: number;
+    boundaryExposure?: {
+      rawBytes: number;
+      retrievedBytes: number;
+      summaryBytes: number;
+      metadataBytes: number;
+      crossBoundaryTokens: number;
+      sensitiveEntityLeakage: number;
+      unnecessaryAgentAccesses: number;
+    };
+    qualityPerDisclosedKb?: number;
+    agentFanOut?: number;
     groundedness: number;
     relevance: number;
     evidenceSupport: number;
@@ -80,6 +113,24 @@ type RunResult = {
     overall?: number;
     rationale?: string;
     error?: string;
+  };
+  evidenceStrategy?: "legacy" | "axnetcc-saea";
+  securityEmulation?: boolean;
+  evidencePlan?: {
+    decisions: Array<{
+      role: string;
+      evidenceId: string;
+      mode: "raw" | "sanitized" | "local-summary" | "metadata-only";
+      coverage: number;
+      policyViolation: boolean;
+      predictedEndToEndMs: number;
+      responseBytes: number;
+      securityLevel: "public" | "internal" | "confidential" | "personal";
+    }>;
+    infeasibleRoles: string[];
+    infeasible: boolean;
+    humanReviewRequired: boolean;
+    reason?: string;
   };
   timeline: { label: string; detail: string; ms: number }[];
 };
@@ -301,6 +352,8 @@ export default function Home() {
   const [hasRun, setHasRun] = useState(false);
   const [runError, setRunError] = useState("");
   const [commercialJudgeEnabled, setCommercialJudgeEnabled] = useState(false);
+  const [evidenceStrategy, setEvidenceStrategy] = useState<"legacy" | "axnetcc-saea">("axnetcc-saea");
+  const [networkScenario, setNetworkScenario] = useState("normal");
   const [activeAgent, setActiveAgent] = useState("security");
   const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
   const selectedCount = hasRun ? result.agents.filter((agent) => agent.selected).length : 0;
@@ -360,7 +413,7 @@ export default function Home() {
     const response = await fetch("/api/orchestrate", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled }),
+      body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled, evidenceStrategy, securityEmulation: evidenceStrategy === "axnetcc-saea", networkScenario, requesterZone: "core" }),
     });
     if (!response.ok) throw new Error("orchestration failed");
     return response.json() as Promise<RunResult>;
@@ -420,8 +473,8 @@ export default function Home() {
     <main>
       <header className="topbar">
         <div className="brand">
-          <span className="brandMark">M</span>
-          <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
+          <span className="brandMark">A</span>
+          <div><strong>AXNETCC v2</strong><small>Security-Aware Evidence Acquisition</small></div>
         </div>
         <nav className="navLinks" aria-label="주요 페이지">
           <a className="aboutLink" href="/about">서비스 소개</a>
@@ -438,9 +491,9 @@ export default function Home() {
 
       <section className="hero">
         <div>
-          <span className="eyebrow">CORE ORCHESTRATOR / LIVE WORKSPACE</span>
-          <h1>분산된 전문성은 연결하고,<br /><em>데이터는 제자리에.</em></h1>
-          <p>필요한 조직 Agent만 선택해 최소 정보로 협업하고, 모든 판단의 근거와 책임을 추적합니다.</p>
+          <span className="eyebrow">DEPARTMENT-BOUND AGENTS / LIVE SAEA WORKSPACE</span>
+          <h1>근거는 필요한 형태로만,<br /><em>데이터 경계는 그대로.</em></h1>
+          <p>부서별 고정 Agent와 endpoint를 유지하며 보안정책·근거 coverage·네트워크 비용을 함께 고려해 전달 형태를 결정합니다.</p>
         </div>
         <div className="heroStatus">
           <div className="pulse"><i /><i /><i /></div>
@@ -473,6 +526,26 @@ export default function Home() {
               </button>
             ))}
           </div>
+          <label className="modeLabel evidenceControlLabel">근거 전달 정책</label>
+          <div className="evidenceStrategyPicker">
+            <button className={evidenceStrategy === "axnetcc-saea" ? "active" : ""} onClick={() => setEvidenceStrategy("axnetcc-saea")}>
+              <strong>AXNetCC-SAEA</strong><small>보안·coverage·network 공동 최적화</small>
+            </button>
+            <button className={evidenceStrategy === "legacy" ? "active" : ""} onClick={() => setEvidenceStrategy("legacy")}>
+              <strong>Legacy</strong><small>기존 API 하위호환 실행</small>
+            </button>
+          </div>
+          <label className="networkScenarioLabel">
+            <span>네트워크 시나리오</span>
+            <select value={networkScenario} onChange={(event) => setNetworkScenario(event.target.value)} disabled={evidenceStrategy === "legacy"}>
+              <option value="normal">Normal · 8 ms</option>
+              <option value="interdepartmental">Interdepartmental · 35 ms</option>
+              <option value="low-bandwidth">Low bandwidth · 32 KB/s</option>
+              <option value="lossy">Lossy · 12% loss</option>
+              <option value="owner-overload">Owner overload · 5×</option>
+              <option value="mixed">Mixed adverse</option>
+            </select>
+          </label>
           <label className="judgeToggle">
             <input
               type="checkbox"
@@ -487,7 +560,7 @@ export default function Home() {
           <button className="compareButton" disabled={running || !query.trim()} onClick={runAllModes}>
             4방식 전체 비교 실행
           </button>
-          <p className="privacyNote">원문 데이터는 각 Edge를 벗어나지 않습니다.</p>
+          <p className="privacyNote">{evidenceStrategy === "axnetcc-saea" ? "정책을 통과한 최소 근거만 부서 경계를 넘습니다." : "Legacy 모드는 기존 전달 동작을 보존합니다."}</p>
         </aside>
 
         {hasRun ? <div className="resultPanel">
@@ -548,6 +621,29 @@ export default function Home() {
               ))}
             </section>
           </div>
+
+          {result.evidencePlan && (
+            <section className="evidencePlanCard">
+              <div className="cardLabel">
+                <span>SECURITY-AWARE EVIDENCE PLAN</span>
+                <b className={result.evidencePlan.infeasible ? "review" : "ready"}>{result.evidencePlan.infeasible ? "사람 검토 필요" : "정책 충족"}</b>
+              </div>
+              <div className="evidenceModeLegend">
+                <span><i className="raw" />raw</span><span><i className="sanitized" />sanitized</span><span><i className="local-summary" />local-summary</span><span><i className="metadata-only" />metadata-only</span>
+              </div>
+              <div className="evidenceDecisionGrid">
+                {result.evidencePlan.decisions.map((decision) => (
+                  <div key={`${decision.role}-${decision.evidenceId}`}>
+                    <span>{decision.role} · {decision.securityLevel}</span>
+                    <strong className={`mode-${decision.mode}`}>{decision.mode}</strong>
+                    <small>coverage {(decision.coverage * 100).toFixed(0)}% · {decision.responseBytes.toLocaleString()} B · {decision.predictedEndToEndMs.toFixed(1)} ms</small>
+                    <b className={decision.policyViolation ? "riskValue" : "safeValue"}>{decision.policyViolation ? "정책 위반" : "정책 허용"}</b>
+                  </div>
+                ))}
+              </div>
+              {result.evidencePlan.reason && <p className="evidencePlanReason">{result.evidencePlan.reason}</p>}
+            </section>
+          )}
 
           <section className="evidenceCard">
             <div className="evidenceTabs">
@@ -620,7 +716,25 @@ export default function Home() {
           <Metric label="TPOT" value={result.metrics.tpotMs == null ? "N/A" : `${result.metrics.tpotMs} ms`} note="선택 Agent 출력 토큰 평균" />
           <Metric label="불필요 필드" value={`${result.metrics.exposedFields}`} note="반환 필터 이후" />
           <Metric label="추적 가능성" value={`${result.metrics.traceability}%`} note="근거·주체 연결률" />
+          <Metric label="경계 노출 점수" value={`${result.metrics.boundaryExposureScore ?? "—"}`} note="원문·검색문맥·요약·메타데이터 가중합" />
+          <Metric label="품질 / 공개 KB" value={`${result.metrics.qualityPerDisclosedKb ?? "—"}`} note="품질 효율 지표" />
+          <Metric label="P95 Agent 지연" value={result.metrics.latencyDistribution ? `${result.metrics.latencyDistribution.p95Ms} ms` : "—"} note="선택 Agent 분포" />
+          <Metric label="Deadline 품질" value={`${result.metrics.qualityUnderDeadline ?? "—"}`} note={`${result.metrics.deadlineMs ?? 15000}ms 이내`} />
         </div>
+        {result.routerDecision && (
+          <div className="comparison">
+            <div className="privacyHeading">
+              <strong>BOUNDARY-CONSTRAINED ROUTING</strong>
+              <span>{result.routerDecision.policy.classification} · {result.routerDecision.policy.purpose}</span>
+            </div>
+            <p className="metricDefinition">
+              예측 coverage {(result.routerDecision.predictedCoverage * 100).toFixed(1)}% ·
+              {result.routerDecision.strategy} · 복잡도 {(result.routerDecision.complexityScore * 100).toFixed(0)} ·
+              목적함수 비용 {result.routerDecision.objectiveCost.toFixed(3)} ·
+              선택 {result.routerDecision.selected.join(", ")} · {result.routerDecision.rationale}
+            </p>
+          </div>
+        )}
         <div className="comparison">
           <div className="comparisonHead"><span>방식별 비교</span><span>상태</span><span>호출</span><span>E2E</span><span>TTFT</span><span>TPOT</span><span>추적성</span></div>
           {comparison.map((row) => (
@@ -724,7 +838,7 @@ export default function Home() {
         </div>
       </section></>}
 
-      <footer><span>MNC Lab. · Korea University</span><span>KOREN 기반 분산 AI Agent 협력 거버넌스 플랫폼</span></footer>
+      <footer><span>AXNetCC v2 · Security-Aware Evidence Acquisition</span><span>Application-layer HTTP evidence gateway & network proxy</span></footer>
     </main>
   );
 }

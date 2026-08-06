@@ -1,0 +1,29 @@
+{
+  "valid": true,
+  "checkedAt": "2026-08-06T10:08:44.121Z",
+  "runId": "paper-full-v4-20260806",
+  "expectedJobs": 24624,
+  "traces": 49248,
+  "uniqueQueries": 6,
+  "profileLevels": {
+    "17": [
+      "confidential",
+      "internal",
+      "personal",
+      "public"
+    ],
+    "29": [
+      "confidential",
+      "internal",
+      "personal"
+    ],
+    "43": [
+      "internal",
+      "personal",
+      "public"
+    ]
+  },
+  "policyViolations": 6335,
+  "transportFailures": 0,
+  "failures": []
+}

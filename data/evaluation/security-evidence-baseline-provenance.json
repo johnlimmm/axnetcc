@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-08-06T00:00:00.000Z",
+  "comparisonLayers": {
+    "acquisition": {
+      "fixedRoleSet": "data/evaluation/golden-set.jsonl#expected_agents",
+      "methods": {
+        "raw-central": "Always request raw evidence; policy bypass is experiment-only and traced.",
+        "always-local": "Always request deterministic local-summary.",
+        "fixed-sanitized": "Sanitized for public/internal and local-summary for confidential/personal.",
+        "network-only": "Select the smallest predicted network payload without policy/coverage constraints.",
+        "security-only": "Select by security level without a coverage constraint.",
+        "axnetcc-saea": "Hard policy and role-coverage constraints followed by lexicographic optimization.",
+        "oracle-feasible": "Offline-only: execute all four modes over HTTP and select among observed feasible outcomes."
+      }
+    },
+    "routing": {
+      "source": "data/evaluation/baseline-provenance.json",
+      "evaluation": "data/evaluation/router-research-report.json",
+      "methods": ["masRouterAdapted", "routeLlmMfAdapted", "irtRouterAdapted", "proposed"],
+      "warning": "These are AX role-selection adapters and not upstream benchmark/checkpoint reproductions."
+    },
+    "architecture": {
+      "methods": ["centralized-legacy", "parallel-legacy", "masrouter-legacy", "remoterag-legacy", "pgrf-legacy", "pgrf-saea", "axnetcc-saea"],
+      "warning": "Inspired architecture adapters are reported separately from research-code adapters."
+    }
+  },
+  "primarySources": [
+    { "name": "MasRouter", "venue": "ACL 2025", "url": "https://aclanthology.org/2025.acl-long.757/", "status": "peer-reviewed" },
+    { "name": "IRT-Router", "venue": "ACL 2025", "url": "https://aclanthology.org/2025.acl-long.761/", "status": "peer-reviewed" },
+    { "name": "RouteLLM", "url": "https://arxiv.org/abs/2406.18665", "status": "preprint-and-official-code" },
+    { "name": "RopMura", "url": "https://arxiv.org/abs/2501.07813", "status": "related-work-preprint" },
+    { "name": "STRMAC", "url": "https://arxiv.org/abs/2511.02200", "status": "related-work-preprint" },
+    { "name": "RCR-Router", "url": "https://arxiv.org/abs/2508.04903", "status": "related-work-preprint" }
+  ]
+}

@@ -101,6 +101,14 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 .modePicker button.active { border-color: var(--blue); background: #f4f7ff; color: var(--blue); }
 .modePicker button.active::after { background: var(--blue); box-shadow: inset 0 0 0 2px white; }
 .modePicker span { font-size: 13px; font-weight: 800; }.modePicker small { color: var(--muted); font-size: 10px; }
+.evidenceControlLabel { display: block; margin-top: 22px; }
+.evidenceStrategyPicker { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+.evidenceStrategyPicker button { min-height: 64px; padding: 10px; text-align: left; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; gap: 4px; }
+.evidenceStrategyPicker button.active { border-color: var(--blue); background: #eef3ff; color: var(--blue); }
+.evidenceStrategyPicker strong { font-size: 10px; }.evidenceStrategyPicker small { color: var(--muted); font-size: 8px; line-height: 1.35; }
+.networkScenarioLabel { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+.networkScenarioLabel select { height: 38px; padding: 0 10px; border: 1px solid var(--line); background: white; color: var(--ink); font-size: 10px; }
+.networkScenarioLabel select:disabled { opacity: .55; }
 .judgeToggle { display: flex; gap: 9px; align-items: flex-start; margin: 14px 0; padding: 11px; border: 1px solid var(--line); background: #fafbfe; cursor: pointer; }
 .judgeToggle input { margin-top: 2px; }.judgeToggle span { display: flex; flex-direction: column; gap: 3px; }
 .judgeToggle strong { font-size: 10px; }.judgeToggle small { color: var(--muted); font-size: 8px; line-height: 1.4; }
@@ -136,6 +144,15 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #255bff12; }
 
 .resultGrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
 .reportCard, .checksCard, .evidenceCard { border: 1px solid var(--line); background: white; }
+.evidencePlanCard { margin-top: 16px; padding: 20px; border: 1px solid #cfd9ef; background: #f8faff; }
+.evidenceModeLegend { display: flex; gap: 14px; margin: 14px 0; flex-wrap: wrap; }
+.evidenceModeLegend span { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; }
+.evidenceModeLegend i { width: 7px; height: 7px; border-radius: 50%; }.evidenceModeLegend .raw { background: #b45143; }.evidenceModeLegend .sanitized { background: #ffb25b; }.evidenceModeLegend .local-summary { background: var(--blue); }.evidenceModeLegend .metadata-only { background: #7b879f; }
+.evidenceDecisionGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.evidenceDecisionGrid > div { padding: 12px; border: 1px solid var(--line); background: white; display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; }
+.evidenceDecisionGrid span { color: var(--muted); font-size: 8px; text-transform: uppercase; }.evidenceDecisionGrid strong { font-size: 11px; }.evidenceDecisionGrid small { color: var(--muted); font-size: 8px; }.evidenceDecisionGrid b { font-size: 8px; text-align: right; }
+.mode-raw { color: #b45143; }.mode-sanitized { color: #a86813; }.mode-local-summary { color: var(--blue); }.mode-metadata-only { color: #687389; }
+.evidencePlanReason { margin: 12px 0 0; color: #b45143; font-size: 9px; }
 .reportCard, .checksCard { padding: 22px; }
 .cardLabel { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 10px; letter-spacing: .08em; font-weight: 800; }
 .cardLabel b { padding: 6px 9px; font-size: 9px; border-radius: 3px; }.cardLabel b.ready { background: #dff8f1; color: #13836a; }.cardLabel b.review { background: #fff0db; color: #a86813; }
@@ -255,7 +272,17 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
 .evaluationTable > div { display: grid; grid-template-columns: 1.7fr repeat(7, 1fr); align-items: center; min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--line); font-size: 10px; }
 .evaluationTable > div:last-child { border: 0; }.evaluationTableHead { min-height: 40px !important; color: var(--muted); background: #f5f7fb; font-size: 8px !important; font-weight: 800; }
 .evaluationTable strong { font-size: 11px; }.evaluationTable small { color: var(--muted); }.evaluationHighlight { color: white; background: var(--blue); }
+.evaluationTable.acquisitionTable { min-width: 820px; }
+.evaluationTable.acquisitionTable > div { grid-template-columns: 1.7fr repeat(4, 1fr); }
+.evaluationTable.routerTable { min-width: 720px; }
+.evaluationTable.routerTable > div { grid-template-columns: 1.7fr repeat(3, 1fr); }
 .evaluationHighlight small { color: #cfd9ff; }.safeValue { color: #13836a; }.riskValue { color: #b45143; }.evaluationHighlight .safeValue { color: var(--mint); }
+.evidenceModeGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.evidenceModeGrid section { min-height: 180px; padding: 22px; border: 1px solid var(--line); background: white; }
+.evidenceModeGrid b { color: var(--blue); font-size: 9px; letter-spacing: .1em; }.evidenceModeGrid strong { display: block; margin: 14px 0 8px; font-size: 18px; }.evidenceModeGrid p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.judgeGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.judgeGrid section { min-height: 145px; padding: 20px; color: white; background: var(--ink); display: flex; flex-direction: column; }
+.judgeGrid span { color: #8fa0c0; font-size: 8px; letter-spacing: .08em; }.judgeGrid strong { margin: 14px 0 8px; color: var(--mint); font-size: 30px; }.judgeGrid small { color: #9aa7bf; font-size: 8px; line-height: 1.45; }
 .tradeoffGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .tradeoffGrid section { min-height: 170px; padding: 22px; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; }
 .tradeoffGrid b { color: var(--blue); font-size: 9px; letter-spacing: .1em; }.tradeoffGrid strong { margin: 12px 0 8px; font-size: 26px; }
@@ -283,7 +310,7 @@ footer { border-top: 1px solid var(--line); display: flex; justify-content: spac
   footer { padding: 22px; display: block; line-height: 1.8; }
   .aboutLink { margin-right: 0; }.aboutHero { padding: 58px 22px 44px; }.aboutContent { margin: 0 22px 60px; }
   .aboutContent > article { grid-template-columns: 1fr; gap: 12px; padding: 38px 0; }.aboutContent ol { grid-template-columns: 1fr; }.aboutContent ol li { min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
-  .noveltyGrid, .metricList { grid-template-columns: 1fr; }.formulaTable > div { grid-template-columns: 1fr; gap: 8px; }
+  .noveltyGrid, .metricList, .evidenceModeGrid, .judgeGrid { grid-template-columns: 1fr; }.formulaTable > div { grid-template-columns: 1fr; gap: 8px; }
   .navLinks { gap: 8px; }.aboutLink { font-size: 9px; }.evaluationSummary { grid-template-columns: 1fr 1fr; }.evaluationSummary > div:nth-child(2) { border-right: 0; }.evaluationSummary > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .evaluationBody { margin: 0 22px 60px; }.evaluationSectionHead { grid-template-columns: 1fr; gap: 10px; }.tradeoffGrid, .methodGrid { grid-template-columns: 1fr; }
   .limitations li { grid-template-columns: 1fr; gap: 7px; }.footerLinks { margin-top: 8px; }

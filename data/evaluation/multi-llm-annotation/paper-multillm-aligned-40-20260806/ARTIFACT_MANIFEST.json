@@ -1,0 +1,41 @@
+{
+  "runId": "paper-multillm-aligned-40-20260806",
+  "generatedAt": "2026-08-06T10:00:45.603Z",
+  "artifacts": [
+    {
+      "name": "run-config.json",
+      "bytes": 2249,
+      "sha256": "705df7b2ecee36fa37bd0ed496ac7a03b394cb55f73bf33d9ad9a113d9011638"
+    },
+    {
+      "name": "qwen2.5_3b.jsonl",
+      "bytes": 20125,
+      "sha256": "65a23d034e291e1eef56fa469f2ad502043c9f4de99a5dc9fb0b8a05efa967fb"
+    },
+    {
+      "name": "llama3.1_8b.jsonl",
+      "bytes": 20082,
+      "sha256": "3c45596c2105bf7c017cf226ad5c6ffb560f7072dcec23f5c88480a7257ef986"
+    },
+    {
+      "name": "gemma3_4b.jsonl",
+      "bytes": 20387,
+      "sha256": "220af27b79a395b9896b76e6508b5e7ab82cb2d0bd0b30f1b49193a2475ae408"
+    },
+    {
+      "name": "consensus-labels.jsonl",
+      "bytes": 10517,
+      "sha256": "fe09a8dceeee4789621a7e724341e6c9f98f8fbfbb3e87d62d5f3fa9ad15b31e"
+    },
+    {
+      "name": "MULTI_LLM_REPORT.json",
+      "bytes": 3892,
+      "sha256": "89881aa690eb6caca52d28688faca87d486be9f73f93e171ae0c7843ca19977e"
+    },
+    {
+      "name": "MULTI_LLM_REPORT.md",
+      "bytes": 666,
+      "sha256": "4a78ad513f3d2362eb115e25a9db840d411362d8808be19cf5d23ec94ecf07cb"
+    }
+  ]
+}

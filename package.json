@@ -1,5 +1,5 @@
 {
-  "name": "mnc-flow",
+  "name": "axnetccv2",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "node scripts/sync-public-css.mjs && vinext build && node scripts/sync-built-assets.mjs && vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/orchestrator.test.mjs",
+    "test": "pnpm build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "local:check": "node --env-file=.env.local scripts/check-local-stack.mjs",
     "edge:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-ollama.ps1",
@@ -17,6 +17,22 @@
     "rag:compile": "node scripts/compile-rag-index.mjs",
     "eval:offline": "node scripts/evaluate-offline.mjs",
     "eval:expanded": "node scripts/evaluate-expanded.mjs"
+    ,"eval:learning-curve": "node scripts/evaluate-router-learning-curve.mjs"
+    ,"eval:statistics": "node scripts/evaluate-statistical-validity.mjs"
+    ,"eval:validate-dataset": "node scripts/validate-evaluation-dataset.mjs"
+    ,"eval:generate-candidates": "node scripts/generate-ax-candidate-set.mjs"
+    ,"eval:annotate-openai": "node scripts/annotate-candidates-openai.mjs"
+    ,"eval:merge-openai": "node scripts/merge-openai-annotations.mjs"
+    ,"eval:annotate-multillm": "node scripts/annotate-candidates-multillm.mjs"
+    ,"eval:analyze-multillm": "node scripts/analyze-candidates-multillm.mjs"
+    ,"eval:annotate-openai-blind": "node scripts/annotate-openai-blind-roles.mjs"
+    ,"eval:analyze-openai-blind": "node scripts/analyze-openai-blind-roles.mjs"
+    ,"evidence:emulation": "node emulation/emulation-supervisor.mjs"
+    ,"eval:security-evidence": "node scripts/run-security-evidence-experiment.mjs"
+    ,"eval:security-evidence:analyze": "node scripts/analyze-security-evidence-results.mjs"
+    ,"paper:security-evidence": "node scripts/build-security-evidence-paper-package.mjs"
+    ,"eval:security-evidence:derive-40": "node scripts/derive-security-evidence-role-concepts.mjs"
+    ,"eval:security-evidence:validate": "node scripts/validate-security-evidence-run.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
