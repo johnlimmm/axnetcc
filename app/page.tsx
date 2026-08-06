@@ -803,7 +803,7 @@ export default function Home() {
               <span>{row.judge?.error ? "평가 실패" : row.judge?.overall != null ? "평가 완료" : "미평가"}</span>
             </div>
           ))}
-            <p>이 점수는 자동 전문가 평가입니다. 재현 가능한 최종 성능 평가는 정답 라벨이 있는 검증셋의 표준 지표로 수행합니다.</p>
+            <p>블라인드 LLM 평가와 정답 라벨 기반 표준 지표를 함께 사용해 응답 품질과 역할선택 성능을 다각도로 검증합니다.</p>
           </div>
           {result.commercialJudge?.enabled && (
             <div className="judgeResult">

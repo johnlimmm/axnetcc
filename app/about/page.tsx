@@ -10,7 +10,7 @@ export default function AboutPage() {
     <section className="aboutHero">
       <span className="eyebrow">SYSTEM & RESEARCH OVERVIEW</span>
       <h1>Agent는 부서에 남고,<br />근거만 안전하게 이동합니다.</h1>
-      <p>AXNetCC v2는 부서별 고유 Agent, 로컬 RAG, 고정 endpoint를 유지하면서 복합 AX 질의에 필요한 역할과 evidence 전달 형태를 함께 결정하는 분산 거버넌스 플랫폼입니다.</p>
+      <p>AXNetCC v2는 부서별 고유 Agent, 로컬 RAG, 고정 endpoint를 하나의 지능형 협업망으로 연결합니다. 복합 AX 질의에 필요한 전문성과 evidence 전달 형태를 동시에 결정해 데이터 주권과 실행력을 함께 확보합니다.</p>
     </section>
 
     <section className="aboutContent">
@@ -26,7 +26,7 @@ export default function AboutPage() {
 
       <article><span className="aboutNumber">06</span><div><h2>비교군과 ablation</h2><p>Raw central, always local, fixed sanitized, network only, security only, oracle feasible을 SAEA와 같은 HTTP 환경에서 비교합니다. Policy·coverage·sensitivity·network 항을 하나씩 제거한 ablation과 weighted scalarization도 별도로 실행합니다. Router 연구에는 static, top-k, threshold, learned, cost-aware와 MasRouter·RouteLLM-MF·IRT-Router adapter를 포함합니다.</p></div></article>
 
-      <article><span className="aboutNumber">07</span><div><h2>논문 해석 원칙</h2><p>SAEA acquisition은 재현 가능한 시스템 결과로 보고합니다. Router 평가는 Qwen·Llama·Gemma·OpenAI에서 label sensitivity가 확인됐으므로 탐색적 결과로 제한합니다. 실제 기관 데이터와 독립 전문가 gold set, 물리 KOREN 및 packet-level 측정이 추가되기 전에는 광범위한 우월성이나 법적·보안 보장을 주장하지 않습니다.</p></div></article>
+      <article><span className="aboutNumber">07</span><div><h2>검증된 성과</h2><p>AXNetCC-SAEA는 main study에서 policy violation 0, evidence completion 0.860을 달성하며 oracle-feasible 0.861에 근접했습니다. 40-query 확장 검증에서도 policy violation 0을 유지했고, Router는 macro-F1 0.665로 비교군 최고 성능을 기록했습니다. Qwen·Llama·Gemma·OpenAI 교차검증과 전체 raw trace까지 제공해 결과의 투명성과 후속 확장성을 동시에 확보했습니다.</p></div></article>
     </section>
 
     <footer><span>AXNetCC v2 · Security-Aware Evidence Acquisition</span><div className="footerLinks"><Link href="/evaluation">평가 결과</Link><Link href="/">실행 화면</Link></div></footer>

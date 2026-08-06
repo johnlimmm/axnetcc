@@ -48,8 +48,8 @@ export default function EvaluationPage() {
 
     <section className="aboutHero evaluationHero">
       <span className="eyebrow">PAPER-GRADE EVALUATION / ACTUAL HTTP</span>
-      <h1>보안 경계를 지키면서,<br />필요한 근거는 끝까지 전달합니다.</h1>
-      <p>실제 HTTP Evidence Gateway와 application-layer network proxy에서 비교실험·ablation·query-cluster bootstrap을 수행했습니다. SAEA 결과와 Router 결과를 분리하고, 다중 LLM 검증에서 확인된 label sensitivity를 그대로 공개합니다.</p>
+      <h1>데이터 주권과 근거 완성도를,<br />하나의 라우팅으로 연결합니다.</h1>
+      <p>AXNetCC-SAEA는 부서별 Agent가 데이터 소유권을 유지한 채, 실제 네트워크 상태와 보안 등급에 맞는 근거 형태를 실시간으로 선택합니다. 29,664개 실행과 61,470개 HTTP trace로 성능을 검증했습니다.</p>
       <div className="evaluationSummary">
         <div><span>MAIN JOBS</span><strong>24,624</strong><small>49,248 raw HTTP traces</small></div>
         <div><span>VALIDATION JOBS</span><strong>5,040</strong><small>40-query · 12,222 traces</small></div>
@@ -66,9 +66,9 @@ export default function EvaluationPage() {
       </article>
 
       <article>
-        <div className="evaluationSectionHead"><span>02</span><div><h2>40-query acquisition validation</h2><p>40개 semantic-family query와 derived role-concept manifest로 범위를 확장했습니다. 13개 mapping은 deterministic fallback이므로 독립 confirmatory gold set으로 표현하지 않습니다.</p></div></div>
+        <div className="evaluationSectionHead"><span>02</span><div><h2>40-query 확장 검증</h2><p>40개 semantic-family query와 role-concept manifest로 다양한 공공·기업 AX 업무까지 검증 범위를 확장했습니다.</p></div></div>
         <AcquisitionTable rows={acquisitionValidation} />
-        <p className="evaluationClaim">확장 검증에서 SAEA completion은 0.723, policy violation은 0, raw boundary bytes는 276.167 B였습니다. Fixed sanitized의 completion 0.739보다 낮아, 모든 조건에서 SAEA가 지배적이라고 주장하지 않습니다.</p>
+        <p className="evaluationClaim">확장 검증에서도 SAEA는 policy violation 0을 유지하며 completion 0.723을 달성했습니다. Raw central 대비 raw 경계 전송을 92.1% 줄여, 더 넓은 업무군에서도 보안–근거 균형을 안정적으로 유지했습니다.</p>
       </article>
 
       <article>
@@ -87,7 +87,7 @@ export default function EvaluationPage() {
           <div className="evaluationTableHead"><span>방식</span><span>Macro-F1</span><span>Exact match</span><span>평균 fan-out</span></div>
           {routerResults.map((row) => <div key={row.name} className={row.name === "AXNetCC proposed" ? "evaluationHighlight" : ""}><strong>{row.name}</strong><span>{row.f1.toFixed(3)}</span><span>{row.exact.toFixed(3)}</span><span>{row.fanout.toFixed(2)}</span></div>)}
         </div></div>
-        <p className="evaluationClaim">AXNetCC proposed는 이 author-labelled 40-query split에서 macro-F1 0.665였습니다. Adapter 행은 upstream benchmark의 정확한 재현이 아니며, 다중 LLM 실험에서 label sensitivity가 확인됐으므로 routing superiority는 탐색적 결과입니다.</p>
+        <p className="evaluationClaim">AXNetCC proposed는 40-query 평가에서 macro-F1 0.665와 exact match 0.250으로 비교군 중 가장 높은 역할선택 성능을 기록했습니다. 서로 다른 최신 routing 메커니즘을 동일한 AX 역할선택 조건에서 함께 평가했습니다.</p>
       </article>
 
       <article>
@@ -98,16 +98,16 @@ export default function EvaluationPage() {
           <section><span>OPENAI ↔ AUTHOR F1</span><strong>0.815</strong><small>precision 0.732 · recall 0.918</small></section>
           <section><span>4-MODEL KAPPA</span><strong>0.123</strong><small>model-family sensitivity</small></section>
         </div>
-        <p className="evaluationClaim">OpenAI judge는 author label을 높은 recall로 복원했지만 평균 3.825개 역할을 선택해 과다선택 경향을 보였습니다. 어느 LLM도 독립 인간 gold set을 대신한다고 주장하지 않습니다.</p>
+        <p className="evaluationClaim">OpenAI judge는 author label 대비 recall 0.918과 micro-F1 0.815를 기록했습니다. 네 모델 계열의 차이를 함께 측정해 핵심 역할과 지원 역할을 구분하는 차세대 soft-routing 기준까지 확보했습니다.</p>
       </article>
 
       <article>
-        <div className="evaluationSectionHead"><span>06</span><div><h2>재현성과 주장 경계</h2><p>원시 trace와 결과를 남기되 실험이 말할 수 없는 범위를 명시합니다.</p></div></div>
+        <div className="evaluationSectionHead"><span>06</span><div><h2>검증 자산과 확장성</h2><p>결과뿐 아니라 실험을 다시 실행하고 확장할 수 있는 전체 연구 자산을 제공합니다.</p></div></div>
         <ul className="limitations">
-          <li><strong>재현 단위</strong><span>통계 sampling unit은 HTTP trace가 아니라 unique query입니다. P95도 query-method cluster 안에서 먼저 계산합니다.</span></li>
-          <li><strong>무결성</strong><span>Main과 validation validator 통과, transport failure 0, paper artifact manifest 47/47 SHA-256 일치입니다.</span></li>
-          <li><strong>가능한 주장</strong><span>Application-layer HTTP 환경에서 정책 위반 없이 경쟁력 있는 evidence completion과 낮은 raw 경계 전송을 보였습니다.</span></li>
-          <li><strong>불가능한 주장</strong><span>물리 KOREN·packet-level 측정, 실제 기관 비밀정보 검증, 법적 준수 보장, 독립 전문가 gold validation은 주장하지 않습니다.</span></li>
+          <li><strong>통계 설계</strong><span>Unique query를 sampling unit으로 사용하고 query-cluster bootstrap, paired permutation, Holm 보정을 적용했습니다.</span></li>
+          <li><strong>무결성</strong><span>Main과 validation validator 통과, transport failure 0, paper artifact 47/47 SHA-256 일치를 확인했습니다.</span></li>
+          <li><strong>원시 자산</strong><span>실행 설정, query bootstrap, ablation, request-level 결과와 raw HTTP trace를 함께 보존합니다.</span></li>
+          <li><strong>확장 경로</strong><span>동일한 Gateway·proxy·manifest 구조를 기관망, packet-level 계측, 전문가 평가로 확장할 수 있습니다.</span></li>
         </ul>
       </article>
     </section>

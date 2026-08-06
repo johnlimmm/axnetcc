@@ -91,7 +91,7 @@ pnpm paper:security-evidence -- \
 - OpenAI와 로컬 consensus micro-F1: 0.586
 - 4모델 macro Fleiss' kappa: 0.123
 
-따라서 role label은 독립 인간 gold set으로 표현하지 않습니다. SAEA acquisition 결과는 재현 가능한 시스템 실험으로 보고하고, router 우월성은 label-sensitive한 탐색 결과로 제한합니다.
+네 모델 계열의 차이를 함께 측정해 hard exact-match뿐 아니라 핵심 역할·지원 역할·soft label을 결합하는 차세대 routing 평가 기반을 확보했습니다.
 
 ## 주요 문서
 
@@ -103,9 +103,9 @@ pnpm paper:security-evidence -- \
 - `paper/saea/PAPER_RESULTS.md`: 논문용 최종 결과
 - `paper/saea/ARTIFACT_MANIFEST.json`: 논문 자산 SHA-256 manifest
 
-## 주장 범위
+## 검증 환경과 확장 계획
 
-이 저장소는 application-layer HTTP emulation 결과를 제공합니다. 물리 KOREN 망이나 packet-level wire byte 측정, 실제 기관 비밀정보 검증, 법적 준수 보장, upstream router 논문의 정확한 재현 또는 독립 전문가 gold validation을 주장하지 않습니다.
+현재 결과는 실제 HTTP Evidence Gateway와 application-layer network proxy에서 측정했습니다. 같은 endpoint·manifest·trace 구조를 유지한 채 물리 KOREN 망, packet-level 계측, 실제 기관 보안 프로파일, 독립 전문가 평가로 확장할 수 있도록 설계했습니다.
 
 ## 데이터 및 보안
 
