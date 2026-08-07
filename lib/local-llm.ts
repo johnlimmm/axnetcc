@@ -1,4 +1,4 @@
-import type { AgentId, KnowledgeChunk } from "./knowledge";
+import type { AgentId, KnowledgeChunk } from "./agent-registry";
 
 export type LocalLlmMetrics = {
   backend: "ollama" | "deterministic";
@@ -61,7 +61,9 @@ export async function generateLocalAnswer(input: {
   query: string;
   evidence: KnowledgeChunk[];
   fallback: string;
+  signal?: AbortSignal;
 }): Promise<{ text: string; metrics: LocalLlmMetrics }> {
+  input.signal?.throwIfAborted();
   const { baseUrl, model } = resolveAgentRuntime(input.agent);
   if (!baseUrl) {
     return {
@@ -84,6 +86,9 @@ export async function generateLocalAnswer(input: {
   const startedAt = performance.now();
   const contentTimes: number[] = [];
   const controller = new AbortController();
+  const abortFromRequest = () => controller.abort(input.signal?.reason);
+  input.signal?.addEventListener("abort", abortFromRequest, { once: true });
+  if (input.signal?.aborted) abortFromRequest();
   const timeout = setTimeout(
     () => controller.abort(),
     Number(process.env.LOCAL_LLM_TIMEOUT_MS ?? 90_000),
@@ -177,6 +182,7 @@ export async function generateLocalAnswer(input: {
       },
     };
   } catch (error) {
+    if (input.signal?.aborted) throw error;
     return {
       text: input.fallback,
       metrics: {
@@ -193,6 +199,7 @@ export async function generateLocalAnswer(input: {
     };
   } finally {
     clearTimeout(timeout);
+    input.signal?.removeEventListener("abort", abortFromRequest);
     releaseInferenceSlot();
   }
 }

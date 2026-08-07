@@ -16,7 +16,10 @@
     "edge:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-agent-ollama.ps1",
     "rag:compile": "node scripts/compile-rag-index.mjs",
     "eval:offline": "node scripts/evaluate-offline.mjs",
-    "eval:expanded": "node scripts/evaluate-expanded.mjs"
+    "eval:expanded": "node scripts/evaluate-expanded.mjs",
+    "eval:routing": "node scripts/evaluate-routing-v2.mjs",
+    "benchmark:routing": "node scripts/benchmark-primary-routing.mjs && python scripts/render-primary-routing-charts.py",
+    "demo:boundary": "node scripts/demo-edge-boundary.mjs"
   },
   "dependencies": {
     "next": "16.2.6",

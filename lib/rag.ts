@@ -1,5 +1,5 @@
 import corpus from "../data/rag-corpus.json";
-import type { AgentId } from "./knowledge";
+import type { AgentId } from "./agent-registry";
 
 type CorpusDocument = {
   id: string;
@@ -11,6 +11,7 @@ type CorpusDocument = {
   publishedAt?: string | null;
   sourceSha256: string;
   licenseReview: string;
+  classification?: "public";
 };
 
 const documents = corpus.documents as CorpusDocument[];

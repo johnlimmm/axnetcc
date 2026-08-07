@@ -7,8 +7,11 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 
 - 기술·데이터·보안·법무·정책·재무·조달·운영 등 8개 전문 Agent
 - 질의 기반 동적 Agent 선택
+- v2 Boundary Router의 단일 Primary + 필수 Reviewer + 적응형 Supporting Agent 실행
+- Edge 내부 Required-Concept Gate와 `sanitized`/`metadata-only` 근거 공개 계획
 - Agent별 독립 Ollama endpoint와 모델 설정
-- Agent별 허용 범위를 적용한 로컬 RAG
+- Agent ID·문서등급을 서버에서 먼저 검사하는 Edge RAG
+- Core에는 요약·근거 ID·계측값만 반환하는 반출 정책
 - 직접 식별자 마스킹과 근거 ID 연결
 - 중앙집중형, 전체 Multi-Agent, MasRouter-inspired, RemoteRAG-inspired, 제안 방식의 동일 질의 비교
 - E2E latency, TTFT, TPOT, Core 전송량, 원문 외부 전송 여부 측정
@@ -31,6 +34,8 @@ Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는
 현재 환경에서 제안 방식은 최고 품질의 93.8%를 유지하면서 전체 Multi-Agent 대비 Core 전송량을 48.2% 줄였습니다. MasRouter-inspired보다 품질이 2.4점, RemoteRAG-inspired보다 6.5점 높았고 원문 비이동을 유지했습니다. 두 inspired baseline은 원 논문의 전체 학습 controller 또는 DistanceDP를 재현한 것이 아니라 공개된 핵심 메커니즘을 동일 환경에 맞춰 구현한 비교군입니다. 이는 현재 평가셋과 장비에 대한 실측 결과이며 모든 환경에 대한 일반화된 성능 보장은 아닙니다.
 
 실험 원자료 요약은 `data/evaluation/literature-baseline-report.json`에 있습니다.
+
+> 위 수치는 Edge 문서등급 경계를 도입하기 전 저장된 baseline입니다. 현재 런타임은 모든 모드에서 Edge가 원문을 보존하고 안전 요약·근거 참조만 반환하므로, 최신 구조 간 비교값은 동일 조건으로 다시 측정해야 합니다.
 
 ### 40문항 고정 정답 평가
 
@@ -68,7 +73,61 @@ Core Web/API (:3000)
        └─ Operations Edge → Ollama + Operations RAG
 ```
 
-Core와 Edge를 한 PC에서 실행할 수도 있고, Agent별 endpoint를 서로 다른 PC·GPU 서버·KOREN 노드에 배치할 수도 있습니다. Core 코드는 배치 형태와 무관하며 환경변수의 주소만 변경합니다.
+Core와 Edge를 한 PC에서 실행할 수도 있고, Agent별 endpoint를 서로 다른 PC·GPU 서버·KOREN 노드에 배치할 수도 있습니다. Core는 corpus를 직접 import하지 않고 `EdgeAgentClient` 계약만 사용합니다.
+
+### v2 라우팅 실행 순서
+
+1. Core가 DLP 결과, 질의 목적, 역할 메타데이터로 Primary Agent를 정확히 하나 선택합니다.
+2. 개인정보·기밀 또는 조달 결합 규칙에 해당하면 보안·법무 또는 조달·재무 Reviewer를 필수로 표시합니다.
+3. Primary Edge는 로컬 RAG 원문으로 자신에게 등록된 concept ID의 충족 여부를 계산합니다.
+4. Core에는 안전 요약, 근거 ID, concept ID별 충족 상태만 반환합니다. 제한 문서는 계속 `reference-only`입니다.
+5. 미충족 concept가 있으면 그 concept의 담당 Supporting Agent만 추가 호출합니다.
+6. Edge `deny`는 다른 Agent 호출로 우회하지 않고 사람 검토 상태로 종료합니다.
+7. 중앙 통합 모델은 Agent 안전 요약과 근거 ID만 사용해 최종 응답을 생성합니다.
+
+v2의 평가용 중앙 Evidence API는 원문 corpus를 Core에서 직접 읽는 구조였기 때문에 가져오지 않았습니다. 대신 planner를 Edge 내부로 옮겼고, 빈 required-concept 목록은 coverage 100%가 아니라 `unknown + humanReviewRequired`로 처리합니다.
+
+#### 주관기관 선정 기준
+
+주관기관은 특정 단어 하나나 LLM KV cache의 attention 값으로 결정하지 않습니다. 먼저 개인정보·기밀 요청은 보안, 명시적 발주·입찰·조달 요청은 조달을 주관기관으로 고정하는 정책 Gate를 적용합니다. 일반 요청은 요청 전체와 8개 Agent routing profile을 비교하는 `hybrid-profile-v1` 점수로 Primary Agent를 정확히 하나 선택합니다.
+
+| 구성요소 | 가중치 | 의미 |
+|---|---:|---|
+| 업무 행위·도메인 신호 | 0.36 | 아키텍처, 위탁, 발주, SLA처럼 실제 수행 업무와의 일치 |
+| 프로필 의미 유사도 | 0.20 | 요청 전체 토큰·문자 n-gram과 역할·책임·개념 프로필 간 유사도 |
+| 키워드·업무 개체 | 0.20 | 예산, 개인정보, 사업자 등 키워드와 구조화된 업무 개체 일치 |
+| 근거 준비도 | 0.12 | 담당 required concept와 Agent RAG manifest의 준비 상태 |
+| 누락 위험 | 0.08 | 보안·법무 등 필수 역할을 빠뜨렸을 때의 위험 |
+| 비용 효율 | 0.04 | 예상 호출·RAG 범위에 따른 상대 비용 |
+
+모든 구성요소와 최종 점수는 0~1로 정규화되어 `routerDecision.primarySelection.rankedCandidates`에 공개됩니다. 함께 반환되는 `confidence`, `top1Top2Margin`, hard-Gate 사유, fallback 사유로 선택을 재현할 수 있습니다. 최고 점수가 0.30 미만이거나 1·2위 차이가 0.025 미만이면 기존 업무 신호 규칙으로 결정적 fallback하며, 업무 신호도 없으면 사람 검토 상태로 남깁니다. `개인정보가 없는`과 같은 부정 범위는 보안·법무의 양성 신호에서 제외합니다.
+
+40개 고정 질의 라우팅 회귀는 다음 명령으로 재현할 수 있습니다.
+
+```bash
+node scripts/evaluate-routing-v2.mjs
+```
+
+키워드 top-1, 키워드 fan-out, v2 heuristic, 현재 adaptive hybrid의 비교 데이터와 별도 PNG 그래프는 다음 명령으로 재생성합니다.
+
+```bash
+node scripts/benchmark-primary-routing.mjs
+python scripts/render-primary-routing-charts.py
+```
+
+산출물은 `reports/primary-routing-benchmark/`에 JSON, CSV, PNG와 평가 한계 설명을 함께 저장합니다.
+
+### 보안 경계 모델
+
+`EDGE_AGENT_MODE=local` 또는 기본 `auto`의 로컬 fallback은 개발·시연을 위한 **단일 프로세스 논리 경계**입니다. 등급 필터와 반출 검사는 동일하게 실행되지만, 운영체제·네트워크 수준 격리는 제공하지 않습니다. 실제 분산 보안 경계가 필요한 운영 배포에서는 다음을 적용합니다.
+
+- `EDGE_AGENT_MODE=remote`, `EDGE_AGENT_REQUIRE_REMOTE=true`
+- 각 Edge 배포의 `EDGE_AGENT_ID`를 하나의 Agent로 고정
+- Agent별 HTTPS endpoint와 서로 다른 service token
+- Edge endpoint의 Agent ID 고정, 요청·응답 크기 제한, timeout, 감사 ID 기록
+- corpus와 Ollama는 Edge 내부에서만 접근하고 Core 네트워크에서는 직접 접근 금지
+
+Edge 응답의 제한 문서는 제목·본문·URL 없이 근거 ID와 등급만 반환됩니다. 공개 문서도 DLP 처리된 짧은 미리보기만 반환됩니다. `local`과 `remote`는 기능 계약은 같지만, 전자에는 물리적 격리가 없다는 차이를 운영 검토에서 반드시 구분해야 합니다.
 
 ## 저장소 구성
 
@@ -165,7 +224,7 @@ LOCAL_LLM_OPERATIONS_BASE_URL=http://127.0.0.1:11434
 
 ### Edge 장비
 
-각 Edge 장비에 Ollama를 설치하고 모델을 받은 뒤 내부망 주소로 서버를 엽니다.
+각 Edge 장비에 이 애플리케이션의 Edge API와 Ollama를 함께 배치합니다. Ollama는 Edge 호스트 내부에서만 열고 Core에는 인증된 `/api/edge/agent` HTTPS endpoint만 공개합니다.
 
 Linux 예시:
 
@@ -176,28 +235,31 @@ OLLAMA_HOST=0.0.0.0:11434 OLLAMA_KEEP_ALIVE=15m ollama serve
 
 운영환경에서는 위 명령을 직접 노출하지 말고 systemd, 컨테이너 오케스트레이터 또는 내부 AI gateway로 관리하십시오.
 
-Edge별 권장 사항:
+Edge별 필수 사항:
 
-- Core의 사설 IP 또는 서비스 계정만 `11434` 접근 허용
-- 인터넷에 Ollama API 직접 공개 금지
-- TLS와 인증이 필요하면 Nginx, Envoy 또는 조직 표준 API gateway 사용
+- Core의 사설 IP 또는 서비스 계정만 Edge HTTPS API 접근 허용
+- 인터넷과 Core에 Ollama `11434` 직접 공개 금지
+- Nginx, Envoy 또는 조직 표준 API gateway에서 TLS와 Agent별 인증 적용
 - Agent별 모델·문서 index·로그 디렉터리 분리
 - 입력 원문과 로그의 보존기간 및 접근권한 설정
 - `/api/tags`와 `/api/chat` 상태 모니터링
 
 ### Core 장비
 
-Core의 `.env.local`에서 Agent별 주소를 실제 Edge 주소로 바꿉니다.
+Core의 `.env.local`에서 Agent별 Edge API 주소와 credential을 설정합니다.
 
 ```dotenv
-LOCAL_LLM_TECH_BASE_URL=http://10.20.1.41:11434
-LOCAL_LLM_DATA_BASE_URL=http://10.20.1.42:11434
-LOCAL_LLM_SECURITY_BASE_URL=http://10.20.1.43:11434
-LOCAL_LLM_LEGAL_BASE_URL=http://10.20.1.44:11434
-LOCAL_LLM_POLICY_BASE_URL=http://10.20.1.45:11434
-LOCAL_LLM_FINANCE_BASE_URL=http://10.20.1.46:11434
-LOCAL_LLM_PROCUREMENT_BASE_URL=http://10.20.1.47:11434
-LOCAL_LLM_OPERATIONS_BASE_URL=http://10.20.1.48:11434
+EDGE_AGENT_MODE=remote
+EDGE_AGENT_REQUIRE_REMOTE=true
+EDGE_AGENT_TECH_BASE_URL=https://tech-edge.internal.example
+EDGE_AGENT_DATA_BASE_URL=https://data-edge.internal.example
+EDGE_AGENT_SECURITY_BASE_URL=https://security-edge.internal.example
+EDGE_AGENT_LEGAL_BASE_URL=https://legal-edge.internal.example
+EDGE_AGENT_POLICY_BASE_URL=https://policy-edge.internal.example
+EDGE_AGENT_FINANCE_BASE_URL=https://finance-edge.internal.example
+EDGE_AGENT_PROCUREMENT_BASE_URL=https://procurement-edge.internal.example
+EDGE_AGENT_OPERATIONS_BASE_URL=https://operations-edge.internal.example
+# Secret Manager에서 Agent별 EDGE_AGENT_<AGENT>_TOKEN도 주입
 ```
 
 설정 확인:
@@ -208,7 +270,7 @@ pnpm run build
 pnpm run start
 ```
 
-운영 기본 포트는 `3000`입니다. 방화벽에서는 사용자→Core의 웹 포트와 Core→Edge의 Ollama 포트만 허용합니다. Edge 간 직접 통신은 현재 구현에 필요하지 않습니다.
+운영 기본 포트는 `3000`입니다. 방화벽에서는 사용자→Core 웹 포트와 Core→Edge HTTPS API만 허용합니다. Core→Ollama 및 Core→corpus 경로는 금지합니다. Edge 간 직접 통신은 현재 구현에 필요하지 않습니다.
 
 ## 3. 컨테이너·클라우드 배치
 
@@ -252,11 +314,19 @@ pnpm run start
 | `LOCAL_LLM_TIMEOUT_MS` | 로컬 LLM 요청 timeout |
 | `LOCAL_LLM_<AGENT>_BASE_URL` | 특정 Agent의 독립 endpoint |
 | `LOCAL_LLM_<AGENT>_MODEL` | 특정 Agent의 모델 |
+| `EDGE_AGENT_MODE` | `auto`, 개발용 `local`, 운영용 `remote` |
+| `EDGE_AGENT_REQUIRE_REMOTE` | 운영에서 단일 프로세스 fallback을 금지 |
+| `EDGE_AGENT_ID` | Edge 서버가 담당하는 고정 Agent ID. 운영 Edge에서 필수 |
+| `EDGE_AGENT_BASE_URL` | 공통 Edge API HTTPS 주소 |
+| `EDGE_AGENT_<AGENT>_BASE_URL` | Agent별 Edge API HTTPS 주소 |
+| `EDGE_AGENT_TOKEN` | 공통 service token. 운영에서는 Agent별 token 권장 |
+| `EDGE_AGENT_<AGENT>_TOKEN` | Agent별 service token |
+| `EDGE_AGENT_TIMEOUT_MS` | Core→Edge timeout |
 | `COMMERCIAL_JUDGE_BASE_URL` | 선택적 OpenAI 호환 블라인드 평가 API |
 | `COMMERCIAL_JUDGE_API_KEY` | 평가 API key. Git 커밋 금지 |
 | `COMMERCIAL_JUDGE_MODEL` | 평가 모델 |
 
-상용 평가를 켜면 질의, 생성 요약과 검색 근거 일부가 외부 평가 API로 전송됩니다. 민감한 운영 데이터에서는 기본적으로 비활성화하십시오.
+상용 평가를 켜면 마스킹된 질의, Edge 생성 요약, 근거 ID·등급만 외부 평가 API로 전송됩니다. 원문 excerpt는 평가 payload에 포함하지 않습니다. 그래도 파생 요약이 조직 정책상 외부 반출 가능한지 확인하고, 민감한 운영 데이터에서는 기본적으로 비활성화하십시오.
 
 ## 5. RAG 데이터 갱신
 
@@ -272,6 +342,7 @@ pnpm run rag:compile
 
 - 출처 URL, 문서명, 발행기관, 기준일, 이용조건
 - 문서 분류와 접근 가능한 Agent
+- 모든 chunk의 명시적 `classification` 값. 누락값을 `public`으로 간주하지 않음
 - 개인정보·비밀정보 포함 여부
 - 중복, 깨진 텍스트, 페이지 번호와 section metadata
 - 샘플 질의에 대한 Retrieval Recall@K
@@ -333,6 +404,8 @@ curl -X POST http://localhost:3000/api/orchestrate \
 - 이미 노출된 API key는 저장소 포함 여부와 무관하게 폐기·재발급합니다.
 - Ollama endpoint를 인터넷에 직접 공개하지 않습니다.
 - Core→Edge 통신에 조직 인증·암호화·접근제어를 적용합니다.
+- 운영 Core에서 `EDGE_AGENT_REQUIRE_REMOTE=true`를 적용하고 corpus/Ollama 직접 경로를 차단합니다.
+- Agent별 token 또는 mTLS/JWT audience를 분리하고 endpoint Agent ID를 요청 body만으로 신뢰하지 않습니다.
 - 운영 로그에 원문 질의와 개인정보를 남길지 정책적으로 결정합니다.
 - 상용 블라인드 평가 기능은 비민감 평가 데이터에만 사용합니다.
 - 배포 전 dependency 취약점 검사와 조직 보안검토를 수행합니다.

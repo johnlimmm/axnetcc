@@ -1,0 +1,5 @@
+method,label,prediction_source,timing_scope,macro_f1_pct,exact_match_pct,critical_role_recall_pct,primary_in_expected_pct,average_fan_out,routing_policy_time_mean_ms,routing_policy_time_median_ms,routing_policy_time_p95_ms,full_orchestration_latency_median_ms
+keyword_top1,Keyword top-1,standalone deterministic baseline,routing function only,35.7,5,22.7,57.5,1,0.015455,0.014952,0.01683,
+current_keyword_fanout,Keyword fan-out,standalone deterministic baseline,routing function only,64.6,20,88.6,57.5,3.33,0.015755,0.015811,0.016415,
+v2_boundary_heuristic,v2 boundary heuristic,standalone reconstruction of teamlead/v2,routing function only,66.2,22.5,90.9,77.5,3.3,0.032317,0.03185,0.034889,
+current_proposed_adaptive_hybrid,Proposed adaptive hybrid,actual built proposed-mode orchestrator output,JS mirror of initial routing plus adaptive policy using precomputed primary coverage,96.8,85,100,97.5,2.58,1.727771,1.749814,1.825192,134.5

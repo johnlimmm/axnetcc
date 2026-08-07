@@ -2,6 +2,7 @@ type JudgeInput = {
   query: string;
   answer: string;
   evidence: string;
+  signal?: AbortSignal;
 };
 
 export type CommercialJudgeResult = {
@@ -53,6 +54,7 @@ export async function evaluateWithCommercialJudge(
           },
         ],
       }),
+      signal: input.signal,
     });
     if (!response.ok) throw new Error(`Judge HTTP ${response.status}`);
     const payload = await response.json() as {
@@ -71,6 +73,7 @@ export async function evaluateWithCommercialJudge(
       rationale: String(parsed.rationale ?? ""),
     };
   } catch (error) {
+    if (input.signal?.aborted) throw error;
     return {
       enabled: true,
       provider: "configured",

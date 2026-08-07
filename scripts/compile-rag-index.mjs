@@ -20,6 +20,7 @@ for (const agent of agents) {
       publishedAt: chunk.published_at,
       sourceSha256: chunk.source_sha256,
       licenseReview: chunk.license_review,
+      classification: "public",
     });
   }
 }

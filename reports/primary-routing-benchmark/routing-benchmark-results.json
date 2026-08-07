@@ -1,0 +1,5033 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-07T08:13:00.409Z",
+  "benchmark": "primary-agent-routing-offline-40",
+  "dataset": {
+    "path": "data/evaluation/ax-golden-set-40.jsonl",
+    "sha256": "16612553e21258e0749b4c5d6c5f551e3b159042fabc4ad7afa654b2ee57ffdc",
+    "cases": 40,
+    "primaryLabelPolicy": "predicted primary belongs to expected_agents",
+    "criticalRoles": [
+      "security",
+      "legal",
+      "procurement",
+      "finance"
+    ]
+  },
+  "sourceRevisions": {
+    "currentHead": "7cd8894170172ceec58de74d6d16a450f2902170",
+    "teamleadV2": "21db814eabebe342173a90558fa25a038a5d55fd",
+    "currentRouterSha256": "bf01fcb92fa11e24bb273ccae8d42ca537d3b48241c7ee6077446ff5d110fd96",
+    "runtimeBundleSha256": "ecb8d92a6c58cb657d6ea5df626151529c1e69465464b48649282dddd8da4560"
+  },
+  "environment": {
+    "node": "v24.14.0",
+    "platform": "win32",
+    "architecture": "x64"
+  },
+  "timing": {
+    "unit": "milliseconds per decision",
+    "statisticForCharts": "median batch-amortized routing-policy CPU time",
+    "rounds": 5,
+    "warmupIterations": 10,
+    "measurementIterations": 50,
+    "includes": "routing functions; proposed also includes adaptive policy with precomputed primary coverage",
+    "excludes": [
+      "orchestration",
+      "Edge retrieval",
+      "RAG",
+      "LLM",
+      "network",
+      "process startup"
+    ]
+  },
+  "currentRuntimeParity": {
+    "casesCompared": 40,
+    "exactMatches": 40,
+    "fields": [
+      "primaryAgent",
+      "candidateAgents",
+      "required",
+      "selected",
+      "adaptiveAdditions",
+      "ranked candidate scores"
+    ]
+  },
+  "currentAcceptance": {
+    "floors": {
+      "macroF1": 66.5,
+      "exactMatchRate": 25,
+      "primaryAccuracy": 95,
+      "criticalRoleRecall": 90
+    },
+    "checks": {
+      "macroF1": {
+        "measured": 96.8,
+        "floor": 66.5,
+        "passed": true
+      },
+      "exactMatchRate": {
+        "measured": 85,
+        "floor": 25,
+        "passed": true
+      },
+      "primaryAccuracy": {
+        "measured": 97.5,
+        "floor": 95,
+        "passed": true
+      },
+      "criticalRoleRecall": {
+        "measured": 100,
+        "floor": 90,
+        "passed": true
+      }
+    },
+    "passed": true
+  },
+  "methods": [
+    {
+      "id": "keyword_top1",
+      "label": "Keyword top-1",
+      "description": "Selects only the Agent with the largest exact keyword-overlap count.",
+      "selectedSetDefinition": "A singleton containing the highest exact substring-keyword score; agentOrder breaks ties and tech is the zero-hit fallback.",
+      "predictionSource": "standalone deterministic baseline",
+      "timingScope": "routing function only"
+    },
+    {
+      "id": "current_keyword_fanout",
+      "label": "Keyword fan-out",
+      "description": "Reproduces the pre-MNC-16 route: call every Agent with at least one keyword hit.",
+      "selectedSetDefinition": "Every Agent whose exact substring-keyword score is greater than zero; tech is selected only when no Agent has a hit.",
+      "predictionSource": "standalone deterministic baseline",
+      "timingScope": "routing function only"
+    },
+    {
+      "id": "v2_boundary_heuristic",
+      "label": "v2 boundary heuristic",
+      "description": "Standalone reconstruction of teamlead/v2 coverage/cost and coupled-domain routing.",
+      "selectedSetDefinition": "The ordered subset of keyword/coupling-required Agents that passes v2 class allowance and is retained by its utility/coverage loop, capped by maxAgents; tech is the empty-set fallback.",
+      "predictionSource": "standalone reconstruction of teamlead/v2",
+      "timingScope": "routing function only"
+    },
+    {
+      "id": "current_proposed_adaptive_hybrid",
+      "label": "Proposed adaptive hybrid",
+      "description": "Current proposed-mode hybrid-profile-v1 primary selection plus post-primary missing-concept additions.",
+      "selectedSetDefinition": "The actual final result.routerDecision.selected from proposed orchestration: the hybrid-profile-v1 primary, then mandatory reviewers and candidate owners of concepts still uncovered by the primary Edge response.",
+      "predictionSource": "actual built proposed-mode orchestrator output",
+      "timingScope": "JS mirror of initial routing plus adaptive policy using precomputed primary coverage"
+    }
+  ],
+  "summary": [
+    {
+      "method": "keyword_top1",
+      "label": "Keyword top-1",
+      "description": "Selects only the Agent with the largest exact keyword-overlap count.",
+      "predictionSource": "standalone deterministic baseline",
+      "timingScope": "routing function only",
+      "macroF1": 35.7,
+      "exactMatchRate": 5,
+      "criticalRoleRecall": 22.7,
+      "primaryAccuracy": 57.5,
+      "averageFanOut": 1,
+      "orchestrationLatencyMedianMs": null,
+      "decisionTimeMeanMs": 0.015455,
+      "decisionTimeMedianMs": 0.014952,
+      "decisionTimeP95Ms": 0.01683,
+      "timingChecksum": 65650
+    },
+    {
+      "method": "current_keyword_fanout",
+      "label": "Keyword fan-out",
+      "description": "Reproduces the pre-MNC-16 route: call every Agent with at least one keyword hit.",
+      "predictionSource": "standalone deterministic baseline",
+      "timingScope": "routing function only",
+      "macroF1": 64.6,
+      "exactMatchRate": 20,
+      "criticalRoleRecall": 88.6,
+      "primaryAccuracy": 57.5,
+      "averageFanOut": 3.33,
+      "orchestrationLatencyMedianMs": null,
+      "decisionTimeMeanMs": 0.015755,
+      "decisionTimeMedianMs": 0.015811,
+      "decisionTimeP95Ms": 0.016415,
+      "timingChecksum": 89830
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "label": "v2 boundary heuristic",
+      "description": "Standalone reconstruction of teamlead/v2 coverage/cost and coupled-domain routing.",
+      "predictionSource": "standalone reconstruction of teamlead/v2",
+      "timingScope": "routing function only",
+      "macroF1": 66.2,
+      "exactMatchRate": 22.5,
+      "criticalRoleRecall": 90.9,
+      "primaryAccuracy": 77.5,
+      "averageFanOut": 3.3,
+      "orchestrationLatencyMedianMs": null,
+      "decisionTimeMeanMs": 0.032317,
+      "decisionTimeMedianMs": 0.03185,
+      "decisionTimeP95Ms": 0.034889,
+      "timingChecksum": 107570
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "label": "Proposed adaptive hybrid",
+      "description": "Current proposed-mode hybrid-profile-v1 primary selection plus post-primary missing-concept additions.",
+      "predictionSource": "actual built proposed-mode orchestrator output",
+      "timingScope": "JS mirror of initial routing plus adaptive policy using precomputed primary coverage",
+      "macroF1": 96.8,
+      "exactMatchRate": 85,
+      "criticalRoleRecall": 100,
+      "primaryAccuracy": 97.5,
+      "averageFanOut": 2.58,
+      "orchestrationLatencyMedianMs": 134.5,
+      "decisionTimeMeanMs": 1.727771,
+      "decisionTimeMedianMs": 1.749814,
+      "decisionTimeP95Ms": 1.825192,
+      "timingChecksum": 96780
+    }
+  ],
+  "perQuery": [
+    {
+      "method": "keyword_top1",
+      "id": "AX001",
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "legal"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX002",
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "tech",
+        "security"
+      ],
+      "predictedAgents": [
+        "security"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX003",
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "security"
+      ],
+      "predictedAgents": [
+        "legal"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX004",
+      "domain": "poc",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX005",
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX006",
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "procurement"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX007",
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data"
+      ],
+      "predictedAgents": [
+        "data"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX008",
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "policy",
+        "legal"
+      ],
+      "predictedAgents": [
+        "policy"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX009",
+      "domain": "operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX010",
+      "domain": "finance",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX011",
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX012",
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data",
+        "legal",
+        "security",
+        "policy"
+      ],
+      "predictedAgents": [
+        "data"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 3,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX013",
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX014",
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "finance"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX015",
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX016",
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX017",
+      "domain": "access-control",
+      "difficulty": "basic",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX018",
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX019",
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX020",
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "predictedAgents": [
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX021",
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX022",
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX023",
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX024",
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX025",
+      "domain": "finops",
+      "difficulty": "basic",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "finance",
+        "operations"
+      ],
+      "predictedAgents": [
+        "finance"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX026",
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "procurement"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX027",
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX028",
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX029",
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX030",
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX031",
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "predictedAgents": [
+        "finance"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX032",
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX033",
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX034",
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "finance"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX035",
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX036",
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "data",
+        "tech"
+      ],
+      "predictedAgents": [
+        "security"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX037",
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX038",
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "finance",
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX039",
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 1,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "keyword_top1",
+      "id": "AX040",
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "policy",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 3,
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX001",
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX002",
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "tech",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX003",
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "security"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX004",
+      "domain": "poc",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX005",
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX006",
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX007",
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "security",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.25,
+      "recall": 1,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX008",
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "policy",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "policy",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX009",
+      "domain": "operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX010",
+      "domain": "finance",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance"
+      ],
+      "truePositive": 1,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX011",
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX012",
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data",
+        "legal",
+        "security",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "security",
+        "policy"
+      ],
+      "truePositive": 3,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1": 0.75,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX013",
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX014",
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "finance",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "finance"
+      ],
+      "criticalHits": [
+        "security",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX015",
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX016",
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX017",
+      "domain": "access-control",
+      "difficulty": "basic",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "policy"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX018",
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "procurement",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX019",
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX020",
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 2,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX021",
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX022",
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "security",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 4,
+      "falseNegative": 1,
+      "precision": 0.2,
+      "recall": 0.5,
+      "f1": 0.28571428571428575,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX023",
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX024",
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX025",
+      "domain": "finops",
+      "difficulty": "basic",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "finance",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance"
+      ],
+      "truePositive": 1,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX026",
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech",
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX027",
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX028",
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX029",
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "security",
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "policy",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX030",
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "finance",
+        "procurement",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX031",
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX032",
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.3333333333333333,
+      "recall": 1,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX033",
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech",
+        "policy"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX034",
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 1,
+      "precision": 0.4,
+      "recall": 0.6666666666666666,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX035",
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "policy",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX036",
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "data",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX037",
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX038",
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "finance",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "finance",
+        "security"
+      ],
+      "criticalHits": [
+        "finance",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX039",
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "finance",
+        "procurement",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 5,
+      "falseNegative": 2,
+      "precision": 0.16666666666666666,
+      "recall": 0.3333333333333333,
+      "f1": 0.2222222222222222,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_keyword_fanout",
+      "id": "AX040",
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "policy",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "legal",
+        "policy",
+        "finance",
+        "operations"
+      ],
+      "truePositive": 4,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX001",
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security",
+        "tech"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX002",
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "tech",
+        "security"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX003",
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "security"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX004",
+      "domain": "poc",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX005",
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX006",
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "tech",
+        "finance"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX007",
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data"
+      ],
+      "predictedAgents": [
+        "data",
+        "security",
+        "operations",
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.25,
+      "recall": 1,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX008",
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "policy",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "policy",
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX009",
+      "domain": "operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX010",
+      "domain": "finance",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "finance"
+      ],
+      "truePositive": 1,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX011",
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "security"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX012",
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data",
+        "legal",
+        "security",
+        "policy"
+      ],
+      "predictedAgents": [
+        "data",
+        "security",
+        "tech",
+        "policy",
+        "legal"
+      ],
+      "truePositive": 4,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX013",
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "procurement",
+        "finance"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX014",
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "truePositive": 3,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "finance"
+      ],
+      "criticalHits": [
+        "security",
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX015",
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "legal",
+        "operations",
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX016",
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "data"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX017",
+      "domain": "access-control",
+      "difficulty": "basic",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech",
+        "policy"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX018",
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "predictedAgents": [
+        "operations",
+        "security",
+        "tech",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX019",
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX020",
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "predictedAgents": [
+        "operations",
+        "security",
+        "legal"
+      ],
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 2,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX021",
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "legal",
+        "data",
+        "tech",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.4,
+      "recall": 1,
+      "f1": 0.5714285714285715,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX022",
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "tech",
+        "operations",
+        "data"
+      ],
+      "truePositive": 1,
+      "falsePositive": 4,
+      "falseNegative": 1,
+      "precision": 0.2,
+      "recall": 0.5,
+      "f1": 0.28571428571428575,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX023",
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "tech"
+      ],
+      "predictedAgents": [
+        "security",
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX024",
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "policy"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 1,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX025",
+      "domain": "finops",
+      "difficulty": "basic",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "finance",
+        "operations"
+      ],
+      "predictedAgents": [
+        "finance",
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX026",
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "legal",
+        "tech",
+        "finance"
+      ],
+      "truePositive": 2,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX027",
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX028",
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "data",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 2,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX029",
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "tech",
+        "operations",
+        "policy"
+      ],
+      "truePositive": 3,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX030",
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "tech",
+        "operations",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 3,
+      "falsePositive": 3,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX031",
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "predictedAgents": [
+        "finance",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX032",
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX033",
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "predictedAgents": [
+        "tech",
+        "policy"
+      ],
+      "truePositive": 0,
+      "falsePositive": 2,
+      "falseNegative": 3,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX034",
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "finance",
+        "procurement",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 3,
+      "falseNegative": 1,
+      "precision": 0.4,
+      "recall": 0.6666666666666666,
+      "f1": 0.5,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX035",
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX036",
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "data",
+        "tech"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 1,
+      "precision": 1,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX037",
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX038",
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "operations",
+        "tech",
+        "finance"
+      ],
+      "truePositive": 3,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6,
+      "recall": 1,
+      "f1": 0.7499999999999999,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance",
+        "security"
+      ],
+      "criticalHits": [
+        "finance",
+        "security"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX039",
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security",
+        "tech",
+        "operations",
+        "finance",
+        "procurement"
+      ],
+      "truePositive": 1,
+      "falsePositive": 5,
+      "falseNegative": 2,
+      "precision": 0.16666666666666666,
+      "recall": 0.3333333333333333,
+      "f1": 0.2222222222222222,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "v2_boundary_heuristic",
+      "id": "AX040",
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "policy",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "security",
+        "legal",
+        "tech",
+        "policy",
+        "finance"
+      ],
+      "truePositive": 4,
+      "falsePositive": 2,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": null
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX001",
+      "domain": "citizen-service",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security",
+        "tech"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 135
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX002",
+      "domain": "internal-rag",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "tech",
+        "security"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 122
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX003",
+      "domain": "outsourcing",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "security"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": 98
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX004",
+      "domain": "poc",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 105
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX005",
+      "domain": "privacy",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "legal"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 97
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX006",
+      "domain": "procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "finance",
+        "tech"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "finance"
+      ],
+      "orchestrationLatencyMs": 104
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX007",
+      "domain": "data-governance",
+      "difficulty": "basic",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data"
+      ],
+      "predictedAgents": [
+        "data"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 66
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX008",
+      "domain": "responsible-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "policy",
+        "legal"
+      ],
+      "predictedAgents": [
+        "policy",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": 78
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX009",
+      "domain": "operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 180
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX010",
+      "domain": "finance",
+      "difficulty": "basic",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "finance"
+      ],
+      "predictedAgents": [
+        "finance",
+        "operations"
+      ],
+      "truePositive": 1,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": 172
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX011",
+      "domain": "training-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "security"
+      ],
+      "predictedAgents": [
+        "legal",
+        "security",
+        "data"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": 148
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX012",
+      "domain": "pseudonymized-data",
+      "difficulty": "advanced",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data",
+        "legal",
+        "security",
+        "policy"
+      ],
+      "predictedAgents": [
+        "data",
+        "security",
+        "legal",
+        "policy"
+      ],
+      "truePositive": 4,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal",
+        "security"
+      ],
+      "criticalHits": [
+        "legal",
+        "security"
+      ],
+      "orchestrationLatencyMs": 128
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX013",
+      "domain": "public-procurement",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "finance",
+        "legal"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "orchestrationLatencyMs": 144
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX014",
+      "domain": "deployment",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "predictedAgents": [
+        "tech",
+        "security",
+        "finance"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "finance"
+      ],
+      "criticalHits": [
+        "security",
+        "finance"
+      ],
+      "orchestrationLatencyMs": 126
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX015",
+      "domain": "administrative-decision",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "legal",
+        "policy"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": 120
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX016",
+      "domain": "rag-quality",
+      "difficulty": "advanced",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "data"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 107
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX017",
+      "domain": "access-control",
+      "difficulty": "basic",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 168
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX018",
+      "domain": "rfi-rfp",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "operations",
+        "legal"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 156
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX019",
+      "domain": "model-operations",
+      "difficulty": "basic",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 135
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX020",
+      "domain": "service-continuity",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech",
+        "policy"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 121
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX021",
+      "domain": "copyright",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "legal",
+        "tech",
+        "data"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": 114
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX022",
+      "domain": "data-sharing",
+      "difficulty": "advanced",
+      "predictedPrimary": "data",
+      "expectedAgents": [
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "data",
+        "policy"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 108
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX023",
+      "domain": "ai-security",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "tech"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 82
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX024",
+      "domain": "ai-ethics",
+      "difficulty": "basic",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "policy"
+      ],
+      "predictedAgents": [
+        "policy"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 50
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX025",
+      "domain": "finops",
+      "difficulty": "basic",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "finance",
+        "operations"
+      ],
+      "predictedAgents": [
+        "finance",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": 172
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX026",
+      "domain": "sole-source",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "finance",
+        "legal"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 153
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX027",
+      "domain": "log-analysis",
+      "difficulty": "adversarial",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 142
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX028",
+      "domain": "knowledge-lifecycle",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "data",
+        "operations"
+      ],
+      "predictedAgents": [
+        "tech",
+        "data",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "exactMatch": false,
+      "primaryCorrect": false,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 125
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX029",
+      "domain": "impact-assessment",
+      "difficulty": "advanced",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "security",
+        "legal",
+        "policy"
+      ],
+      "predictedAgents": [
+        "policy",
+        "security",
+        "legal"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security",
+        "legal"
+      ],
+      "criticalHits": [
+        "security",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 141
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX030",
+      "domain": "cloud-resilience",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "procurement",
+        "legal"
+      ],
+      "predictedAgents": [
+        "operations",
+        "legal",
+        "procurement"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 134
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX031",
+      "domain": "business-case",
+      "difficulty": "advanced",
+      "predictedPrimary": "finance",
+      "expectedAgents": [
+        "tech",
+        "operations",
+        "finance"
+      ],
+      "predictedAgents": [
+        "finance",
+        "tech",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": 117
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX032",
+      "domain": "public-rag",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech"
+      ],
+      "truePositive": 1,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 53
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX033",
+      "domain": "traceability",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "data",
+        "operations",
+        "security"
+      ],
+      "predictedAgents": [
+        "security",
+        "data",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 212
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX034",
+      "domain": "exit-plan",
+      "difficulty": "advanced",
+      "predictedPrimary": "procurement",
+      "expectedAgents": [
+        "procurement",
+        "legal",
+        "data"
+      ],
+      "predictedAgents": [
+        "procurement",
+        "finance",
+        "data",
+        "legal"
+      ],
+      "truePositive": 3,
+      "falsePositive": 1,
+      "falseNegative": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "exactMatch": false,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "procurement",
+        "legal"
+      ],
+      "criticalHits": [
+        "procurement",
+        "legal"
+      ],
+      "orchestrationLatencyMs": 186
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX035",
+      "domain": "high-risk-ai",
+      "difficulty": "advanced",
+      "predictedPrimary": "policy",
+      "expectedAgents": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "predictedAgents": [
+        "policy",
+        "legal",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": 164
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX036",
+      "domain": "authorization",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "security",
+        "data",
+        "tech"
+      ],
+      "predictedAgents": [
+        "security",
+        "tech",
+        "data"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "security"
+      ],
+      "criticalHits": [
+        "security"
+      ],
+      "orchestrationLatencyMs": 143
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX037",
+      "domain": "acceptance-test",
+      "difficulty": "basic",
+      "predictedPrimary": "tech",
+      "expectedAgents": [
+        "operations",
+        "tech"
+      ],
+      "predictedAgents": [
+        "tech",
+        "operations"
+      ],
+      "truePositive": 2,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [],
+      "criticalHits": [],
+      "orchestrationLatencyMs": 193
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX038",
+      "domain": "local-llm",
+      "difficulty": "advanced",
+      "predictedPrimary": "security",
+      "expectedAgents": [
+        "finance",
+        "security",
+        "operations"
+      ],
+      "predictedAgents": [
+        "security",
+        "finance",
+        "operations"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance",
+        "security"
+      ],
+      "criticalHits": [
+        "finance",
+        "security"
+      ],
+      "orchestrationLatencyMs": 179
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX039",
+      "domain": "interagency",
+      "difficulty": "advanced",
+      "predictedPrimary": "legal",
+      "expectedAgents": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "predictedAgents": [
+        "legal",
+        "data",
+        "policy"
+      ],
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "legal"
+      ],
+      "criticalHits": [
+        "legal"
+      ],
+      "orchestrationLatencyMs": 163
+    },
+    {
+      "method": "current_proposed_adaptive_hybrid",
+      "id": "AX040",
+      "domain": "scale-out",
+      "difficulty": "advanced",
+      "predictedPrimary": "operations",
+      "expectedAgents": [
+        "operations",
+        "policy",
+        "finance",
+        "tech"
+      ],
+      "predictedAgents": [
+        "operations",
+        "tech",
+        "policy",
+        "finance"
+      ],
+      "truePositive": 4,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exactMatch": true,
+      "primaryCorrect": true,
+      "criticalExpected": [
+        "finance"
+      ],
+      "criticalHits": [
+        "finance"
+      ],
+      "orchestrationLatencyMs": 139
+    }
+  ],
+  "caveats": [
+    "Development-set diagnostic; no independent holdout.",
+    "Primary accuracy is membership in expected_agents because no unique primary label exists.",
+    "v2 is a standalone reconstruction; proposed quality uses actual built application execution.",
+    "Proposed routing-policy timing uses precomputed primary evidence coverage and is not end-to-end latency."
+  ]
+}
