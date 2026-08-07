@@ -159,6 +159,14 @@ const exampleRequests = [
   "고객 응대 챗봇 외주 계약을 추진합니다. 계약상 책임과 예상 운영비를 검토해 주세요.",
 ];
 
+const comparisonModes: Array<{ id: RunResult["mode"]; name: string }> = [
+  { id: "centralized", name: "중앙집중형" },
+  { id: "parallel", name: "전체 Multi-Agent" },
+  { id: "masrouter", name: "MasRouter-inspired" },
+  { id: "remoterag", name: "RemoteRAG-inspired" },
+  { id: "proposed", name: "AXNetCC Router" },
+];
+
 function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult {
   const lower = query.toLowerCase();
   const keywords: Record<string, string[]> = {
@@ -374,13 +382,7 @@ export default function Home() {
   }, []);
 
   const comparison = useMemo(() => {
-    return [
-      { id: "centralized" as const, name: "중앙집중형" },
-      { id: "parallel" as const, name: "병렬 Multi-Agent" },
-      { id: "masrouter" as const, name: "MasRouter-inspired" },
-      { id: "remoterag" as const, name: "RemoteRAG-inspired" },
-      { id: "proposed" as const, name: "제안 방식" },
-    ].map((item) => ({
+    return comparisonModes.map((item) => ({
       ...item,
       metrics: benchmarks[item.id]?.metrics ?? buildFallbackResult(query, item.id).metrics,
       judge: benchmarks[item.id]?.commercialJudge,
@@ -396,7 +398,7 @@ export default function Home() {
     const proposed = measured.find((row) => row.id === "proposed");
     const centralized = measured.find((row) => row.id === "centralized");
     return {
-      complete: measured.length === 5 && judged.length === 5,
+      complete: measured.length === comparisonModes.length && judged.length === comparisonModes.length,
       bestQuality,
       qualityRetention:
         proposed?.judge?.overall != null && bestQuality
@@ -442,13 +444,7 @@ export default function Home() {
     setRunning(true);
     setRunError("");
     setBenchmarks({});
-    const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
-      { mode: "centralized", label: "중앙집중형" },
-      { mode: "parallel", label: "전체 Multi-Agent" },
-      { mode: "masrouter", label: "MasRouter-inspired" },
-      { mode: "remoterag", label: "RemoteRAG-inspired" },
-      { mode: "proposed", label: "제안 방식" },
-    ];
+    const sequence = comparisonModes.map(({ id, name }) => ({ mode: id, label: name }));
     try {
       for (let index = 0; index < sequence.length; index += 1) {
         const item = sequence[index];
@@ -515,7 +511,7 @@ export default function Home() {
           <label className="modeLabel">실행 방식</label>
           <div className="modePicker">
             {[
-              ["proposed", "제안 방식", "동적 선택 + 최소 전달"],
+              ["proposed", "AXNetCC Router", "동적 역할 선택 + SAEA"],
               ["masrouter", "MasRouter-inspired", "질의 복잡도 + 역할 라우팅"],
               ["remoterag", "RemoteRAG-inspired", "질의 일반화 + 제한 검색"],
               ["parallel", "병렬 방식", "모든 Agent 호출"],
@@ -558,8 +554,9 @@ export default function Home() {
             {running ? <><span className="spinner" /> {runProgress}</> : <>선택 방식 실행 <span>→</span></>}
           </button>
           <button className="compareButton" disabled={running || !query.trim()} onClick={runAllModes}>
-            4방식 전체 비교 실행
+            {comparisonModes.length}개 방식 순차 실측
           </button>
+          <p className="compareNote">방식 간 자원 간섭을 줄이기 위해 하나씩 측정하며, 각 방식 내부의 선택 Agent는 병렬로 처리합니다.</p>
           <p className="privacyNote">{evidenceStrategy === "axnetcc-saea" ? "정책을 통과한 최소 근거만 부서 경계를 넘습니다." : "Legacy 모드는 기존 전달 동작을 보존합니다."}</p>
         </aside>
 
@@ -741,11 +738,11 @@ export default function Home() {
             <div className={row.id === "proposed" ? "highlight" : ""} key={row.id}>
               <strong>{row.name}</strong>
               <span>{row.measured ? "실측" : "미실행"}</span>
-              <span>{row.metrics.calls}</span>
+              <span>{row.measured ? row.metrics.calls : "—"}</span>
               <span>{row.measured ? `${(row.metrics.latencyMs / 1000).toFixed(1)} s` : "—"}</span>
               <span>{row.measured && row.metrics.ttftMs != null ? `${row.metrics.ttftMs} ms` : "—"}</span>
               <span>{row.measured && row.metrics.tpotMs != null ? `${row.metrics.tpotMs} ms` : "—"}</span>
-              <span>{row.metrics.traceability}%</span>
+              <span>{row.measured ? `${row.metrics.traceability}%` : "—"}</span>
             </div>
           ))}
           <p className="metricDefinition">TTFT는 사용자에게 가장 먼저 도착한 토큰(min), TPOT은 실행 Agent별 출력 토큰 시간의 평균, E2E는 모든 선택 Agent와 통합이 끝난 시간입니다. CPU 환경에서는 동시 Agent 수와 prompt 길이의 영향을 함께 봐야 합니다.</p>
@@ -761,13 +758,13 @@ export default function Home() {
           {comparison.map((row) => (
             <div className={row.id === "proposed" ? "privacyHighlight" : ""} key={`privacy-${row.id}`}>
               <strong>{row.name}</strong>
-              <span className={row.metrics.rawDataLeavesEdge ? "riskBad" : "riskGood"}>
-                {row.metrics.rawDataLeavesEdge ? "예" : "아니오"}
+              <span className={row.measured ? (row.metrics.rawDataLeavesEdge ? "riskBad" : "riskGood") : ""}>
+                {row.measured ? (row.metrics.rawDataLeavesEdge ? "예" : "아니오") : "—"}
               </span>
               <span>{row.measured ? `${(row.metrics.boundaryBytes / 1024).toFixed(1)} KB` : "—"}</span>
-              <span>{row.metrics.dataRecipients}개</span>
-              <span>{row.metrics.minimizationRate}%</span>
-              <span className={row.metrics.exposedFields > 0 ? "riskBad" : "riskGood"}>{row.metrics.exposedFields}개</span>
+              <span>{row.measured ? `${row.metrics.dataRecipients}개` : "—"}</span>
+              <span>{row.measured ? `${row.metrics.minimizationRate}%` : "—"}</span>
+              <span className={row.measured ? (row.metrics.exposedFields > 0 ? "riskBad" : "riskGood") : ""}>{row.measured ? `${row.metrics.exposedFields}개` : "—"}</span>
             </div>
           ))}
           <p>Core 전송량과 PII 노출필드는 실제 실행 payload에서 바이트와 필드 개수를 직접 측정합니다.</p>
@@ -781,11 +778,11 @@ export default function Home() {
             {liveComparison.complete ? (
               <>
                 <strong>최고 방식 대비 품질 {liveComparison.qualityRetention}% 유지</strong>
-                <span>동시에 중앙집중형 대비 Core 전송량 {liveComparison.boundaryGain}% 감소</span>
+                <span>중앙집중형 대비 Core 전송량 {liveComparison.boundaryGain}% 감소</span>
               </>
             ) : (
               <>
-                <strong>상용 LLM 전문가 평가를 켜고 4방식 비교를 실행하세요</strong>
+                <strong>상용 LLM 전문가 평가를 켜고 {comparisonModes.length}개 방식 순차 비교를 실행하세요</strong>
                 <span>동일 질의의 정확성·근거충실도·완전성을 블라인드 비교합니다.</span>
               </>
             )}
