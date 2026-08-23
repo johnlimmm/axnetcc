@@ -54,3 +54,17 @@ public/index-*.css
 __pycache__/
 *.py[cod]
 /paper/rendered/
+
+# Evaluation artifacts are deny-by-default. Keep only reviewed, reproducible summaries.
+/reports/*
+!/reports/README.md
+!/reports/primary-routing-benchmark/
+/reports/primary-routing-benchmark/*
+!/reports/primary-routing-benchmark/README.md
+!/reports/primary-routing-benchmark/routing-benchmark-summary.csv
+!/reports/primary-routing-benchmark/routing-benchmark-per-query.csv
+!/reports/primary-routing-benchmark/routing-benchmark-results.json
+!/reports/primary-routing-benchmark/routing-quality.png
+!/reports/primary-routing-benchmark/routing-efficiency.png
+!/reports/scheduler-benchmark-v1.json
+!/reports/scheduler-benchmark-v1.svg

@@ -54,6 +54,12 @@ test("MNC-16 exposes exactly one primary and skips support for a single-domain r
   assert.ok(result.routerDecision.requiredConcepts.length > 0);
   assert.equal(result.agents.filter((agent) => agent.executionRole === "primary").length, 1);
   assert.equal(result.agents.find((agent) => agent.id === "finance").executionRole, "primary");
+  assert.equal(result.report.primaryAgentId, "finance");
+  assert.deepEqual(result.report.participatingAgentIds, ["finance"]);
+  const finance = result.agents.find((agent) => agent.id === "finance");
+  assert.ok(finance.report);
+  assert.ok(finance.evidence.length > 0);
+  assert.ok(finance.report.citationIds.every((id) => finance.evidence.some((item) => item.id === id)));
   assert.equal(typeof result.routerDecision.predictedCoverage, "number");
   assert.equal(typeof result.routerDecision.objectiveCost, "number");
   assert.ok(result.routerDecision.rationale.length > 0);
@@ -74,6 +80,35 @@ test("MNC-16 exposes exactly one primary and skips support for a single-domain r
     assert.ok(Array.isArray(candidate.matchedTerms));
     assert.ok(Array.isArray(candidate.matchedEntities));
     assert.ok(Array.isArray(candidate.matchedConceptIds));
+  }
+});
+
+test("managed mode assigns one primary and produces reports for every selected Agent", async () => {
+  const runtime = await worker();
+  const response = await runtime.fetch(
+    new Request("http://localhost/api/orchestrate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query: "공공 AI 시범사업의 성능, 운영 전환과 개인정보 통제를 근거와 함께 검토해 주세요.",
+        mode: "managed",
+      }),
+    }),
+    environment,
+    context,
+  );
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  const selected = result.agents.filter((agent) => agent.selected);
+  assert.equal(selected.filter((agent) => agent.executionRole === "primary").length, 1);
+  assert.equal(result.report.primaryAgentId, result.routerDecision.primaryAgent);
+  assert.deepEqual(new Set(result.report.participatingAgentIds), new Set(selected.map((agent) => agent.id)));
+  for (const agent of selected) {
+    assert.ok(agent.report, `${agent.id} report missing`);
+    assert.ok(agent.evidence.length > 0, `${agent.id} evidence missing`);
+    assert.ok(agent.report.citationIds.length > 0, `${agent.id} citations missing`);
+    assert.ok(agent.report.citationIds.every((id) => agent.evidence.some((item) => item.id === id)));
+    assert.ok(result.report.sections.some((section) => section.sourceAgentIds.includes(agent.id)));
   }
 });
 
@@ -98,6 +133,22 @@ test("personal data and procurement couplings force the mandatory reviewer roles
   assert.ok(procurement.routerDecision.required.includes("procurement"));
   assert.ok(procurement.routerDecision.required.includes("finance"));
   assert.ok(procurement.agents.find((agent) => agent.id === "finance").selected);
+});
+
+test("confidential requests cannot omit the Security owner", async () => {
+  const result = await orchestrate(
+    "기밀 내부 IP와 권한경계 자료의 접근통제 및 감사 절차를 검토해 주세요.",
+  );
+  assert.equal(result.routerDecision.securityLevel, "confidential");
+  assert.equal(result.routerDecision.primaryAgent, "security");
+  assert.equal(result.routerDecision.primarySelection.hardGate.applied, true);
+  assert.equal(result.routerDecision.primarySelection.hardGate.forcedAgent, "security");
+  assert.ok(result.routerDecision.primarySelection.hardGate.reasons.includes(
+    "confidential-boundary-security-owner",
+  ));
+  assert.ok(result.routerDecision.required.includes("security"));
+  assert.ok(result.routerDecision.selected.includes("security"));
+  assert.equal(result.agents.find((agent) => agent.id === "security").executionRole, "primary");
 });
 
 test("low-signal routing exposes deterministic fallback and review reasons", async () => {
@@ -209,12 +260,12 @@ test("an authoritative Edge deny cannot be bypassed through another Agent", asyn
         requestId: edgeRequest.requestId,
         agentId: edgeRequest.agentId,
         status: "denied",
-        answer: {
+        summary: {
           text: "Edge 정책이 이 요청의 처리를 거부했습니다.",
           classification: "public",
-          citations: [],
+          evidenceIds: [],
         },
-        evidence: [],
+        evidenceRefs: [],
         evidencePlan: {
           strategy: "edge-policy-and-coverage",
           status: "denied",
@@ -236,6 +287,7 @@ test("an authoritative Edge deny cannot be bypassed through another Agent", asyn
         },
         metrics: {
           backend: "deterministic",
+          answerSource: "deterministic-fallback",
           model: "edge-policy-deny",
           evidenceCount: 0,
           sourceBytesProcessed: 0,
@@ -243,6 +295,8 @@ test("an authoritative Edge deny cannot be bypassed through another Agent", asyn
           latencyMs: 1,
           ttftMs: null,
           tpotMs: null,
+          promptTokens: null,
+          completionTokens: null,
           corpusChunks: 0,
         },
         boundary: {
@@ -256,6 +310,7 @@ test("an authoritative Edge deny cannot be bypassed through another Agent", asyn
           eventId: "AUD-AUTHORITATIVE-DENY",
           recordedAt: new Date().toISOString(),
           policyVersion: "edge-rag-v1",
+          policyDecisionId: "POL-AUTHORITATIVE-DENY",
         },
       };
       for (let index = 0; index < 8; index += 1) {

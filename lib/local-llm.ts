@@ -2,7 +2,9 @@ import type { AgentId, KnowledgeChunk } from "./agent-registry";
 
 export type LocalLlmMetrics = {
   backend: "ollama" | "deterministic";
+  answerSource: "local-llm" | "deterministic-fallback";
   model: string;
+  transport: "none" | "loopback" | "remote";
   ttftMs: number | null;
   tpotMs: number | null;
   tokensPerSecond: number | null;
@@ -20,22 +22,21 @@ type OllamaChunk = {
   eval_duration?: number;
 };
 
-const inferenceQueues = new Map<string, Promise<void>>();
-
-async function acquireInferenceSlot(endpoint: string) {
-  const previous = inferenceQueues.get(endpoint) ?? Promise.resolve();
-  let release = () => {};
-  const next = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  inferenceQueues.set(endpoint, next);
-  await previous;
-  return () => {
-    release();
-    if (inferenceQueues.get(endpoint) === next) {
-      inferenceQueues.delete(endpoint);
-    }
-  };
+function classifyEndpointTransport(baseUrl: string): LocalLlmMetrics["transport"] {
+  if (!baseUrl) return "none";
+  try {
+    const hostname = new URL(baseUrl).hostname.toLowerCase();
+    return hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "::1" ||
+      hostname.endsWith(".localhost")
+      ? "loopback"
+      : "remote";
+  } catch {
+    // An invalid or opaque endpoint must not be treated as privacy-safe.
+    return "remote";
+  }
 }
 
 function agentEnvironmentKey(agent: AgentId, suffix: "BASE_URL" | "MODEL") {
@@ -61,6 +62,7 @@ export async function generateLocalAnswer(input: {
   query: string;
   evidence: KnowledgeChunk[];
   fallback: string;
+  outputFormat?: "brief" | "agent-report" | "integrated-report";
   signal?: AbortSignal;
 }): Promise<{ text: string; metrics: LocalLlmMetrics }> {
   input.signal?.throwIfAborted();
@@ -70,7 +72,9 @@ export async function generateLocalAnswer(input: {
       text: input.fallback,
       metrics: {
         backend: "deterministic",
+        answerSource: "deterministic-fallback",
         model,
+        transport: "none",
         ttftMs: null,
         tpotMs: null,
         tokensPerSecond: null,
@@ -82,7 +86,7 @@ export async function generateLocalAnswer(input: {
     };
   }
 
-  const releaseInferenceSlot = await acquireInferenceSlot(baseUrl);
+  const transport = classifyEndpointTransport(baseUrl);
   const startedAt = performance.now();
   const contentTimes: number[] = [];
   const controller = new AbortController();
@@ -105,8 +109,13 @@ export async function generateLocalAnswer(input: {
         options: {
           temperature: 0.1,
           seed: 42,
-          num_predict: 64,
-          num_ctx: 2048,
+          num_predict:
+            input.outputFormat === "brief"
+              ? 96
+              : input.outputFormat === "agent-report"
+                ? 160
+                : 192,
+          num_ctx: 4096,
         },
         messages: [
           {
@@ -114,7 +123,11 @@ export async function generateLocalAnswer(input: {
             content:
               `당신은 ${input.agentName}이며 ${input.responsibility}을 담당한다. ` +
               "분석 과정은 출력하지 말고 최종 답변만 작성한다. 제공된 근거에서 확인되는 사실만 사용한다. " +
-              "한국어 2개 항목, 250자 이내로 답하고 각 항목은 '판단: ... 근거: [정확한 근거 ID]' 형식을 지킨다. " +
+              (input.outputFormat === "integrated-report"
+                ? "한국어 종합보고서 형식으로 '종합 결론', '전문영역별 검토', '실행 권고', '한계'를 작성한다. 각 문단 끝에 근거 ID를 표시한다. "
+                : input.outputFormat === "brief"
+                  ? "한국어 2개 항목, 350자 이내로 답하고 각 항목은 '판단: ... 근거: [정확한 근거 ID]' 형식을 지킨다. "
+                  : "한국어 검토보고서 형식으로 '핵심 판단', '세부 검토', '실행 권고', '한계'를 작성한다. 각 판단과 권고 끝에 근거 ID를 표시한다. ") +
               "근거에 없는 내용을 추측하지 말고, 확인할 수 없으면 '근거 부족'이라고 표시한다.",
           },
           {
@@ -122,7 +135,7 @@ export async function generateLocalAnswer(input: {
             content:
               `질의:\n${input.query}\n\n근거:\n` +
               input.evidence
-                .slice(0, 2)
+                .slice(0, input.outputFormat === "brief" ? 2 : 10)
                 .map((item) => `[${item.id}] ${item.title} / ${item.section}\n${item.text.slice(0, 250)}`)
                 .join("\n\n"),
           },
@@ -168,11 +181,32 @@ export async function generateLocalAnswer(input: {
         : gaps.length
           ? gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
           : null;
+    const generatedText = text.trim();
+    if (!generatedText) {
+      return {
+        text: input.fallback,
+        metrics: {
+          backend: "deterministic",
+          answerSource: "deterministic-fallback",
+          model,
+          transport,
+          ttftMs: null,
+          tpotMs: null,
+          tokensPerSecond: null,
+          promptTokens: finalChunk.prompt_eval_count ?? null,
+          completionTokens: finalChunk.eval_count ?? 0,
+          totalMs: Math.round(totalMs),
+          fallbackReason: "Ollama returned an empty response",
+        },
+      };
+    }
     return {
-      text: text.trim() || input.fallback,
+      text: generatedText,
       metrics: {
         backend: "ollama",
+        answerSource: "local-llm",
         model,
+        transport,
         ttftMs: contentTimes.length ? Math.round(contentTimes[0] - startedAt) : null,
         tpotMs: tpotMs == null ? null : Number(tpotMs.toFixed(1)),
         tokensPerSecond: tokensPerSecond ? Number(tokensPerSecond.toFixed(2)) : null,
@@ -187,7 +221,9 @@ export async function generateLocalAnswer(input: {
       text: input.fallback,
       metrics: {
         backend: "deterministic",
+        answerSource: "deterministic-fallback",
         model,
+        transport,
         ttftMs: null,
         tpotMs: null,
         tokensPerSecond: null,
@@ -200,6 +236,5 @@ export async function generateLocalAnswer(input: {
   } finally {
     clearTimeout(timeout);
     input.signal?.removeEventListener("abort", abortFromRequest);
-    releaseInferenceSlot();
   }
 }

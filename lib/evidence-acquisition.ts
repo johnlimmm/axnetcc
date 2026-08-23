@@ -98,11 +98,13 @@ export function planEvidenceAtEdge(input: {
     return {
       referenceId: chunk.id,
       classification: chunk.classification,
+      // Public sources may cross the boundary only as a DLP-sanitized preview.
+      // Internal/confidential sources remain opaque references.
       mode: chunk.classification === "public" ? "sanitized" : "metadata-only",
       coveredConceptIds,
       rationale: chunk.classification === "public"
-        ? "공개 근거는 DLP 정제 미리보기로 반환합니다."
-        : "제한 근거는 Edge에 보존하고 식별자만 반환합니다.",
+        ? "공개 근거는 DLP를 통과한 제목·발췌·출처만 Core에 반환합니다."
+        : "제한 근거는 Edge에 보존하고 식별자와 등급만 반환합니다.",
     };
   });
 

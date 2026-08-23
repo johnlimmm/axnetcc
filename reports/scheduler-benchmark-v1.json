@@ -1,0 +1,243 @@
+{
+  "reportVersion": "scheduler-benchmark-v1",
+  "generatedAt": "2026-08-07T10:18:06.648Z",
+  "provenance": "deterministic-mock-workload",
+  "configuration": {
+    "model": "mock-ollama-deterministic-timer",
+    "corpus": "not-applicable-scheduler-only",
+    "endpointCount": 2,
+    "endpointCapacity": 1,
+    "seed": 20260807,
+    "bursts": [
+      10,
+      50
+    ],
+    "agentCounts": [
+      1,
+      3,
+      8
+    ],
+    "agingThresholdMs": 160,
+    "maxOvertakes": 3,
+    "schedulerImplementation": "lib/endpoint-scheduler.ts",
+    "node": "v24.14.0"
+  },
+  "scenarios": [
+    {
+      "reportVersion": "scheduler-benchmark-v1",
+      "policy": "fifo",
+      "burst": 10,
+      "requestCount": 10,
+      "taskCount": 37,
+      "agentMix": {
+        "1": 4,
+        "3": 3,
+        "8": 3
+      },
+      "requestCompletionMs": {
+        "p50": 68,
+        "p95": 158,
+        "max": 158
+      },
+      "completionReadyRequestMs": {
+        "p50": 60,
+        "p95": 158,
+        "max": 158
+      },
+      "queueWaitMs": {
+        "p50": 73,
+        "p95": 145,
+        "max": 151
+      },
+      "taskE2eMs": {
+        "p50": 82,
+        "p95": 152
+      },
+      "makespanMs": 158,
+      "throughputRequestsPerSecond": 63.29,
+      "lastTaskPromotions": 0,
+      "agingPromotions": 0,
+      "maxOvertakenCount": 0,
+      "starvationCount": 0,
+      "strictGlobalWaitBound": {
+        "targetMs": 171,
+        "observedMaxQueueWaitMs": 151,
+        "offeredLoadLowerBoundMs": 158,
+        "feasibleUnderBurst": true,
+        "status": "passed",
+        "rationale": "The offered service demand fits within the aging threshold plus one maximum service time."
+      }
+    },
+    {
+      "reportVersion": "scheduler-benchmark-v1",
+      "policy": "priority",
+      "burst": 10,
+      "requestCount": 10,
+      "taskCount": 37,
+      "agentMix": {
+        "1": 4,
+        "3": 3,
+        "8": 3
+      },
+      "requestCompletionMs": {
+        "p50": 31,
+        "p95": 158,
+        "max": 158
+      },
+      "completionReadyRequestMs": {
+        "p50": 15,
+        "p95": 22,
+        "max": 22
+      },
+      "queueWaitMs": {
+        "p50": 74,
+        "p95": 145,
+        "max": 151
+      },
+      "taskE2eMs": {
+        "p50": 80,
+        "p95": 152
+      },
+      "makespanMs": 158,
+      "throughputRequestsPerSecond": 63.29,
+      "lastTaskPromotions": 3,
+      "agingPromotions": 0,
+      "maxOvertakenCount": 2,
+      "starvationCount": 0,
+      "strictGlobalWaitBound": {
+        "targetMs": 171,
+        "observedMaxQueueWaitMs": 151,
+        "offeredLoadLowerBoundMs": 158,
+        "feasibleUnderBurst": true,
+        "status": "passed",
+        "rationale": "The offered service demand fits within the aging threshold plus one maximum service time."
+      }
+    },
+    {
+      "reportVersion": "scheduler-benchmark-v1",
+      "policy": "fifo",
+      "burst": 50,
+      "requestCount": 50,
+      "taskCount": 196,
+      "agentMix": {
+        "1": 17,
+        "3": 17,
+        "8": 16
+      },
+      "requestCompletionMs": {
+        "p50": 399,
+        "p95": 783,
+        "max": 798
+      },
+      "completionReadyRequestMs": {
+        "p50": 399,
+        "p95": 791,
+        "max": 791
+      },
+      "queueWaitMs": {
+        "p50": 391,
+        "p95": 756,
+        "max": 791
+      },
+      "taskE2eMs": {
+        "p50": 399,
+        "p95": 763
+      },
+      "makespanMs": 798,
+      "throughputRequestsPerSecond": 62.66,
+      "lastTaskPromotions": 0,
+      "agingPromotions": 0,
+      "maxOvertakenCount": 0,
+      "starvationCount": 0,
+      "strictGlobalWaitBound": {
+        "targetMs": 171,
+        "observedMaxQueueWaitMs": 791,
+        "offeredLoadLowerBoundMs": 798,
+        "feasibleUnderBurst": false,
+        "status": "not-applicable-overloaded-burst",
+        "rationale": "All tasks arrive at once and serial service demand exceeds the proposed bound; no capacity-1 non-preemptive scheduler can globally satisfy it."
+      }
+    },
+    {
+      "reportVersion": "scheduler-benchmark-v1",
+      "policy": "priority",
+      "burst": 50,
+      "requestCount": 50,
+      "taskCount": 196,
+      "agentMix": {
+        "1": 17,
+        "3": 17,
+        "8": 16
+      },
+      "requestCompletionMs": {
+        "p50": 399,
+        "p95": 783,
+        "max": 798
+      },
+      "completionReadyRequestMs": {
+        "p50": 123,
+        "p95": 791,
+        "max": 791
+      },
+      "queueWaitMs": {
+        "p50": 390,
+        "p95": 756,
+        "max": 791
+      },
+      "taskE2eMs": {
+        "p50": 399,
+        "p95": 763
+      },
+      "makespanMs": 798,
+      "throughputRequestsPerSecond": 62.66,
+      "lastTaskPromotions": 8,
+      "agingPromotions": 184,
+      "maxOvertakenCount": 3,
+      "starvationCount": 0,
+      "strictGlobalWaitBound": {
+        "targetMs": 171,
+        "observedMaxQueueWaitMs": 791,
+        "offeredLoadLowerBoundMs": 798,
+        "feasibleUnderBurst": false,
+        "status": "not-applicable-overloaded-burst",
+        "rationale": "All tasks arrive at once and serial service demand exceeds the proposed bound; no capacity-1 non-preemptive scheduler can globally satisfy it."
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "burst": 10,
+      "requestP50ImprovementPercent": 54.41,
+      "requestP95ImprovementPercent": 0,
+      "completionReadyP50ImprovementPercent": 75,
+      "completionReadyP95ImprovementPercent": 86.08,
+      "throughputChangePercent": 0
+    },
+    {
+      "burst": 50,
+      "requestP50ImprovementPercent": 0,
+      "requestP95ImprovementPercent": 0,
+      "completionReadyP50ImprovementPercent": 69.17,
+      "completionReadyP95ImprovementPercent": 0,
+      "throughputChangePercent": 0
+    }
+  ],
+  "acceptance": {
+    "throughputLossWithinFivePercent": true,
+    "completionReadyP50Improved": true,
+    "noStarvation": true,
+    "maxOvertakesRespected": true,
+    "feasibleStrictWaitBoundsPassed": true,
+    "overloadedStrictWaitBounds": [
+      {
+        "burst": 50,
+        "targetMs": 171,
+        "observedMaxQueueWaitMs": 791,
+        "offeredLoadLowerBoundMs": 798,
+        "feasibleUnderBurst": false,
+        "status": "not-applicable-overloaded-burst",
+        "rationale": "All tasks arrive at once and serial service demand exceeds the proposed bound; no capacity-1 non-preemptive scheduler can globally satisfy it."
+      }
+    ]
+  }
+}

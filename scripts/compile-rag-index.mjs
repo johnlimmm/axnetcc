@@ -1,7 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const root = new URL("../", import.meta.url);
 const agents = ["tech", "data", "security", "legal", "policy", "finance", "procurement", "operations"];
 const documents = [];
 

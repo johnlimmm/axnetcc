@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-07T08:13:00.409Z",
+  "generatedAt": "2026-08-07T10:21:22.575Z",
   "benchmark": "primary-agent-routing-offline-40",
   "dataset": {
     "path": "data/evaluation/ax-golden-set-40.jsonl",
@@ -15,10 +15,10 @@
     ]
   },
   "sourceRevisions": {
-    "currentHead": "7cd8894170172ceec58de74d6d16a450f2902170",
+    "currentHead": "52cce449cf74fd5a81d8435450f987170a640efe",
     "teamleadV2": "21db814eabebe342173a90558fa25a038a5d55fd",
-    "currentRouterSha256": "bf01fcb92fa11e24bb273ccae8d42ca537d3b48241c7ee6077446ff5d110fd96",
-    "runtimeBundleSha256": "ecb8d92a6c58cb657d6ea5df626151529c1e69465464b48649282dddd8da4560"
+    "currentRouterSha256": "10cdf7a7584fcd8bb11a7d42c547977fc083d52b8bc5073cf8415455bb13b12c",
+    "runtimeBundleSha256": "1a27045b19f9eabb92d67563d2da21115e78645a5ef6ce4bbd40013e16e40a46"
   },
   "environment": {
     "node": "v24.14.0",
@@ -131,9 +131,9 @@
       "primaryAccuracy": 57.5,
       "averageFanOut": 1,
       "orchestrationLatencyMedianMs": null,
-      "decisionTimeMeanMs": 0.015455,
-      "decisionTimeMedianMs": 0.014952,
-      "decisionTimeP95Ms": 0.01683,
+      "decisionTimeMeanMs": 0.013786,
+      "decisionTimeMedianMs": 0.013603,
+      "decisionTimeP95Ms": 0.01423,
       "timingChecksum": 65650
     },
     {
@@ -148,9 +148,9 @@
       "primaryAccuracy": 57.5,
       "averageFanOut": 3.33,
       "orchestrationLatencyMedianMs": null,
-      "decisionTimeMeanMs": 0.015755,
-      "decisionTimeMedianMs": 0.015811,
-      "decisionTimeP95Ms": 0.016415,
+      "decisionTimeMeanMs": 0.014485,
+      "decisionTimeMedianMs": 0.014619,
+      "decisionTimeP95Ms": 0.014853,
       "timingChecksum": 89830
     },
     {
@@ -165,9 +165,9 @@
       "primaryAccuracy": 77.5,
       "averageFanOut": 3.3,
       "orchestrationLatencyMedianMs": null,
-      "decisionTimeMeanMs": 0.032317,
-      "decisionTimeMedianMs": 0.03185,
-      "decisionTimeP95Ms": 0.034889,
+      "decisionTimeMeanMs": 0.029199,
+      "decisionTimeMedianMs": 0.028969,
+      "decisionTimeP95Ms": 0.030854,
       "timingChecksum": 107570
     },
     {
@@ -181,10 +181,10 @@
       "criticalRoleRecall": 100,
       "primaryAccuracy": 97.5,
       "averageFanOut": 2.58,
-      "orchestrationLatencyMedianMs": 134.5,
-      "decisionTimeMeanMs": 1.727771,
-      "decisionTimeMedianMs": 1.749814,
-      "decisionTimeP95Ms": 1.825192,
+      "orchestrationLatencyMedianMs": 97,
+      "decisionTimeMeanMs": 3.793321,
+      "decisionTimeMedianMs": 3.826993,
+      "decisionTimeP95Ms": 4.032985,
       "timingChecksum": 96780
     }
   ],
@@ -3829,7 +3829,7 @@
         "security",
         "legal"
       ],
-      "orchestrationLatencyMs": 135
+      "orchestrationLatencyMs": 103
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -3859,7 +3859,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 122
+      "orchestrationLatencyMs": 88
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -3891,7 +3891,7 @@
         "legal",
         "security"
       ],
-      "orchestrationLatencyMs": 98
+      "orchestrationLatencyMs": 89
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -3917,7 +3917,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 105
+      "orchestrationLatencyMs": 85
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -3949,7 +3949,7 @@
         "security",
         "legal"
       ],
-      "orchestrationLatencyMs": 97
+      "orchestrationLatencyMs": 65
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -3983,7 +3983,7 @@
         "procurement",
         "finance"
       ],
-      "orchestrationLatencyMs": 104
+      "orchestrationLatencyMs": 64
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4007,7 +4007,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 66
+      "orchestrationLatencyMs": 54
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4037,7 +4037,7 @@
       "criticalHits": [
         "legal"
       ],
-      "orchestrationLatencyMs": 78
+      "orchestrationLatencyMs": 62
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4063,7 +4063,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 180
+      "orchestrationLatencyMs": 109
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4092,7 +4092,7 @@
       "criticalHits": [
         "finance"
       ],
-      "orchestrationLatencyMs": 172
+      "orchestrationLatencyMs": 108
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4126,7 +4126,7 @@
         "legal",
         "security"
       ],
-      "orchestrationLatencyMs": 148
+      "orchestrationLatencyMs": 108
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4162,7 +4162,7 @@
         "legal",
         "security"
       ],
-      "orchestrationLatencyMs": 128
+      "orchestrationLatencyMs": 107
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4198,7 +4198,7 @@
         "legal",
         "finance"
       ],
-      "orchestrationLatencyMs": 144
+      "orchestrationLatencyMs": 91
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4232,7 +4232,7 @@
         "security",
         "finance"
       ],
-      "orchestrationLatencyMs": 126
+      "orchestrationLatencyMs": 91
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4262,7 +4262,7 @@
       "criticalHits": [
         "legal"
       ],
-      "orchestrationLatencyMs": 120
+      "orchestrationLatencyMs": 89
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4290,7 +4290,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 107
+      "orchestrationLatencyMs": 89
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4320,7 +4320,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 168
+      "orchestrationLatencyMs": 109
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4354,7 +4354,7 @@
         "procurement",
         "legal"
       ],
-      "orchestrationLatencyMs": 156
+      "orchestrationLatencyMs": 103
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4380,7 +4380,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 135
+      "orchestrationLatencyMs": 85
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4408,7 +4408,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 121
+      "orchestrationLatencyMs": 99
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4439,7 +4439,7 @@
       "criticalHits": [
         "legal"
       ],
-      "orchestrationLatencyMs": 114
+      "orchestrationLatencyMs": 83
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4465,7 +4465,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 108
+      "orchestrationLatencyMs": 80
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4495,7 +4495,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 82
+      "orchestrationLatencyMs": 77
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4519,7 +4519,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 50
+      "orchestrationLatencyMs": 69
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4549,7 +4549,7 @@
       "criticalHits": [
         "finance"
       ],
-      "orchestrationLatencyMs": 172
+      "orchestrationLatencyMs": 103
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4582,7 +4582,7 @@
         "procurement",
         "legal"
       ],
-      "orchestrationLatencyMs": 153
+      "orchestrationLatencyMs": 100
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4613,7 +4613,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 142
+      "orchestrationLatencyMs": 83
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4640,7 +4640,7 @@
       "primaryCorrect": false,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 125
+      "orchestrationLatencyMs": 98
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4674,7 +4674,7 @@
         "security",
         "legal"
       ],
-      "orchestrationLatencyMs": 141
+      "orchestrationLatencyMs": 97
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4708,7 +4708,7 @@
         "procurement",
         "legal"
       ],
-      "orchestrationLatencyMs": 134
+      "orchestrationLatencyMs": 97
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4740,7 +4740,7 @@
       "criticalHits": [
         "finance"
       ],
-      "orchestrationLatencyMs": 117
+      "orchestrationLatencyMs": 94
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4764,7 +4764,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 53
+      "orchestrationLatencyMs": 83
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4796,7 +4796,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 212
+      "orchestrationLatencyMs": 114
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4831,7 +4831,7 @@
         "procurement",
         "legal"
       ],
-      "orchestrationLatencyMs": 186
+      "orchestrationLatencyMs": 127
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4863,7 +4863,7 @@
       "criticalHits": [
         "legal"
       ],
-      "orchestrationLatencyMs": 164
+      "orchestrationLatencyMs": 126
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4895,7 +4895,7 @@
       "criticalHits": [
         "security"
       ],
-      "orchestrationLatencyMs": 143
+      "orchestrationLatencyMs": 125
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4921,7 +4921,7 @@
       "primaryCorrect": true,
       "criticalExpected": [],
       "criticalHits": [],
-      "orchestrationLatencyMs": 193
+      "orchestrationLatencyMs": 114
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4955,7 +4955,7 @@
         "finance",
         "security"
       ],
-      "orchestrationLatencyMs": 179
+      "orchestrationLatencyMs": 110
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -4987,7 +4987,7 @@
       "criticalHits": [
         "legal"
       ],
-      "orchestrationLatencyMs": 163
+      "orchestrationLatencyMs": 110
     },
     {
       "method": "current_proposed_adaptive_hybrid",
@@ -5021,7 +5021,7 @@
       "criticalHits": [
         "finance"
       ],
-      "orchestrationLatencyMs": 139
+      "orchestrationLatencyMs": 110
     }
   ],
   "caveats": [

@@ -9,7 +9,9 @@
     "dev": "vinext dev",
     "build": "node scripts/sync-public-css.mjs && vinext build && node scripts/sync-built-assets.mjs && vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/orchestrator.test.mjs",
+    "test": "npm run build && npm run test:all",
+    "test:all": "node scripts/run-all-tests.mjs",
+    "test:repeat": "node scripts/run-all-tests.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "local:check": "node --env-file=.env.local scripts/check-local-stack.mjs",
     "edge:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-ollama.ps1",
@@ -19,6 +21,7 @@
     "eval:expanded": "node scripts/evaluate-expanded.mjs",
     "eval:routing": "node scripts/evaluate-routing-v2.mjs",
     "benchmark:routing": "node scripts/benchmark-primary-routing.mjs && python scripts/render-primary-routing-charts.py",
+    "benchmark:scheduler": "node --experimental-strip-types scripts/benchmark-endpoint-scheduler.mjs && node scripts/render-scheduler-benchmark.mjs",
     "demo:boundary": "node scripts/demo-edge-boundary.mjs"
   },
   "dependencies": {

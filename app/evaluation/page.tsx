@@ -1,139 +1,487 @@
-const results = [
-  { name: "Single Centralized RAG", quality: 81.6, deviation: 5.1, correctness: 79.5, groundedness: 82.2, completeness: 83.1, ttft: "18.36초", tpot: "110.9ms", latency: "57.0초", bytes: "52,788B", leaves: "전송" },
-  { name: "All-Agent Aggregation", quality: 81.3, deviation: 4.9, correctness: 79.3, groundedness: 80.9, completeness: 83.3, ttft: "5.69초", tpot: "157.4ms", latency: "59.6초", bytes: "6,718B", leaves: "미전송" },
-  { name: "MasRouter-inspired", quality: 74.1, deviation: 5.5, correctness: 75.2, groundedness: 74.5, completeness: 72.3, ttft: "2.21초", tpot: "133.4ms", latency: "58.9초", bytes: "1,426B", leaves: "전송" },
-  { name: "RemoteRAG-inspired", quality: 70.0, deviation: 10.3, correctness: 71.9, groundedness: 68.1, completeness: 69.7, ttft: "4.58초", tpot: "104.0ms", latency: "60.0초", bytes: "4,649B", leaves: "전송" },
-  { name: "제안 방식", quality: 76.5, deviation: 4.7, correctness: 77.1, groundedness: 75.3, completeness: 76.7, ttft: "3.78초", tpot: "152.2ms", latency: "59.2초", bytes: "3,479B", leaves: "미전송" },
-];
+import Link from "next/link";
+import type { ReactNode } from "react";
 
-const fixedResults = [
-  { name: "Single Centralized RAG", quality: 58.5, ci: "55.4–62.2", f1: 46.5, concept: 14.4, retrieval: 51.2, bytes: "50,503B", leaves: "전송" },
-  { name: "All-Agent Aggregation", quality: 81.5, ci: "79.1–83.9", f1: 46.5, concept: 75.0, retrieval: 51.2, bytes: "6,324B", leaves: "미전송" },
-  { name: "MasRouter-inspired", quality: 62.0, ci: "55.9–68.0", f1: 57.4, concept: 50.0, retrieval: 35.6, bytes: "1,149B", leaves: "전송" },
-  { name: "RemoteRAG-inspired", quality: 49.9, ci: "45.2–54.9", f1: 57.4, concept: 14.4, retrieval: 37.5, bytes: "4,004B", leaves: "전송" },
-  { name: "제안 방식", quality: 70.6, ci: "64.7–76.4", f1: 64.6, concept: 62.5, retrieval: 42.5, bytes: "2,507B", leaves: "미전송" },
-];
+import expandedReportJson from "../../data/evaluation/expanded-report-v2.json";
+import offlineReportJson from "../../data/evaluation/latest-report-v2.json";
+import repeatReportJson from "../../data/evaluation/repeat-benchmark-report-v2.json";
+import LatestRunEvaluation from "./LatestRunEvaluation";
+
+const REPORT_SCHEMA_VERSION = "mnc-privacy-evaluation/v2";
+const PRIVACY_RISK_VERSION = "v2";
+
+type ReportStatus = "measured" | "partial" | "pending-replay";
+
+type PrivacyAggregate = {
+  privacyRiskVersion: "v2";
+  status: "measured";
+  sampleSize: number;
+  averageScore: number;
+  sensitiveTransmission: {
+    averageNumerator: number;
+    averageDenominator: number;
+    averageRatio: number;
+  };
+  agentSelection: {
+    averageNumerator: number;
+    averageDenominator: number;
+    averageRatio: number;
+  };
+  originalDisclosure: {
+    averageNumeratorBytes: number;
+    averageDenominatorBytes: number;
+    averageRatio: number;
+  };
+  exposureStates: {
+    sensitiveNotDetected: number;
+    detectedFullyMasked: number;
+    sensitiveExposure: number;
+  };
+  privacyPassRate: number;
+  outputLeakRate: number;
+};
+
+type VersionedReport = {
+  schemaVersion: string;
+  privacyRiskVersion: string;
+  status: ReportStatus;
+  generatedAt: string | null;
+  expectedRuns?: number;
+  completedRuns?: number;
+  runs?: number;
+  pendingReason?: string;
+};
+
+type OfflineModeSummary = {
+  quality: number;
+  conceptRecall: number;
+  agentSelectionF1: number;
+  retrievalSuccessRate: number;
+  citationValidity: number;
+  forbiddenOutputPassRate: number;
+  averageBoundaryBytes: number;
+  averagePrivacyRiskScore: number;
+  averageLatencyMs: number | null;
+  qualityRetention: number | null;
+  privacyRisk: PrivacyAggregate;
+};
+
+type OfflineReport = VersionedReport & {
+  cases: number;
+  modes: Record<string, OfflineModeSummary>;
+};
+
+type ExpandedModeSummary = {
+  n: number;
+  objectiveQuality: number;
+  objectiveQualityCi95: [number, number];
+  agentMacroF1: number;
+  agentMicroPrecision: number;
+  agentMicroRecall: number;
+  agentMicroF1: number;
+  requiredConceptRecall: number;
+  retrievalRecallAtK: number;
+  retrievalMrr: number;
+  citationValidity: number;
+  forbiddenOutputPassRate: number;
+  averageBoundaryBytes: number;
+  rawDataLeavesEdge: boolean;
+  averagePrivacyRiskScore: number;
+  qualityRetention: number | null;
+  privacyRisk: PrivacyAggregate;
+};
+
+type ExpandedReport = VersionedReport & {
+  cases: number;
+  summaries: Record<string, ExpandedModeSummary>;
+};
+
+type RepeatModeSummary = {
+  mode: string;
+  n: number;
+  overallMean: number | null;
+  overallSd: number | null;
+  correctness: number | null;
+  groundedness: number | null;
+  completeness: number | null;
+  ttftMs: number | null;
+  tpotMs: number | null;
+  latencyMs: number | null;
+  boundaryBytes: number | null;
+  rawDataLeavesEdge: boolean | null;
+  averagePrivacyRiskScore: number;
+  qualityRetentionPct: number | null;
+  privacyRisk: PrivacyAggregate;
+};
+
+type RepeatReport = VersionedReport & {
+  repetitions: number;
+  queries: number;
+  completedJudgeRuns: number;
+  summary: RepeatModeSummary[];
+};
+
+const modeLabels: Record<string, string> = {
+  centralized: "Single Centralized RAG",
+  managed: "Managed Agent",
+  parallel: "All-Agent Aggregation",
+  masrouter: "MasRouter-inspired",
+  remoterag: "RemoteRAG-inspired",
+  proposed: "제안 방식",
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assertV2Report(value: unknown, label: string): asserts value is VersionedReport {
+  if (!isRecord(value)) throw new Error(`${label}: 보고서가 객체가 아닙니다.`);
+  if (value.schemaVersion !== REPORT_SCHEMA_VERSION || value.privacyRiskVersion !== PRIVACY_RISK_VERSION) {
+    throw new Error(
+      `${label}: v1/v2 평가 결과를 함께 표시하거나 집계할 수 없습니다. ` +
+      `${REPORT_SCHEMA_VERSION}/${PRIVACY_RISK_VERSION} 보고서가 필요합니다.`,
+    );
+  }
+}
+
+function assertAggregateV2(value: PrivacyAggregate, label: string) {
+  if (value?.privacyRiskVersion !== PRIVACY_RISK_VERSION) {
+    throw new Error(`${label}: v2가 아닌 Privacy Risk breakdown은 집계에서 제외해야 합니다.`);
+  }
+}
+
+for (const [label, report] of [
+  ["오프라인 파일럿", offlineReportJson],
+  ["40문항 평가", expandedReportJson],
+  ["반복 벤치마크", repeatReportJson],
+] as const) {
+  assertV2Report(report, label);
+}
+
+const offlineReport = offlineReportJson as unknown as OfflineReport;
+const expandedReport = expandedReportJson as unknown as ExpandedReport;
+const repeatReport = repeatReportJson as unknown as RepeatReport;
+
+const offlineEntries = Object.entries(offlineReport.modes);
+const expandedEntries = Object.entries(expandedReport.summaries);
+const repeatEntries = repeatReport.summary;
+
+for (const [mode, summary] of offlineEntries) {
+  assertAggregateV2(summary.privacyRisk, `오프라인/${mode}`);
+}
+for (const [mode, summary] of expandedEntries) {
+  assertAggregateV2(summary.privacyRisk, `40문항/${mode}`);
+}
+for (const summary of repeatEntries) {
+  assertAggregateV2(summary.privacyRisk, `반복/${summary.mode}`);
+}
+
+function statusLabel(status: ReportStatus) {
+  if (status === "measured") return "측정 완료";
+  if (status === "partial") return "부분 측정";
+  return "재실행 대기";
+}
+
+function reportRunCount(report: VersionedReport) {
+  return report.runs ?? report.completedRuns ?? 0;
+}
+
+function finite(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function percent(ratio: number) {
+  return `${(ratio * 100).toFixed(1)}%`;
+}
+
+function score(value: unknown) {
+  return finite(value) ? value.toFixed(1) : "—";
+}
+
+function percentScore(value: unknown) {
+  return finite(value) ? `${value.toFixed(1)}%` : "—";
+}
+
+function decimal(value: unknown, suffix = "", digits = 1) {
+  return finite(value) ? `${value.toFixed(digits)}${suffix}` : "—";
+}
+
+function bytes(value: unknown) {
+  return finite(value) ? `${Math.round(value).toLocaleString()}B` : "—";
+}
+
+function yesNo(value: unknown, trueLabel = "예", falseLabel = "아니오") {
+  return typeof value === "boolean" ? (value ? trueLabel : falseLabel) : "—";
+}
+
+function countRatio(ratio: number, numerator: number, denominator: number) {
+  return `${percent(ratio)} · ${numerator.toFixed(1)}/${denominator.toFixed(1)}`;
+}
+
+function byteRatio(ratio: number, numerator: number, denominator: number) {
+  return `${percent(ratio)} · ${Math.round(numerator).toLocaleString()}/${Math.round(denominator).toLocaleString()}B`;
+}
+
+function exposureLabel(privacy: PrivacyAggregate) {
+  const { sensitiveNotDetected, detectedFullyMasked, sensitiveExposure } = privacy.exposureStates;
+  if (sensitiveExposure > 0) return `일부 노출 ${sensitiveExposure}/${privacy.sampleSize}`;
+  if (detectedFullyMasked > 0 && sensitiveNotDetected === 0) return "탐지 후 완전 마스킹";
+  if (sensitiveNotDetected > 0 && detectedFullyMasked === 0) return "민감정보 미탐지";
+  return `미탐지 ${sensitiveNotDetected} · 완전 마스킹 ${detectedFullyMasked}`;
+}
+
+function PendingReport({ report }: { report: VersionedReport }) {
+  return (
+    <p className="evaluationClaim">
+      <strong>{statusLabel(report.status)}</strong> · 완료 {reportRunCount(report).toLocaleString()}회 /
+      예정 {(report.expectedRuns ?? 0).toLocaleString()}회 · {report.pendingReason ?? "일부 측정값이 아직 없습니다."}
+      미측정 값은 추정값으로 채우지 않고 <b>—</b>로 표시합니다.
+    </p>
+  );
+}
+
+function TableHeader({ children }: { children: ReactNode }) {
+  return <div className="evaluationTableHead">{children}</div>;
+}
 
 export default function EvaluationPage() {
   return (
     <main className="aboutPage evaluationPage">
       <header className="topbar">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           <span className="brandMark">M</span>
           <div><strong>MNC FLOW</strong><small>KOREN Distributed AI Governance</small></div>
-        </a>
+        </Link>
         <nav className="navLinks" aria-label="주요 페이지">
-          <a className="aboutLink" href="/about">서비스 소개</a>
-          <a className="aboutLink" href="/">실행 화면</a>
+          <Link className="aboutLink" href="/about">서비스 소개</Link>
+          <Link className="aboutLink" href="/">실행 화면</Link>
         </nav>
       </header>
 
       <section className="aboutHero evaluationHero">
-        <span className="eyebrow">REPEATED COMPARATIVE EVALUATION</span>
-        <h1>문헌 기반 baseline보다 높은 품질,<br />원문은 데이터 경계 안에.</h1>
-        <p>5개 공공·기업 AX 복합 질의를 다섯 방식에 각각 3회 적용했습니다. 총 75개 실제 응답을 동일한 상용 LLM 블라인드 평가자로 채점하고, 품질·속도·데이터 이동을 함께 비교했습니다.</p>
+        <span className="eyebrow">VERSIONED PERFORMANCE EVALUATION</span>
+        <h1>응답과 성능 진단을 분리하고,<br />측정된 값만 보여줍니다.</h1>
+        <p>
+          개별 실행의 Privacy·품질·라우팅·스케줄러 지표와 재현 가능한 고정 평가 결과를 한곳에서 확인합니다.
+          정적 비교표는 versioned report JSON을 사용하며, 버전이 없거나 아직 측정되지 않은 값은 집계하지 않습니다.
+        </p>
         <div className="evaluationSummary">
-          <div><span>총 평가 실행</span><strong>75</strong><small>5질의 × 5방식 × 3회</small></div>
-          <div><span>품질 유지율</span><strong>93.8%</strong><small>최고 품질 방식 대비</small></div>
-          <div><span>전송량 절감</span><strong>48.2%</strong><small>전체 Multi-Agent 대비</small></div>
-          <div><span>문헌 baseline 우위</span><strong>+2.4</strong><small>MasRouter-inspired 대비</small></div>
+          <div><span>PRIVACY SCHEMA</span><strong>v2</strong><small>S/A/O breakdown</small></div>
+          <div><span>파일럿</span><strong>{reportRunCount(offlineReport)}</strong><small>{statusLabel(offlineReport.status)}</small></div>
+          <div><span>40문항 평가</span><strong>{reportRunCount(expandedReport) || "—"}</strong><small>{statusLabel(expandedReport.status)}</small></div>
+          <div><span>반복 평가</span><strong>{reportRunCount(repeatReport) || "—"}</strong><small>{statusLabel(repeatReport.status)}</small></div>
         </div>
       </section>
 
       <section className="evaluationBody">
-        <article>
-          <div className="evaluationSectionHead">
-            <span>01</span>
-            <div><h2>반복평가 결과</h2><p>모든 수치는 15개 응답의 평균이며, 종합 품질 옆 ± 값은 반복 변동을 나타내는 표준편차입니다.</p></div>
-          </div>
-          <div className="evaluationTableWrap">
-            <div className="evaluationTable">
-              <div className="evaluationTableHead"><span>방식</span><span>종합 품질</span><span>정확성</span><span>근거충실도</span><span>완전성</span><span>TTFT</span><span>TPOT</span><span>원문 외부 전송</span></div>
-              {results.map((result) => (
-                <div key={result.name} className={result.name === "제안 방식" ? "evaluationHighlight" : ""}>
-                  <strong>{result.name}</strong>
-                  <span>{result.quality} <small>±{result.deviation}</small></span>
-                  <span>{result.correctness}</span>
-                  <span>{result.groundedness}</span>
-                  <span>{result.completeness}</span>
-                  <span>{result.ttft}</span>
-                  <span>{result.tpot}</span>
-                  <b className={result.leaves === "미전송" ? "safeValue" : "riskValue"}>{result.leaves}</b>
-                </div>
-              ))}
-            </div>
-          </div>
-        </article>
+        <LatestRunEvaluation />
 
         <article>
           <div className="evaluationSectionHead">
             <span>02</span>
-            <div><h2>40문항 고정 정답 평가</h2><p>정답 Agent·필수 개념·관련 공식 문서군을 사전 라벨링한 40개 AX 문항을 다섯 방식으로 실행한 200개 결과입니다.</p></div>
-          </div>
-          <div className="evaluationTableWrap">
-            <div className="evaluationTable">
-              <div className="evaluationTableHead"><span>방식</span><span>객관 품질</span><span>95% CI</span><span>Agent F1</span><span>개념 Recall</span><span>문서군 Recall@K</span><span>Core 전송량</span><span>원문 외부 전송</span></div>
-              {fixedResults.map((result) => (
-                <div key={result.name} className={result.name === "제안 방식" ? "evaluationHighlight" : ""}>
-                  <strong>{result.name}</strong>
-                  <span>{result.quality}</span>
-                  <span>{result.ci}</span>
-                  <span>{result.f1}</span>
-                  <span>{result.concept}</span>
-                  <span>{result.retrieval}</span>
-                  <span>{result.bytes}</span>
-                  <b className={result.leaves === "미전송" ? "safeValue" : "riskValue"}>{result.leaves}</b>
-                </div>
-              ))}
+            <div>
+              <h2>파일럿 모드별 평가</h2>
+              <p>Privacy Risk v2의 S/A/O breakdown과 기존 JSON에 기록된 품질·인용·출력보호·지연·경계 전송량을 함께 표시합니다.</p>
             </div>
           </div>
-          <p className="evaluationClaim">정답 기반 평가에서 제안 방식은 최고 객관 품질의 86.6%를 유지했습니다. Agent Micro-F1은 64.6으로 MasRouter-inspired의 57.4보다 높았고, 제안 방식과 두 inspired baseline의 품질 차이 95% 신뢰구간은 각각 +4.9~+12.8점, +16.2~+25.5점이었습니다.</p>
+          {offlineReport.status === "measured" && offlineEntries.length > 0 ? (
+            <>
+              <h3 className="evaluationSubheading">Privacy Risk v2</h3>
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="offline-privacy-table">
+                  <TableHeader>
+                    <span>방식</span><span>Risk</span><span>S 민감정보</span><span>A Agent</span>
+                    <span>O 원문</span><span>노출 상태</span><span>Privacy pass</span><span>표본</span>
+                  </TableHeader>
+                  {offlineEntries.map(([mode, summary]) => (
+                    <div key={mode} className={mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[mode] ?? mode}</strong>
+                      <span>{score(summary.averagePrivacyRiskScore)}</span>
+                      <span>{countRatio(summary.privacyRisk.sensitiveTransmission.averageRatio, summary.privacyRisk.sensitiveTransmission.averageNumerator, summary.privacyRisk.sensitiveTransmission.averageDenominator)}</span>
+                      <span>{countRatio(summary.privacyRisk.agentSelection.averageRatio, summary.privacyRisk.agentSelection.averageNumerator, summary.privacyRisk.agentSelection.averageDenominator)}</span>
+                      <span>{byteRatio(summary.privacyRisk.originalDisclosure.averageRatio, summary.privacyRisk.originalDisclosure.averageNumeratorBytes, summary.privacyRisk.originalDisclosure.averageDenominatorBytes)}</span>
+                      <b className={summary.privacyRisk.exposureStates.sensitiveExposure > 0 ? "riskValue" : "safeValue"}>{exposureLabel(summary.privacyRisk)}</b>
+                      <span>{percentScore(summary.privacyRisk.privacyPassRate)}</span>
+                      <span>{summary.privacyRisk.sampleSize}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <h3 className="evaluationSubheading">품질·인용·출력보호·운영 성능</h3>
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="offline-performance-table">
+                  <TableHeader>
+                    <span>방식</span><span>객관 품질</span><span>Agent F1</span><span>검색 성공률</span>
+                    <span>인용 유효성</span><span>출력보호 통과</span><span>Latency</span><span>Boundary bytes</span>
+                  </TableHeader>
+                  {offlineEntries.map(([mode, summary]) => (
+                    <div key={mode} className={mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[mode] ?? mode}</strong>
+                      <span>{score(summary.quality)}</span>
+                      <span>{score(summary.agentSelectionF1)}</span>
+                      <span>{percentScore(summary.retrievalSuccessRate)}</span>
+                      <span>{percentScore(summary.citationValidity)}</span>
+                      <span>{percentScore(summary.forbiddenOutputPassRate)}</span>
+                      <span>{decimal(summary.averageLatencyMs, "ms")}</span>
+                      <span>{bytes(summary.averageBoundaryBytes)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : <PendingReport report={offlineReport} />}
         </article>
 
         <article>
           <div className="evaluationSectionHead">
             <span>03</span>
-            <div><h2>무엇이 더 좋은가</h2><p>제안 방식은 절대 품질 1위가 아니라, 공공기관과 기업 AX에서 중요한 품질·보호·속도의 균형을 목표로 합니다.</p></div>
+            <div>
+              <h2>40문항 × 5모드 고정 정답 평가</h2>
+              <p>총 200회 평가의 품질, Agent 선택, 문서 검색, 인용, 출력보호 및 경계 전송량을 같은 v2 계약으로 비교합니다.</p>
+            </div>
           </div>
-          <div className="tradeoffGrid">
-            <section><b>QUALITY</b><strong>76.5점</strong><p>MasRouter-inspired보다 2.4점, RemoteRAG-inspired보다 6.5점 높고 최고 품질의 93.8%를 유지했습니다.</p></section>
-            <section><b>DATA</b><strong>3,479B</strong><p>전체 Multi-Agent보다 48.2%, 중앙집중형보다 93.4% 적은 데이터만 Core로 전달합니다.</p></section>
-            <section><b>RESPONSIVENESS</b><strong>3.78초</strong><p>중앙집중형보다 TTFT가 79.4% 짧으며, E2E는 All-Agent와 유사했습니다.</p></section>
-            <section><b>BOUNDARY</b><strong>원문 미전송</strong><p>MasRouter·RemoteRAG-inspired와 달리 조직 원문을 Core 또는 원격 검색 경계로 보내지 않습니다.</p></section>
-          </div>
-          <p className="evaluationClaim">결론: 제안 방식은 문헌 기반 routing·privacy RAG baseline보다 높은 품질을 보이면서 원문 비이동을 유지했고, 전체 Agent 실행 대비 Core 전송량을 절반가량 줄였습니다.</p>
+          {expandedReport.status === "measured" && expandedEntries.length > 0 ? (
+            <>
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="expanded-quality-table">
+                  <TableHeader>
+                    <span>방식</span><span>객관 품질</span><span>95% CI</span><span>Agent F1</span>
+                    <span>개념 Recall</span><span>문서 Recall@K</span><span>Privacy Risk</span><span>노출 상태</span>
+                  </TableHeader>
+                  {expandedEntries.map(([mode, summary]) => (
+                    <div key={mode} className={mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[mode] ?? mode}</strong>
+                      <span>{score(summary.objectiveQuality)}</span>
+                      <span>{summary.objectiveQualityCi95.map((value) => value.toFixed(1)).join("–")}</span>
+                      <span>{score(summary.agentMacroF1)}</span>
+                      <span>{score(summary.requiredConceptRecall)}</span>
+                      <span>{score(summary.retrievalRecallAtK)}</span>
+                      <span>{score(summary.averagePrivacyRiskScore)}</span>
+                      <b className={summary.privacyRisk.exposureStates.sensitiveExposure > 0 ? "riskValue" : "safeValue"}>{exposureLabel(summary.privacyRisk)}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <h3 className="evaluationSubheading">인용·출력보호·경계 보조 지표</h3>
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="expanded-safety-table">
+                  <TableHeader>
+                    <span>방식</span><span>인용 유효성</span><span>출력보호 통과</span><span>Boundary bytes</span>
+                    <span>원문 Edge 이탈</span><span>검색 MRR</span><span>품질 유지율</span><span>표본</span>
+                  </TableHeader>
+                  {expandedEntries.map(([mode, summary]) => (
+                    <div key={mode} className={mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[mode] ?? mode}</strong>
+                      <span>{percentScore(summary.citationValidity)}</span>
+                      <span>{percentScore(summary.forbiddenOutputPassRate)}</span>
+                      <span>{bytes(summary.averageBoundaryBytes)}</span>
+                      <span>{yesNo(summary.rawDataLeavesEdge, "이탈", "없음")}</span>
+                      <span>{score(summary.retrievalMrr)}</span>
+                      <span>{percentScore(summary.qualityRetention)}</span>
+                      <span>{summary.n}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : <PendingReport report={expandedReport} />}
         </article>
 
         <article>
           <div className="evaluationSectionHead">
             <span>04</span>
-            <div><h2>실험 설계와 산식</h2><p>결과를 재현할 수 있도록 비교 조건과 계산 기준을 고정했습니다.</p></div>
+            <div>
+              <h2>적용 안정성 반복 벤치마크</h2>
+              <p>5질의 × 5모드 × 3회 실행의 품질 Judge, TTFT/TPOT, E2E 지연, 경계 전송량 및 Privacy 지표입니다.</p>
+            </div>
           </div>
-          <div className="methodGrid">
-            <div><b>질의 구성</b><p>개인정보·클라우드·법무·예산, RAG 데이터·접근통제·SLA, 조달·종속성·검수, 환각·편향·책임, 로컬·외부 LLM 비교 등 5개 복합 질의</p></div>
-            <div><b>반복 조건</b><p>각 질의를 중앙집중형·전체 Agent·MasRouter-inspired·RemoteRAG-inspired·제안 방식에 3회씩 적용해 방식당 15개 응답을 확보</p></div>
-            <div><b>품질 평가</b><p>방식 이름을 평가 프롬프트에서 제외한 상용 LLM 블라인드 평가로 정확성·근거충실도·완전성을 0~100점으로 채점</p></div>
-            <div><b>품질 유지율</b><code>제안 방식 평균 품질 ÷ 최고 방식 평균 품질 × 100</code></div>
-            <div><b>전송량 절감률</b><code>(비교 방식 전송량 − 제안 방식 전송량) ÷ 비교 방식 전송량 × 100</code></div>
-            <div><b>속도 측정</b><p>TTFT는 요청부터 첫 토큰까지, TPOT는 첫 토큰 이후 토큰당 평균 생성시간, E2E는 전체 응답 완료시간으로 측정</p></div>
-          </div>
+          {repeatEntries.length > 0 && repeatReport.status !== "pending-replay" ? (
+            <>
+              {repeatReport.status === "partial" ? <PendingReport report={repeatReport} /> : null}
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="repeat-overview-table">
+                  <TableHeader>
+                    <span>방식</span><span>종합 품질</span><span>표준편차</span><span>Latency</span>
+                    <span>Boundary bytes</span><span>Privacy Risk</span><span>노출 상태</span><span>표본</span>
+                  </TableHeader>
+                  {repeatEntries.map((summary) => (
+                    <div key={summary.mode} className={summary.mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[summary.mode] ?? summary.mode}</strong>
+                      <span>{score(summary.overallMean)}</span>
+                      <span>{score(summary.overallSd)}</span>
+                      <span>{decimal(summary.latencyMs, "ms")}</span>
+                      <span>{bytes(summary.boundaryBytes)}</span>
+                      <span>{score(summary.averagePrivacyRiskScore)}</span>
+                      <b className={summary.privacyRisk.exposureStates.sensitiveExposure > 0 ? "riskValue" : "safeValue"}>{exposureLabel(summary.privacyRisk)}</b>
+                      <span>{summary.n}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <h3 className="evaluationSubheading">Judge·생성 지연 상세</h3>
+              <div className="evaluationTableWrap">
+                <div className="evaluationTable" data-testid="repeat-detail-table">
+                  <TableHeader>
+                    <span>방식</span><span>Correctness</span><span>Groundedness</span><span>Completeness</span>
+                    <span>TTFT</span><span>TPOT</span><span>원문 Edge 이탈</span><span>품질 유지율</span>
+                  </TableHeader>
+                  {repeatEntries.map((summary) => (
+                    <div key={summary.mode} className={summary.mode === "proposed" ? "evaluationHighlight" : ""}>
+                      <strong>{modeLabels[summary.mode] ?? summary.mode}</strong>
+                      <span>{score(summary.correctness)}</span>
+                      <span>{score(summary.groundedness)}</span>
+                      <span>{score(summary.completeness)}</span>
+                      <span>{decimal(summary.ttftMs, "ms")}</span>
+                      <span>{decimal(summary.tpotMs, "ms")}</span>
+                      <span>{yesNo(summary.rawDataLeavesEdge, "이탈", "없음")}</span>
+                      <span>{percentScore(summary.qualityRetentionPct)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : <PendingReport report={repeatReport} />}
         </article>
 
         <article>
           <div className="evaluationSectionHead">
             <span>05</span>
-            <div><h2>해석 시 주의사항</h2><p>이 결과가 말할 수 있는 범위와 아직 확장해야 할 부분을 구분합니다.</p></div>
+            <div>
+              <h2>계산 기준과 스키마 보호</h2>
+              <p>보고서 생성 단계와 페이지 로딩 단계에서 Privacy 버전을 검증하고, 측정값과 미측정값을 구분합니다.</p>
+            </div>
+          </div>
+          <div className="methodGrid">
+            <div><b>Privacy Risk v2</b><code>100 × (0.5 × S + 0.3 × A + 0.2 × O)</code></div>
+            <div><b>S · 민감정보 전달 비율</b><p>탐지된 민감정보 중 경계를 넘어 전달된 민감정보의 비율입니다.</p></div>
+            <div><b>A · Agent 선택 비율</b><p>등록된 전체 Agent 중 요청 처리에 선택된 Agent의 비율입니다.</p></div>
+            <div><b>O · 원문 전달 비율</b><p>보호 대상 원문 byte 중 외부 실행 경계로 전달된 원문 byte의 비율입니다.</p></div>
+            <div><b>출력보호</b><p>금지된 민감 필드가 최종 출력에 포함되지 않았는지 고정 규칙으로 검사합니다.</p></div>
+            <div><b>Schema guard</b><p>버전이 없거나 v2가 아닌 보고서는 평균 계산 전에 오류로 중단합니다.</p></div>
+          </div>
+        </article>
+
+        <article>
+          <div className="evaluationSectionHead">
+            <span>06</span>
+            <div><h2>현재 해석 범위</h2><p>완료된 실행과 아직 검증 중인 지표를 구분합니다.</p></div>
           </div>
           <ul className="limitations">
-            <li><strong>현재 결론</strong><span>75개 실제 응답 평가에서는 최고 품질의 93.8%, 40문항 고정 정답 평가에서는 86.6%를 유지했습니다. 두 평가 모두 inspired baseline보다 높은 품질과 원문 비이동을 보였습니다.</span></li>
-            <li><strong>재현 범위</strong><span>MasRouter의 학습 controller와 RemoteRAG의 DistanceDP 전체를 재현한 것이 아니라, 공개된 핵심 메커니즘을 동일 로컬 환경에 맞춘 inspired baseline입니다.</span></li>
-            <li><strong>라벨 한계</strong><span>40문항 정답은 저자 라벨이며 독립 전문가 합의평가는 아닙니다. Recall@K는 특정 페이지가 아니라 관련 공식 문서군 기준입니다.</span></li>
-            <li><strong>다음 검증</strong><span>외부 전문가 2인 이상의 독립 라벨과 합의도, 미사용 기관 데이터셋, routing·retrieval 구성요소 ablation을 추가해야 합니다.</span></li>
+            <li><strong>표시 원칙</strong><span>미실행 모드의 점수·감소율·순위를 추정하지 않고 해당 값을 —로 표시합니다.</span></li>
+            <li><strong>Legacy 제외</strong><span>버전 없는 latest-report.json, expanded-report.json, literature-baseline-report.json은 v2 평균에 포함하지 않습니다.</span></li>
+            <li><strong>단일 실행</strong><span>최근 실행 진단은 해당 RUN-ID의 측정값이며 모드 간 우월성을 의미하지 않습니다.</span></li>
+            <li><strong>고정 평가</strong><span>40문항 평가는 저자 라벨 고정 데이터셋이며 독립적인 held-out 평가가 아닙니다.</span></li>
+            <li><strong>부분 Judge</strong><span>상용 Judge가 구성되지 않은 반복 평가의 품질 값은 추정하지 않고 —로 남깁니다.</span></li>
           </ul>
         </article>
       </section>
 
-      <footer><span>MNC Lab. · Korea University</span><div className="footerLinks"><a href="/about">서비스 소개</a><a href="/">MNC FLOW 실행 화면</a></div></footer>
+      <footer>
+        <span>MNC Lab. · Korea University</span>
+        <div className="footerLinks"><Link href="/about">서비스 소개</Link><Link href="/">MNC FLOW 실행 화면</Link></div>
+      </footer>
     </main>
   );
 }

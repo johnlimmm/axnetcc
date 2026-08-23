@@ -18,8 +18,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "요청 본문은 올바른 JSON이어야 합니다." }, { status: 400 });
   }
 
-  if (typeof body.query !== "string" || body.query.trim().length < 5) {
-    return Response.json({ error: "query는 5자 이상이어야 합니다." }, { status: 400 });
+  if (typeof body.query !== "string" || body.query.trim().length < 5 || body.query.length > 20_000) {
+    return Response.json({ error: "query는 5자 이상 20,000자 이하여야 합니다." }, { status: 400 });
   }
 
   const mode = normalizeMode(body.mode);

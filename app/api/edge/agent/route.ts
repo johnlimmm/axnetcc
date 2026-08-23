@@ -2,15 +2,14 @@ import { agentIds, type AgentId } from "../../../../lib/agent-registry";
 import {
   validateEdgeAgentRequest,
   validateEdgeAgentResponse,
-  type EdgeAgentResponse,
 } from "../../../../lib/edge-agent-contract";
+import { projectEdgeAgentResponseForCore } from "../../../../lib/edge-core-contract";
 import { executeEdgeAgentLocally } from "../../../../lib/edge-agent-service";
 
 export const dynamic = "force-dynamic";
 
 const MAX_REQUEST_BYTES = 32 * 1024;
 const agentIdSet = new Set<string>(agentIds);
-const encoder = new TextEncoder();
 const responseHeaders = {
   "cache-control": "no-store",
   "x-content-type-options": "nosniff",
@@ -88,20 +87,6 @@ async function readLimitedRequest(request: Request) {
   }
 }
 
-function serializeMeasuredResponse(response: EdgeAgentResponse) {
-  response.boundary.transport = "http";
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const body = JSON.stringify(response);
-    const bytes = encoder.encode(body).length;
-    if (response.boundary.returnedBytes === bytes && response.metrics.egressBytes === bytes) {
-      return body;
-    }
-    response.boundary.returnedBytes = bytes;
-    response.metrics.egressBytes = bytes;
-  }
-  throw new Error("EDGE_RESPONSE_SIZE_DID_NOT_CONVERGE");
-}
-
 export async function POST(request: Request) {
   const production = process.env.NODE_ENV === "production";
   const headerAgent = request.headers.get("x-edge-agent-id");
@@ -166,8 +151,9 @@ export async function POST(request: Request) {
   try {
     const localResult = await executeEdgeAgentLocally(edgeRequest, request.signal);
     localResult.boundary.transport = "http";
-    const result = validateEdgeAgentResponse(localResult);
-    const body = serializeMeasuredResponse(result);
+    const internalResult = validateEdgeAgentResponse(localResult);
+    const result = projectEdgeAgentResponseForCore(internalResult, "http");
+    const body = JSON.stringify(result);
     return new Response(body, {
       status: 200,
       headers: {

@@ -1,5 +1,43 @@
 # MNC FLOW
 
+## Privacy Risk v2 평가 보고서
+
+개인정보 위험도는 API가 반환하는 동일한 `privacyRiskVersion: "v2"` breakdown을 보고서와
+`/evaluation` 화면에서 사용합니다.
+
+```text
+Privacy Risk = 100 × (0.5 × S + 0.3 × A + 0.2 × O)
+S = 탐지된 민감정보 중 경계를 넘어 전달된 비율
+A = 전체 등록 Agent 중 선택된 Agent 비율
+O = 보호 대상 원문 byte 중 경계를 넘어 전달된 원문 byte 비율
+```
+
+| v2 보고서 | 실행 범위 | 결과 사용 원칙 |
+|---|---:|---|
+| `data/evaluation/latest-report-v2.json` | 파일럿 6문항 × 4모드 | `status: measured`일 때만 수치 표시 |
+| `data/evaluation/expanded-report-v2.json` | 40문항 × 5모드 (200회) | `status: measured`; 전체 v2 breakdown 실측 |
+| `data/evaluation/repeat-benchmark-report-v2.json` | 5질의 × 5모드 × 3회 (75회) | 실행·privacy는 실측, 상용 Judge 미설정으로 품질은 `partial`·`—` |
+
+2026-08-07에 현재 deterministic fallback 빌드로 파일럿 24회(6문항 × 4모드)를 재실행한
+Privacy Risk v2 결과입니다. 독립 held-out 평가가 아닌 고정 파일럿입니다.
+
+같은 빌드로 40문항×5모드 200회도 재실행했습니다. 제안 방식은 Macro-F1 96.8%,
+객관 품질 54.6점(최고 55.5점 대비 98.4%), 평균 Privacy Risk 9.7점이었고 금지 출력
+통과율은 100%였습니다. 반복 75회 역시 완료했지만 상용 Judge 자격증명이 없어 품질 열은
+추정하지 않고 `—`로 유지하며 보고서 상태를 `partial`로 기록합니다.
+
+| 모드 | 평균 Risk | S | A | O | 상태 (6건) |
+|---|---:|---:|---:|---:|---|
+| Centralized | 30.0 | 0.0% | 100.0% | 0.0% | 미탐지 5 · 완전 마스킹 1 · 일부 노출 0 |
+| Managed | 10.8 | 0.0% | 35.4% | 0.0% | 미탐지 5 · 완전 마스킹 1 · 일부 노출 0 |
+| Parallel | 30.0 | 0.0% | 100.0% | 0.0% | 미탐지 5 · 완전 마스킹 1 · 일부 노출 0 |
+| Proposed | 9.0 | 0.0% | 29.2% | 0.0% | 미탐지 5 · 완전 마스킹 1 · 일부 노출 0 |
+
+민감정보 상태는 `민감정보 미탐지`, `탐지 후 완전 마스킹`, `일부 노출`로 구분합니다.
+버전이 없는 기존 `latest-report.json`, `expanded-report.json`,
+`literature-baseline-report.json`의 수치는 legacy v1 proxy 참고값이며 v2 평균·비교에는 포함하지 않습니다.
+아래의 기존 성능 표 역시 v2 재생성 전의 legacy 실험 기록입니다.
+
 공공기관·기업 AX를 위한 **분산형 Multi-Agent RAG 거버넌스 프로토타입**입니다.  
 Core가 질의를 분석해 필요한 전문 Agent만 선택하고, 각 Agent는 자신에게 허용된 문서와 독립적인 로컬 LLM endpoint를 사용합니다. 원문을 중앙으로 모으지 않고 최소 결과와 근거 식별자만 통합하는 구조를 실험합니다.
 
@@ -322,6 +360,8 @@ pnpm run start
 | `EDGE_AGENT_TOKEN` | 공통 service token. 운영에서는 Agent별 token 권장 |
 | `EDGE_AGENT_<AGENT>_TOKEN` | Agent별 service token |
 | `EDGE_AGENT_TIMEOUT_MS` | Core→Edge timeout |
+| `REQUEST_COORDINATOR_SCOPE` | 현재는 `single-process`만 지원. 다른 값은 실행 차단 |
+| `REQUEST_COORDINATOR_REPLICA_COUNT` | 중앙 큐 권위를 보장하기 위해 반드시 `1`; 다중 replica는 공유 저장소 구현 전 차단 |
 | `COMMERCIAL_JUDGE_BASE_URL` | 선택적 OpenAI 호환 블라인드 평가 API |
 | `COMMERCIAL_JUDGE_API_KEY` | 평가 API key. Git 커밋 금지 |
 | `COMMERCIAL_JUDGE_MODEL` | 평가 모델 |

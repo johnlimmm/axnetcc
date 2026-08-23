@@ -359,7 +359,7 @@ function buildPrimaryRoutingScores(
         Math.min(1, matchedEntities.length / 2) * 0.4,
       ),
       evidenceReadiness: rounded(
-        (agentProfiles[agentId].ragAgents.includes(agentId) ? 0.35 : 0) +
+        ((agentProfiles[agentId].ragAgents as readonly AgentId[]).includes(agentId) ? 0.35 : 0) +
         Math.min(1, agentProfiles[agentId].ragAgents.length / 3) * 0.25 +
         (matchedConceptIds.length / roleConcepts[agentId].length) * 0.4,
       ),

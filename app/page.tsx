@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { isRunStartStalled } from "../lib/run-observation";
 
 type RouterDecisionView = {
   version: "2";
@@ -61,7 +62,57 @@ type EvidencePlanView = {
     status: "verified" | "partial" | "unknown" | "denied";
     coverage: number | null;
     modes: string[];
+    transfers: Array<{
+      referenceId: string;
+      plannedMode: string;
+      appliedMode: string;
+      egressBytes: number;
+    }>;
   }>;
+};
+
+type MetricProvenanceView = {
+  version: "v2";
+  kind: "measured" | "derived" | "estimated" | "unavailable";
+  source: string;
+  method: string;
+  detail?: string;
+};
+
+type ReportPriority = "high" | "medium" | "low";
+
+type ReportFinding = {
+  title: string;
+  content: string;
+  citations: string[];
+};
+
+type ReportRecommendation = {
+  content: string;
+  priority: ReportPriority;
+  citations: string[];
+};
+
+type AgentEvidenceReport = {
+  version: "1";
+  title: string;
+  executiveSummary: string;
+  findings: ReportFinding[];
+  recommendations: ReportRecommendation[];
+  limitations: string[];
+  citationIds: string[];
+};
+
+type IntegratedEvidenceReport = {
+  version: "1";
+  title: string;
+  executiveSummary: string;
+  primaryAgentId: string;
+  participatingAgentIds: string[];
+  sections: Array<ReportFinding & { sourceAgentIds: string[] }>;
+  recommendations: ReportRecommendation[];
+  limitations: string[];
+  references: Array<{ evidenceId: string; agentId: string }>;
 };
 
 type AgentResult = {
@@ -75,6 +126,7 @@ type AgentResult = {
   score: number;
   question: string;
   summary: string;
+  report?: AgentEvidenceReport;
   evidence: {
     id: string;
     title: string;
@@ -96,6 +148,7 @@ type AgentResult = {
   latencyMs: number;
   inference?: {
     backend: "ollama" | "deterministic";
+    answerSource?: "local-llm" | "deterministic-fallback";
     model: string;
     role?: "agent-llm" | "evidence-projection" | "not-selected";
     ttftMs: number | null;
@@ -115,10 +168,14 @@ type RunResult = {
     | "remoterag";
   title: string;
   conclusion: string;
+  report?: IntegratedEvidenceReport;
   integration?: {
     actor: "core-orchestrator" | "central-llm" | "managed-supervisor";
     label: string;
     backend: "ollama" | "deterministic";
+    answerSource?: "local-llm" | "deterministic-fallback";
+    fallbackReason?: string;
+    fallbackReasonCode?: string;
     model: string | null;
   };
   status: "ready" | "review";
@@ -127,17 +184,50 @@ type RunResult = {
   agents: AgentResult[];
   checks: { label: string; status: "pass" | "warn"; detail: string }[];
   metrics: {
-    calls: number;
-    tokens: number;
+    calls: number | null;
+    agentCalls?: number;
+    integrationCalls?: number;
+    tokens: number | null;
+    tokenBreakdown?: {
+      inferenceCount: number;
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    } | null;
     bytes: number;
-    latencyMs: number;
-    exposedFields: number;
-    traceability: number;
+    latencyMs: number | null;
+    latencyBreakdown?: {
+      queueWaitMs: number | null;
+      inferenceMs: number | null;
+      endToEndMs: number | null;
+      aggregation: string;
+    };
+    exposedFields: number | null;
+    traceability: number | null;
     rawDataLeavesEdge: boolean;
     boundaryBytes: number;
     dataRecipients: number;
-    minimizationRate: number;
+    minimizationRate: number | null;
     privacyRiskScore: number;
+    privacyRiskVersion?: "v2";
+    privacyRisk?: {
+      privacyRiskVersion: "v2";
+      score: number;
+      sensitiveDetectedCount: number;
+      sensitiveTransmittedCount: number;
+      sensitiveTransmissionRatio: number;
+      selectedAgentCount: number;
+      totalAgentCount: number;
+      agentSelectionRatio: number;
+      originalBytes: number;
+      transmittedOriginalBytes: number;
+      originalDisclosureRatio: number;
+      egressEnvelopeCount: number;
+      recipientCount: number;
+      privacyPass: boolean;
+      outputLeak: boolean;
+      diagnostics: string[];
+    };
     groundedness: number;
     relevance: number;
     evidenceSupport: number;
@@ -156,6 +246,10 @@ type RunResult = {
     model?: string;
     ttftMs?: number | null;
     tpotMs?: number | null;
+    provenance?: {
+      version: "v2";
+      fields: Record<string, MetricProvenanceView>;
+    };
   };
   commercialJudge?: {
     enabled: boolean;
@@ -175,7 +269,14 @@ type RunResult = {
     rawContentReturned: false;
     policyVersion?: string;
   };
-  timeline: { label: string; detail: string; ms: number }[];
+  timeline: {
+    label: string;
+    detail: string;
+    ms: number;
+    queueWaitMs?: number | null;
+    inferenceMs?: number | null;
+    provenance?: MetricProvenanceView["kind"];
+  }[];
 };
 
 type LlmHealth = {
@@ -224,7 +325,54 @@ type ProgressEvent = {
   evidenceCount?: number;
   backend?: "ollama" | "deterministic";
   model?: string;
+  execution?: {
+    executionStatus: "queued" | "running" | "integrating" | "completed" | "partial_failed" | "failed" | "cancelled";
+    totalCount: number;
+    terminalCount: number;
+    remainingCount: number;
+    version: number;
+  };
 };
+
+type RunApiTask = {
+  taskId: string;
+  kind: "agent" | "central-integration" | "managed-supervisor" | "commercial-judge";
+  assignee: string;
+  required: boolean;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped";
+  queuePosition: number | null;
+  waitingMs: number;
+};
+
+type RunApiSnapshot = {
+  requestId: string;
+  mode: RunResult["mode"];
+  status: "queued" | "running" | "integrating" | "completed" | "partial_failed" | "failed" | "cancelled";
+  createdAt: number;
+  updatedAt: number;
+  latestStage: string | null;
+  lastEventId: number;
+  progress: {
+    totalCount: number;
+    terminalCount: number;
+    remainingCount: number;
+  };
+  tasks: RunApiTask[];
+  result?: RunResult;
+  errorCode?: string;
+};
+
+class RunApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message = code) {
+    super(message);
+    this.name = "RunApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
 
 type LiveAgentStage =
   | "idle"
@@ -255,6 +403,8 @@ type LiveAgentState = {
   evidenceCount: number;
   backend?: "ollama" | "deterministic";
   model?: string;
+  queuePosition?: number | null;
+  waitingMs?: number;
 };
 
 type LiveRunState = {
@@ -274,11 +424,18 @@ type LiveRunState = {
   evidencePlan?: EvidencePlanView;
   agents: Record<string, LiveAgentState>;
   activity: Array<{ sequence: number; message: string }>;
+  execution: {
+    status: RunApiSnapshot["status"];
+    totalCount: number;
+    terminalCount: number;
+    remainingCount: number;
+  };
 };
 
 type LiveRunAction =
   | { type: "reset"; mode: RunResult["mode"]; label?: string }
   | { type: "event"; event: ProgressEvent }
+  | { type: "snapshot"; snapshot: RunApiSnapshot }
   | { type: "error"; message: string };
 
 const agents = [
@@ -328,6 +485,12 @@ function createLiveRunState(mode: RunResult["mode"], label?: string): LiveRunSta
       },
     ])),
     activity: [],
+    execution: {
+      status: "queued",
+      totalCount: 0,
+      terminalCount: 0,
+      remainingCount: 0,
+    },
   };
 }
 
@@ -338,6 +501,92 @@ function liveRunReducer(state: LiveRunState, action: LiveRunAction): LiveRunStat
       ...state,
       message: action.message,
       core: { ...state.core, stage: "error", message: action.message },
+    };
+  }
+
+  if (action.type === "snapshot") {
+    const snapshot = action.snapshot;
+    let nextAgents = state.agents;
+    let nextCore = state.core;
+    let nextMessage = state.message;
+    for (const task of snapshot.tasks) {
+      if (task.kind === "agent") {
+        const current = nextAgents[task.assignee];
+        if (!current) continue;
+        const stage: LiveAgentStage = task.status === "queued"
+          ? "queued"
+          : task.status === "running"
+            ? current.stage === "queued" || current.stage === "idle" ? "retrieving" : current.stage
+            : task.status === "succeeded"
+              ? ["completed", "mapped", "fallback"].includes(current.stage) ? current.stage : "completed"
+              : task.status === "skipped"
+                ? "skipped"
+                : "error";
+        nextAgents = {
+          ...nextAgents,
+          [task.assignee]: {
+            ...current,
+            selected: task.status !== "skipped",
+            stage,
+            queuePosition: task.queuePosition,
+            waitingMs: task.waitingMs,
+            message: task.status === "queued"
+              ? `실행 대기 중${task.queuePosition ? ` · Queue ${task.queuePosition}번` : ""}`
+              : task.status === "running" && (current.stage === "queued" || current.stage === "idle")
+                ? "RAG 근거를 검색하고 응답을 생성하는 중"
+              : current.message,
+          },
+        };
+      } else {
+        const isJudge = task.kind === "commercial-judge";
+        const isSupervisor = task.kind === "managed-supervisor";
+        const actor = isJudge ? "상용 LLM 평가" : isSupervisor ? "Managed Supervisor" : "중앙 모델";
+        if (task.status === "queued") {
+          nextMessage = `${actor}가 Agent 결과를 기다리는 중입니다.`;
+          nextCore = { ...nextCore, message: nextMessage };
+        } else if (task.status === "running") {
+          nextMessage = isJudge
+            ? "상용 LLM이 최종 응답을 평가하는 중입니다."
+            : `${actor}가 근거와 Agent 응답을 통합해 최종 응답을 생성하는 중입니다.`;
+          nextCore = {
+            ...nextCore,
+            stage: isJudge ? "judging" : "integrating",
+            message: nextMessage,
+          };
+        } else if (task.status === "succeeded") {
+          nextMessage = `${actor} 처리가 완료되었습니다.`;
+          nextCore = {
+            ...nextCore,
+            stage: isJudge || snapshot.status === "completed" || snapshot.status === "partial_failed"
+              ? "completed"
+              : nextCore.stage,
+            message: nextMessage,
+          };
+        } else if (task.status === "failed" || task.status === "cancelled") {
+          nextMessage = `${actor} 처리 단계가 종료되었습니다.`;
+          nextCore = { ...nextCore, stage: "error", message: nextMessage };
+        }
+      }
+    }
+    if (snapshot.status === "integrating" && nextCore.stage !== "judging") {
+      nextMessage = nextCore.message === state.core.message
+        ? "중앙 모델이 근거와 응답을 통합하는 중입니다."
+        : nextMessage;
+      nextCore = { ...nextCore, stage: "integrating", message: nextMessage };
+    }
+    return {
+      ...state,
+      runId: snapshot.requestId,
+      mode: snapshot.mode,
+      message: nextMessage,
+      agents: nextAgents,
+      core: nextCore,
+      execution: {
+        status: snapshot.status,
+        totalCount: snapshot.progress.totalCount,
+        terminalCount: snapshot.progress.terminalCount,
+        remainingCount: snapshot.progress.remainingCount,
+      },
     };
   }
 
@@ -447,6 +696,14 @@ function liveRunReducer(state: LiveRunState, action: LiveRunAction): LiveRunStat
     routerDecision: event.routerDecision ?? state.routerDecision,
     evidencePlan: event.evidencePlan ?? state.evidencePlan,
     activity: [...state.activity, { sequence: event.sequence, message: event.message }].slice(-5),
+    execution: event.execution
+      ? {
+          status: event.execution.executionStatus,
+          totalCount: event.execution.totalCount,
+          terminalCount: event.execution.terminalCount,
+          remainingCount: event.execution.remainingCount,
+        }
+      : state.execution,
   };
 }
 
@@ -457,190 +714,10 @@ const exampleRequests = [
   "권한경계 기밀 대응 절차를 보안과 운영 관점에서 검토해 주세요.",
 ];
 
+const ACTIVE_RUN_STORAGE_KEY = "mnc-flow-active-run-v2";
+
 function holdCompletedLiveState() {
   return new Promise<void>((resolve) => window.setTimeout(resolve, 320));
-}
-
-function buildFallbackResult(query: string, mode: RunResult["mode"]): RunResult {
-  const lower = query.toLowerCase();
-  const keywords: Record<string, string[]> = {
-    tech: ["ai", "기술", "시스템", "서비스", "클라우드", "구축", "운영", "성능"],
-    data: ["데이터셋", "데이터 품질", "학습데이터", "수집", "정제", "메타데이터", "가명정보"],
-    security: ["보안", "개인정보", "데이터", "접근", "민원", "내부", "클라우드"],
-    legal: ["법", "책임", "계약", "규정", "민원", "개인정보", "외주"],
-    policy: ["정책", "윤리", "공정성", "편향", "투명성", "영향평가", "공공성"],
-    finance: ["예산", "비용", "조달", "타당성", "계약", "운영비"],
-    procurement: ["조달", "발주", "입찰", "규격서", "사업자", "카탈로그", "계약"],
-    operations: ["운영", "sla", "장애", "모니터링", "응답시간", "품질", "유지보수"],
-  };
-  const selectedIds =
-    mode === "proposed" || mode === "managed"
-      ? agents
-          .map((agent) => ({
-            id: agent.id,
-            score: keywords[agent.id].filter((word) => lower.includes(word)).length,
-          }))
-          .filter((entry) => entry.score > 0)
-          .map((entry) => entry.id)
-      : agents.map((agent) => agent.id);
-  if (!selectedIds.length) selectedIds.push("tech");
-
-  const content: Record<string, Omit<AgentResult, "selected" | "score" | "color" | "shortName" | "name">> = {
-    tech: {
-      id: "tech",
-      question: "서비스 목표 달성을 위한 최소 기술 구성과 단계별 검증 기준은 무엇입니까?",
-      summary: "업무망과 AI 처리영역을 분리하고, 검색 증강 생성(RAG)·응답 필터·감사 로그를 독립 모듈로 구성하는 단계적 도입이 적절합니다.",
-      evidence: [
-        { id: "TECH-ARCH-07", title: "AI 서비스 표준 아키텍처 v2.1", excerpt: "업무 데이터 저장소와 추론 계층의 논리적 분리" },
-        { id: "OPS-SLA-03", title: "서비스 운영 SLA 지침", excerpt: "시범운영 단계 응답시간 P95 기준 정의" },
-      ],
-      responsibility: "디지털전략팀 기술검토 책임",
-      filteredFields: ["담당자 휴대전화", "서버 관리계정"],
-      latencyMs: 286,
-    },
-    data: {
-      id: "data",
-      question: "데이터 출처·품질·갱신·폐기 기준은 무엇입니까?",
-      summary: "데이터 출처와 이용조건을 확인하고 품질, 최신성, 메타데이터 및 폐기 기준을 수명주기 전체에 적용해야 합니다.",
-      evidence: [{ id: "DATA-GOV-01", title: "공공 AI 데이터 관리 기준", excerpt: "출처·품질·갱신주기 기록" }],
-      responsibility: "데이터 관리부서 품질·수명주기 검토",
-      filteredFields: [],
-      latencyMs: 301,
-    },
-    security: {
-      id: "security",
-      question: "개인정보와 내부정보를 보호하기 위한 필수 통제 및 반출 제한은 무엇입니까?",
-      summary: "원문은 조직 Edge에 유지하고 최소 질의만 전달해야 합니다. 민감정보 마스킹, 역할 기반 접근통제, 프롬프트·응답 감사가 필수입니다.",
-      evidence: [
-        { id: "SEC-POL-12", title: "생성형 AI 보안정책", excerpt: "민감정보의 외부 추론환경 전송 금지" },
-        { id: "PRIV-GUIDE-04", title: "개인정보 처리 가이드", excerpt: "목적 달성에 필요한 최소 항목만 처리" },
-      ],
-      responsibility: "정보보호팀 보안성 검토",
-      filteredFields: ["주민등록번호", "민원인 연락처", "내부 IP"],
-      latencyMs: 342,
-    },
-    legal: {
-      id: "legal",
-      question: "관련 법령·계약 조건과 AI 산출물의 검토 책임을 어떻게 규정해야 합니까?",
-      summary: "AI 결과는 보조 판단으로 한정하고 담당자의 최종 검토를 명시해야 합니다. 위탁 처리 시 데이터 이용범위·재위탁·사고책임 조항이 필요합니다.",
-      evidence: [
-        { id: "LEGAL-AI-09", title: "AI 활용 업무 법률 검토서", excerpt: "자동화된 결과에 대한 담당자 최종 검토 의무" },
-        { id: "CONT-DPA-02", title: "데이터 처리 위탁 표준조항", excerpt: "목적 외 처리와 재위탁 제한" },
-      ],
-      responsibility: "법무팀 규정·계약 검토",
-      filteredFields: ["계약 상대방 개인주소"],
-      latencyMs: 318,
-    },
-    policy: {
-      id: "policy",
-      question: "공공성·투명성·편향 및 영향평가 기준은 무엇입니까?",
-      summary: "정책 목적과 권리 영향을 명시하고 설명가능성, 편향 점검, 이의제기 절차를 운영해야 합니다.",
-      evidence: [{ id: "POLICY-AI-01", title: "공공 AI 도입 원칙", excerpt: "투명성·책임성·영향평가" }],
-      responsibility: "AI 정책담당 공공성·영향평가 검토",
-      filteredFields: [],
-      latencyMs: 329,
-    },
-    finance: {
-      id: "finance",
-      question: "시범도입과 운영 단계의 비용항목 및 조달상 확인사항은 무엇입니까?",
-      summary: "PoC·본사업을 분리하고 사용량 기반 추론비, 보안검증비, 운영인력 비용을 총소유비용에 포함해야 합니다. 경쟁성 검토가 선행돼야 합니다.",
-      evidence: [
-        { id: "FIN-TCO-11", title: "정보화사업 TCO 산정표", excerpt: "구축비 외 3개년 운영·추론 비용 포함" },
-        { id: "PROC-STD-06", title: "디지털서비스 조달지침", excerpt: "규격서 작성 전 경쟁성·종속성 검토" },
-      ],
-      responsibility: "재무·구매팀 예산 타당성 검토",
-      filteredFields: ["개별 인건비 단가"],
-      latencyMs: 254,
-    },
-    procurement: {
-      id: "procurement",
-      question: "발주 방식과 경쟁성, 사업자 종속 위험은 무엇입니까?",
-      summary: "측정 가능한 규격과 경쟁성, 데이터 이전·계약 종료 조건을 명시해야 합니다.",
-      evidence: [{ id: "PROC-CAT-01", title: "디지털서비스 계약 안내", excerpt: "카탈로그 계약과 평가 절차" }],
-      responsibility: "구매·계약부서 발주·경쟁성 검토",
-      filteredFields: [],
-      latencyMs: 276,
-    },
-    operations: {
-      id: "operations",
-      question: "SLA·장애대응·품질측정과 운영 전환 기준은 무엇입니까?",
-      summary: "응답시간·가용성·정확성 지표와 장애 대응 및 운영 전환 게이트를 정의해야 합니다.",
-      evidence: [{ id: "OPS-SLA-01", title: "AI 서비스 운영 기준", excerpt: "SLA·모니터링·운영 전환 조건" }],
-      responsibility: "서비스 운영부서 SLA·품질 검토",
-      filteredFields: [],
-      latencyMs: 297,
-    },
-  };
-
-  const agentResults = agents.map((agent) => {
-    const score = keywords[agent.id].filter((word) => lower.includes(word)).length;
-    return {
-      ...agent,
-      ...content[agent.id],
-      selected: selectedIds.includes(agent.id),
-      score: Math.min(99, 62 + score * 8),
-    };
-  });
-  const calls = mode === "centralized" ? 1 : selectedIds.length + (mode === "managed" ? 1 : 0);
-  const baseTokens = mode === "centralized" ? 6940 : calls * 790 + 620;
-  const exposedFields = mode === "proposed" ? 0 : mode === "parallel" ? 7 : 12;
-  return {
-    runId: "RUN-PREVIEW",
-    mode,
-    title: "신규 AI 서비스 도입 종합 검토",
-    conclusion:
-      "제한적 시범 도입을 권고합니다. 원문 데이터의 Edge 보존, 역할 기반 접근통제, 담당자 최종 검토를 선행조건으로 설정하고 PoC 이후 품질·보안·비용 지표를 재평가해야 합니다.",
-    status: selectedIds.includes("security") && selectedIds.includes("legal") ? "ready" : "review",
-    agents: agentResults,
-    checks: [
-      { label: "필수 검토영역", status: calls >= 2 ? "pass" : "warn", detail: `${calls}개 전문영역의 판단을 반영했습니다.` },
-      { label: "근거 완전성", status: "pass", detail: "모든 핵심 판단에 근거 식별자가 연결되었습니다." },
-      { label: "응답 충돌", status: "warn", detail: "기술 편의성과 보안상 데이터 반출 제한 사이에 조건부 조정이 필요합니다." },
-      { label: "민감정보", status: exposedFields === 0 ? "pass" : "warn", detail: exposedFields === 0 ? "Edge 반환 전 필터링되었습니다." : `${exposedFields}개 불필요 필드가 전달되었습니다.` },
-    ],
-    metrics: {
-      calls,
-      tokens: baseTokens,
-      bytes: mode === "proposed" ? calls * 1840 : mode === "parallel" ? 14680 : mode === "managed" ? 29600 : 42800,
-      latencyMs: mode === "proposed" ? 1120 : mode === "parallel" ? 1540 : mode === "managed" ? 2140 : 1890,
-      exposedFields,
-      traceability: mode === "proposed" ? 100 : mode === "parallel" ? 72 : mode === "managed" ? 82 : 35,
-      rawDataLeavesEdge: false,
-      boundaryBytes: mode === "centralized" ? 42800 : mode === "managed" ? 29600 : mode === "parallel" ? 14680 : calls * 1840,
-      dataRecipients: mode === "centralized" ? 1 : calls,
-      minimizationRate: mode === "centralized" || mode === "managed" ? 0 : mode === "parallel" ? 66 : 78,
-      privacyRiskScore: mode === "centralized" ? 85 : mode === "managed" ? 76 : mode === "parallel" ? 62 : Math.min(35, 8 + calls * 3),
-      groundedness: mode === "proposed" ? 88 : mode === "managed" ? 82 : mode === "parallel" ? 76 : 68,
-      relevance: mode === "proposed" ? 90 : mode === "managed" ? 84 : mode === "parallel" ? 80 : 72,
-      evidenceSupport: mode === "proposed" ? 88 : mode === "managed" ? 82 : mode === "parallel" ? 76 : 68,
-      citationCoverage: mode === "proposed" ? 92 : mode === "managed" ? 84 : mode === "parallel" ? 78 : 62,
-      citationValidity: mode === "proposed" ? 96 : 88,
-      domainCoverage: 100,
-      answerCompleteness: mode === "proposed" ? 90 : 86,
-      qualityScore: mode === "proposed" ? 92 : mode === "managed" ? 86 : mode === "parallel" ? 82 : 74,
-      llmBackend: "deterministic",
-      model: "qwen2.5:3b",
-      ttftMs: null,
-      tpotMs: null,
-    },
-    timeline: [
-      { label: "요청 분석", detail: "업무영역·의도·민감도 분류", ms: 74 },
-      { label: "Agent 선택", detail: `${calls}개 역할 및 접근권한 일치`, ms: 31 },
-      { label: "최소 질의 생성", detail: "조직별 허용 필드만 포함", ms: 48 },
-      { label: "Edge Local RAG", detail: "원문은 Edge 내부에서만 검색", ms: 721 },
-      { label: "검증·통합", detail: "근거·충돌·검토주체 연결", ms: 246 },
-    ],
-  };
-}
-
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{note}</small>
-    </div>
-  );
 }
 
 function agentLabel(agentId: string) {
@@ -678,183 +755,6 @@ function RouterDecisionCard({ decision, compact = false }: { decision: RouterDec
       )}
       <p className="routerRationale">{decision.rationale.at(-1)}</p>
     </section>
-  );
-}
-
-function EvidencePlanCard({ plan, compact = false }: { plan: EvidencePlanView; compact?: boolean }) {
-  const coverageLabel = plan.coverage === null ? "UNKNOWN" : `${Math.round(plan.coverage * 100)}%`;
-  return (
-    <section className={`evidencePlanCard ${plan.humanReviewRequired ? "review" : "verified"} ${compact ? "compact" : ""}`} aria-label="Edge 근거 충족 계획">
-      <header>
-        <div><span>EDGE EVIDENCE GATE</span><strong>필수 개념 충족도와 실제 공개 방식을 확인했습니다</strong></div>
-        <b>{plan.humanReviewRequired ? "HUMAN REVIEW" : "VERIFIED"}</b>
-      </header>
-      <div className="evidenceCoverageRow">
-        <strong>{coverageLabel}</strong>
-        <div><span style={{ width: `${plan.coverage === null ? 0 : Math.round(plan.coverage * 100)}%` }} /></div>
-        <small>충족 {plan.coveredConceptIds.length} · 미충족 {plan.missingConceptIds.length}</small>
-      </div>
-      {!compact && (
-        <div className="evidenceAgentPlans">
-          {plan.agentPlans.map((agentPlan) => (
-            <div key={agentPlan.agentId}>
-              <strong>{agentLabel(agentPlan.agentId)} Agent</strong>
-              <span className={`planStatus ${agentPlan.status}`}>{agentPlan.status}</span>
-              <small>{agentPlan.coverage === null ? "coverage unknown" : `${Math.round(agentPlan.coverage * 100)}% coverage`}</small>
-              <p>{agentPlan.modes.length ? agentPlan.modes.map((mode) => <b key={mode}>{mode}</b>) : <b>metadata only</b>}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      {!!plan.missingConceptIds.length && <p className="missingConcepts">미충족: {plan.missingConceptIds.join(" · ")}</p>}
-    </section>
-  );
-}
-
-function LiveExecutionPanel({ state }: { state: LiveRunState }) {
-  const selectedAgents = agents.filter((agent) => state.agents[agent.id]?.selected === true);
-  const completedAgents = selectedAgents.filter((agent) => {
-    const stage = state.agents[agent.id]?.stage;
-    return stage === "completed" || stage === "fallback" || stage === "mapped";
-  });
-  const completion = state.core.stage === "completed"
-    ? 100
-    : selectedAgents.length
-    ? Math.min(94, Math.round(completedAgents.length / selectedAgents.length * 76) + 8)
-    : 6;
-  const isCentralAgentMapping = state.mode === "centralized" || state.mode === "remoterag";
-  const coreMeta = state.core.kind === "managed-supervisor"
-    ? {
-        eyebrow: "MANAGED INTEGRATION",
-        title: "Managed Supervisor",
-        detail: "전문 Agent 응답·근거를 중앙 모델이 최종 통합",
-      }
-    : state.core.kind === "central-llm"
-      ? {
-          eyebrow: "CENTRAL INFERENCE",
-          title: state.mode === "proposed" ? "AXNetCC 중앙 통합 모델" : "중앙 Core LLM",
-          detail: state.mode === "proposed"
-            ? "Edge Agent의 안전 요약·근거 ID만 통합"
-            : "중앙 RAG 검색과 단일 모델 응답 생성",
-        }
-      : {
-          eyebrow: "GOVERNANCE CORE",
-          title: "Core Orchestrator",
-          detail: "Agent 선택·근거 검증·충돌 조정",
-        };
-  const coreStageLabel: Record<LiveCoreStage, string> = {
-    routing: "요청 분석 중",
-    retrieving: "중앙 RAG 검색 중",
-    generating: "중앙 응답 생성 중",
-    integrating: state.core.kind === "core-orchestrator" ? "응답 검증·통합 중" : "중앙 모델 통합 중",
-    judging: "품질 평가 중",
-    completed: "최종 통합 완료",
-    error: "실행 오류",
-  };
-  const agentStageLabel: Record<LiveAgentStage, string> = {
-    idle: "라우팅 대기 중",
-    queued: "실행 순서 대기 중",
-    retrieving: "RAG에서 근거 검색 중…",
-    retrieved: "근거 검색 완료",
-    generating: isCentralAgentMapping ? "중앙 응답에 근거 연결 중…" : "응답 생성하는 중…",
-    mapping: "중앙 응답에 전문 근거 연결 중…",
-    completed: "응답 생성 완료",
-    mapped: "전문 근거 매핑 완료",
-    fallback: "근거 기반 Fallback 완료",
-    skipped: "이번 요청에서 제외됨",
-    error: "실행 오류",
-  };
-
-  function miniStepClass(stage: LiveAgentStage, step: "rag" | "model" | "done") {
-    if (stage === "skipped" || stage === "idle" || stage === "queued") return "";
-    if (step === "rag") return stage === "retrieving" ? "active" : "done";
-    if (step === "model") {
-      if (stage === "retrieved" || stage === "generating" || stage === "mapping") return "active";
-      return stage === "completed" || stage === "fallback" || stage === "mapped" ? "done" : "";
-    }
-    return stage === "completed" || stage === "mapped" ? "done" : stage === "fallback" ? "warning" : "";
-  }
-
-  return (
-    <div className="resultPanel liveExecutionPanel">
-      <div className="liveRunTop">
-        <div>
-          <span className="liveRunKicker"><i /> LIVE ORCHESTRATION</span>
-          <strong>{state.runId ?? "RUN 준비 중"}</strong>
-          <small>{modeLabels[state.mode]}</small>
-        </div>
-        <div className="liveRunCount">
-          <strong>{completedAgents.length}<span> / {selectedAgents.length || "-"}</span></strong>
-          <small>Agent 응답 완료</small>
-        </div>
-      </div>
-
-      <div className="liveProgress" aria-hidden="true">
-        <span style={{ width: `${completion}%` }} />
-      </div>
-      <p className="liveNow" aria-live="polite"><span className="spinner dark" />{state.message}</p>
-
-      {state.routerDecision && <RouterDecisionCard decision={state.routerDecision} compact />}
-
-      <section className={`liveCore stage-${state.core.stage}`}>
-        <div className="coreSignal" aria-hidden="true">
-          <i /><i /><i /><b>CORE</b>
-        </div>
-        <div className="liveCoreCopy">
-          <span>{coreMeta.eyebrow}</span>
-          <strong>{coreMeta.title}</strong>
-          <p>{coreMeta.detail}</p>
-        </div>
-        <div className="liveCoreStatus">
-          <span><i />{coreStageLabel[state.core.stage]}</span>
-          <small>{state.core.model ?? (state.core.kind === "core-orchestrator" ? "정책 기반 결정론적 통합" : "모델 연결 확인 중")}</small>
-          {state.core.backend && <b>{state.core.backend === "ollama" ? "LOCAL LLM" : "DETERMINISTIC FALLBACK"}</b>}
-          {state.core.evidenceCount > 0 && <b>근거 {state.core.evidenceCount}건</b>}
-        </div>
-      </section>
-
-      <div className="flowDivider" aria-hidden="true"><span>EDGE AGENT EXECUTION</span></div>
-      <div className="liveAgentGrid">
-        {agents.map((agent) => {
-          const live = state.agents[agent.id];
-          const stage = live?.stage ?? "idle";
-          return (
-            <article
-              key={agent.id}
-              className={`liveAgentCard stage-${stage}`}
-              style={{ "--agent": agent.color } as React.CSSProperties}
-            >
-              <header>
-                <i>{agent.shortName.slice(0, 1)}</i>
-                <div><strong>{agent.shortName} Agent</strong><small>{agent.detail}</small></div>
-                <span className="agentStateDot" />
-              </header>
-              <div className="agentMiniFlow" aria-label={`${agent.shortName} Agent 실행 단계`}>
-                <span className={miniStepClass(stage, "rag")}>RAG</span><i />
-                <span className={miniStepClass(stage, "model")}>{isCentralAgentMapping ? "MAP" : "LLM"}</span><i />
-                <span className={miniStepClass(stage, "done")}>DONE</span>
-              </div>
-              <p>{agentStageLabel[stage]}</p>
-              <footer>
-                <span>{live?.evidenceCount ? `근거 ${live.evidenceCount}건` : live?.selected === false ? "미호출" : "근거 대기"}</span>
-                <span>{stage === "mapping" || stage === "mapped" ? "EVIDENCE MAP" : live?.backend === "ollama" ? "LOCAL LLM" : live?.backend === "deterministic" ? "FALLBACK" : "EDGE"}</span>
-              </footer>
-            </article>
-          );
-        })}
-      </div>
-
-      {state.evidencePlan && <EvidencePlanCard plan={state.evidencePlan} compact />}
-
-      <section className="liveActivity">
-        <div><strong>실시간 실행 로그</strong><small>민감 원문을 제외한 상태 메타데이터만 표시합니다.</small></div>
-        <ol>
-          {state.activity.map((item) => (
-            <li key={item.sequence}><b>{String(item.sequence).padStart(2, "0")}</b><span>{item.message}</span></li>
-          ))}
-        </ol>
-      </section>
-    </div>
   );
 }
 
@@ -920,6 +820,19 @@ function agentLiveLabel(stage: LiveAgentStage) {
   return labels[stage];
 }
 
+function executionStatusLabel(status: LiveRunState["execution"]["status"]) {
+  const labels: Record<LiveRunState["execution"]["status"], string> = {
+    queued: "실행 대기",
+    running: "Agent 실행 중",
+    integrating: "중앙 통합 중",
+    completed: "처리 완료",
+    partial_failed: "일부 실패 · 검토 중",
+    failed: "처리 실패",
+    cancelled: "요청 취소",
+  };
+  return labels[status];
+}
+
 function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
   const phase = getFocusPhase(state);
   const activeStep = phase === "routing" ? 0 : phase === "assigned" ? 1 : phase === "retrieving" ? 2 : 3;
@@ -970,6 +883,15 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
         <span className="spinner dark" aria-hidden="true" />{state.message}
       </p>
 
+      {state.execution.totalCount > 0 && (
+        <div className="processingWorkload" role="status" aria-label="전체 작업 처리 현황">
+          <span>{executionStatusLabel(state.execution.status)}</span>
+          <div aria-hidden="true"><i style={{ width: `${Math.round(state.execution.terminalCount / state.execution.totalCount * 100)}%` }} /></div>
+          <strong>{state.execution.remainingCount}개 작업 남음</strong>
+          <small>{state.execution.terminalCount} / {state.execution.totalCount} 완료</small>
+        </div>
+      )}
+
       {phase !== "routing" && selectedAgents.length > 0 && (
         <section className="selectedAgentStage" aria-label="선택된 Agent 처리 현황">
           <header>
@@ -986,11 +908,16 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
                   ? "필수 검토"
                   : "지원기관";
               const finished = live.stage === "completed" || live.stage === "mapped" || live.stage === "fallback";
+              const queueDetail = live.stage === "queued"
+                ? live.queuePosition
+                  ? `Queue ${live.queuePosition}번 · ${(Math.max(live.waitingMs ?? 0, 0) / 1000).toFixed(1)}초 대기`
+                  : "실행 슬롯 확인 중"
+                : null;
               return (
                 <article key={agent.id} className={finished ? "finished" : "working"} style={{ "--agent": agent.color } as React.CSSProperties}>
                   <i aria-hidden="true">{agent.shortName.slice(0, 1)}</i>
                   <div><span>{role}</span><strong>{agent.shortName} Agent</strong><small>{agentLiveLabel(live.stage)}</small></div>
-                  <b>{live.evidenceCount > 0 ? `근거 ${live.evidenceCount}건` : finished ? "수신 완료" : "수신 중"}</b>
+                  <b className={queueDetail ? "queueDetail" : undefined}>{queueDetail ?? (live.evidenceCount > 0 ? `근거 ${live.evidenceCount}건` : finished ? "수신 완료" : "처리 중")}</b>
                 </article>
               );
             })}
@@ -1033,6 +960,149 @@ function AppHeader({ health }: { health: LlmHealth | null }) {
   );
 }
 
+function CitationChips({ citations }: { citations: string[] }) {
+  if (!citations.length) return null;
+  return (
+    <span className="reportCitations" aria-label="연결된 RAG 근거">
+      {citations.map((citation) => (
+        <b key={citation} data-evidence-id={citation}>[{citation}]</b>
+      ))}
+    </span>
+  );
+}
+
+function IntegratedReportDocument({
+  report,
+  agents,
+}: {
+  report: IntegratedEvidenceReport;
+  agents: AgentResult[];
+}) {
+  const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+  return (
+    <section className="reportDocument" data-testid="integrated-report" aria-labelledby="integrated-report-title">
+      <header>
+        <div><span>INTEGRATED EVIDENCE REPORT · v{report.version}</span><h2 id="integrated-report-title">{report.title}</h2></div>
+        <p>주관·협력 Agent의 RAG 근거와 검토보고서를 중앙에서 통합했습니다.</p>
+      </header>
+      <article className="reportExecutiveSummary">
+        <span>EXECUTIVE SUMMARY</span>
+        <p>{report.executiveSummary}</p>
+        <div>
+          <b>주관 {agentById.get(report.primaryAgentId)?.shortName ?? report.primaryAgentId}</b>
+          <small>참여 Agent {report.participatingAgentIds.length}개 · 참고 근거 {report.references.length}건</small>
+        </div>
+      </article>
+      <div className="reportSections">
+        {report.sections.map((section, index) => (
+          <article key={`${section.title}-${index}`}>
+            <span>{index === 0 ? "01 · 종합 결론" : `${String(index + 1).padStart(2, "0")} · 전문 검토`}</span>
+            <h3>{section.title}</h3>
+            <p>{section.content}</p>
+            <footer>
+              <small>{section.sourceAgentIds.map((id) => agentById.get(id)?.shortName ?? id).join(" · ")}</small>
+              <CitationChips citations={section.citations} />
+            </footer>
+          </article>
+        ))}
+      </div>
+      <div className="reportRecommendations">
+        <h3>실행 권고안</h3>
+        {report.recommendations.map((recommendation, index) => (
+          <article key={`${recommendation.content}-${index}`}>
+            <b className={recommendation.priority}>{recommendation.priority === "high" ? "우선" : recommendation.priority === "medium" ? "중기" : "후속"}</b>
+            <p>{recommendation.content}</p>
+            <CitationChips citations={recommendation.citations} />
+          </article>
+        ))}
+      </div>
+      <footer className="reportLimitations">
+        <strong>검토 범위와 한계</strong>
+        <ul>{report.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul>
+      </footer>
+    </section>
+  );
+}
+
+function AgentReportDocument({ agent }: { agent: AgentResult }) {
+  const report = agent.report;
+  if (!report) {
+    return (
+      <article className="agentAnswer" data-testid="agent-report">
+        <span>AGENT RESPONSE</span><h3>{agent.shortName} Agent의 검토 의견</h3><p>{agent.summary}</p>
+      </article>
+    );
+  }
+  return (
+    <article className="agentReportDocument" data-testid="agent-report">
+      <header><span>AGENT EVIDENCE REPORT · v{report.version}</span><h3>{report.title}</h3><p>{report.executiveSummary}</p></header>
+      <div className="agentReportFindings">
+        {report.findings.map((finding, index) => (
+          <section key={`${finding.title}-${index}`}>
+            <b>{String(index + 1).padStart(2, "0")}</b>
+            <div><h4>{finding.title}</h4><p>{finding.content}</p><CitationChips citations={finding.citations} /></div>
+          </section>
+        ))}
+      </div>
+      <div className="agentReportRecommendations">
+        <strong>실행 권고</strong>
+        {report.recommendations.map((recommendation, index) => <p key={`${recommendation.content}-${index}`}>{recommendation.content}<CitationChips citations={recommendation.citations} /></p>)}
+      </div>
+      <div className="responsibility"><strong>검토 주체</strong><span>{agent.responsibility}</span></div>
+      <small className="agentReportLimitation">{report.limitations.join(" · ")}</small>
+    </article>
+  );
+}
+
+function AgentProcessingPath({ result, agents: selectedAgents }: { result: RunResult; agents: AgentResult[] }) {
+  const primaryId = result.report?.primaryAgentId ?? result.routerDecision?.primaryAgent ?? selectedAgents[0]?.id;
+  const integrationLabel = result.integration?.label ?? "Core Orchestrator";
+  const integrationModel = result.integration?.backend === "ollama"
+    ? result.integration.model ?? "Local LLM"
+    : "안전 응답 모드";
+
+  return (
+    <section className="agentProcessingPath" data-testid="agent-processing-path" aria-labelledby="agent-processing-path-title">
+      <header>
+        <div><span>RESPONSE GENERATION PATH</span><h2 id="agent-processing-path-title">Agent를 통해 응답을 생성한 과정</h2></div>
+        <p>중앙 라우터가 담당 영역을 정하고, 각 Agent의 RAG 검토보고서를 중앙에서 통합했습니다.</p>
+      </header>
+
+      {result.routerDecision && <RouterDecisionCard decision={result.routerDecision} compact />}
+
+      <div className="agentPathFlow">
+        <article className="agentPathNode routerNode">
+          <span>01 · ROUTING</span>
+          <strong>Boundary Router</strong>
+          <p>요청의 담당 영역을 분석해 주관·협력 Agent를 선택</p>
+        </article>
+        <i aria-hidden="true">→</i>
+        <div className="agentPathGroup" aria-label="응답 생성에 참여한 Agent">
+          {selectedAgents.map((agent) => {
+            const role = agent.id === primaryId
+              ? "주관 Agent"
+              : agent.executionRole === "required-reviewer"
+                ? "필수 검토 Agent"
+                : "협력 Agent";
+            return (
+              <article key={agent.id} className={agent.id === primaryId ? "primary" : "supporting"} style={{ "--agent": agent.color } as React.CSSProperties}>
+                <i aria-hidden="true">{agent.shortName.slice(0, 1)}</i>
+                <div><span>{role}</span><strong>{agent.shortName} Agent</strong><small>RAG 근거 {agent.evidence.length}건 검토 · 보고서 생성</small></div>
+              </article>
+            );
+          })}
+        </div>
+        <i aria-hidden="true">→</i>
+        <article className="agentPathNode integrationNode">
+          <span>03 · INTEGRATION</span>
+          <strong>{integrationLabel}</strong>
+          <p>{integrationModel}이 Agent 보고서와 근거를 중앙 통합</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 function FocusedResultPanel({
   result,
   activeAgent,
@@ -1046,14 +1116,7 @@ function FocusedResultPanel({
 }) {
   const selectedAgents = result.agents.filter((agent) => agent.selected);
   const selected = selectedAgents.find((agent) => agent.id === activeAgent) ?? selectedAgents[0] ?? result.agents[0];
-  const primaryId = result.routerDecision?.primaryAgent;
-  const primarySelection = result.routerDecision?.primarySelection;
-  const confidence = primarySelection
-    ? Math.round((primarySelection.confidence <= 1 ? primarySelection.confidence * 100 : primarySelection.confidence))
-    : null;
-  const margin = primarySelection
-    ? Math.round((primarySelection.top1Top2Margin <= 1 ? primarySelection.top1Top2Margin * 100 : primarySelection.top1Top2Margin))
-    : null;
+  const primaryId = result.report?.primaryAgentId ?? result.routerDecision?.primaryAgent;
 
   return (
     <section className="focusShell finalFocus" aria-labelledby="final-result-title">
@@ -1063,30 +1126,21 @@ function FocusedResultPanel({
         <div>
           <span>REQUEST COMPLETED · {result.runId}</span>
           <h1 id="final-result-title">{result.title}</h1>
-          <p>{result.conclusion}</p>
+          <p>주관·협력 Agent의 RAG 검토와 중앙 통합이 완료되었습니다.</p>
         </div>
         <b className={result.status}>{result.status === "ready" ? "응답 완료" : "검토 필요"}</b>
       </header>
 
-      <div className="answerOverview">
-        <section>
-          <span>FINAL RESPONSE</span>
-          <h2>중앙 통합 응답</h2>
-          <p>{result.conclusion}</p>
-          <small>{result.integration?.label ?? "Core Orchestrator"} · {result.integration?.backend === "ollama" ? result.integration.model : "안전 응답 모드"}</small>
-        </section>
-        <aside>
-          <span>RESPONSE BASIS</span>
-          <strong>{selectedAgents.reduce((sum, agent) => sum + agent.evidence.length, 0)}건</strong>
-          <p>{selectedAgents.length}개 기관의 근거를 연결했습니다.</p>
-          <div>{selectedAgents.map((agent) => <b key={agent.id}>{agent.shortName}</b>)}</div>
-        </aside>
-      </div>
+      <AgentProcessingPath result={result} agents={selectedAgents} />
 
-      <section className="resultEvidence" aria-labelledby="evidence-title">
+      {result.report
+        ? <IntegratedReportDocument report={result.report} agents={selectedAgents} />
+        : <section className="reportDocument legacyIntegratedReport" data-testid="integrated-report"><header><div><span>INTEGRATED REVIEW</span><h2>중앙 통합 검토 의견</h2></div></header><article className="reportExecutiveSummary"><p>{result.conclusion}</p></article></section>}
+
+      <section className="resultEvidence" data-testid="result-agent-evidence" aria-labelledby="evidence-title">
         <header>
-          <div><span>TRACEABLE EVIDENCE</span><h2 id="evidence-title">Agent 응답과 근거</h2></div>
-          <p>기관을 선택하면 해당 Agent가 전달한 안전 요약과 근거를 확인할 수 있습니다.</p>
+          <div><span>AGENT REVIEW REPORTS</span><h2 id="evidence-title">Agent별 검토보고서와 RAG 근거</h2></div>
+          <p>Agent를 선택하면 주관·협력 기관의 검토보고서와 연결된 근거 문서를 확인할 수 있습니다.</p>
         </header>
         <div className="resultAgentTabs" role="tablist" aria-label="Agent별 근거">
           {selectedAgents.map((agent) => {
@@ -1108,12 +1162,7 @@ function FocusedResultPanel({
           })}
         </div>
         <div className="resultEvidenceBody" role="tabpanel" aria-label={`${selected.shortName} Agent 응답과 근거`}>
-          <article className="agentAnswer">
-            <span>AGENT RESPONSE</span>
-            <h3>{selected.shortName} Agent의 검토 의견</h3>
-            <p>{selected.summary}</p>
-            <div className="responsibility"><strong>검토 주체</strong><span>{selected.responsibility}</span></div>
-          </article>
+          <AgentReportDocument agent={selected} />
           <div className="evidenceList">
             {selected.evidence.length ? selected.evidence.map((source) => {
               const classification = source.classification ?? "public";
@@ -1127,47 +1176,12 @@ function FocusedResultPanel({
                   <p>{referenceOnly ? "보호된 원문은 Edge에 보존되며 중앙에는 근거 ID만 전달되었습니다." : source.excerpt}</p>
                 </article>
               );
-            }) : <p className="noEvidence">표시할 수 있는 근거가 없습니다. 상세 진단에서 근거 게이트 상태를 확인하세요.</p>}
+            }) : <p className="noEvidence">표시할 수 있는 근거가 없습니다. Agent 보고서의 검토 범위와 한계를 확인하세요.</p>}
           </div>
         </div>
       </section>
 
-      <details className="resultDiagnostics">
-        <summary><span><strong>라우팅·보안·성능 상세 진단</strong><small>주관기관 선택 근거와 감사 정보를 펼쳐 봅니다.</small></span><b>펼치기</b></summary>
-        <div className="diagnosticBody">
-          {primarySelection && (
-            <section className="selectionDiagnostic" aria-label="주관기관 선택 점수 상세">
-              <header><div><span>PRIMARY SELECTION</span><strong>주관기관 선택 근거</strong></div><p>신뢰도 <b>{confidence}%</b> · 1위와 2위의 차이 <b>{margin}%p</b></p></header>
-              <div>
-                {primarySelection.rankedCandidates.slice(0, 3).map((candidate) => (
-                  <article key={candidate.agentId}>
-                    <span>{candidate.rank}위</span><strong>{agentLabel(candidate.agentId)} Agent</strong><b>{candidate.totalScore.toFixed(3)}</b>
-                  </article>
-                ))}
-              </div>
-              <p>{primarySelection.hardGate.applied
-                ? `필수 정책 규칙 적용 · ${primarySelection.hardGate.reasons.join(" · ")}`
-                : `${primarySelection.algorithm} · 임계값 ${primarySelection.decisionThreshold}`}</p>
-            </section>
-          )}
-          {result.routerDecision && <RouterDecisionCard decision={result.routerDecision} />}
-          {result.evidencePlan && <EvidencePlanCard plan={result.evidencePlan} />}
-          <section className="compactDiagnostics">
-            <div><span>Agent 호출</span><strong>{result.metrics.calls}회</strong></div>
-            <div><span>처리 지연</span><strong>{(result.metrics.latencyMs / 1000).toFixed(2)}초</strong></div>
-            <div><span>Core 전송량</span><strong>{(result.metrics.boundaryBytes / 1024).toFixed(1)}KB</strong></div>
-            <div><span>추적 가능성</span><strong>{result.metrics.traceability}%</strong></div>
-          </section>
-          <section className="diagnosticChecks">
-            {result.checks.map((check) => <p key={check.label}><b className={check.status}>{check.status === "pass" ? "\u2713" : "!"}</b><span><strong>{check.label}</strong><small>{check.detail}</small></span></p>)}
-          </section>
-          <ol className="compactTimeline">
-            {result.timeline.map((item, index) => <li key={item.label}><b>{index + 1}</b><span><strong>{item.label}</strong><small>{item.detail}</small></span><em>{item.ms} ms</em></li>)}
-          </ol>
-        </div>
-      </details>
-
-      <div className="resultActions"><button type="button" onClick={onNewRequest}>새 요청 시작</button><Link href="/evaluation">성능 평가 결과 보기</Link></div>
+      <div className="resultActions"><button type="button" onClick={onNewRequest}>새 요청 시작</button><Link href={`/evaluation?run=${encodeURIComponent(result.runId)}`}>성능 평가 결과 보기</Link></div>
     </section>
   );
 }
@@ -1175,21 +1189,15 @@ function FocusedResultPanel({
 export default function Home() {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<RunResult["mode"]>("proposed");
-  const [result, setResult] = useState<RunResult>(() => buildFallbackResult(exampleRequests[0], "proposed"));
-  const [benchmarks, setBenchmarks] = useState<Partial<Record<RunResult["mode"], RunResult>>>({});
+  const [result, setResult] = useState<RunResult | null>(null);
   const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
-  const [runProgress, setRunProgress] = useState("");
-  const [hasRun, setHasRun] = useState(false);
   const [runError, setRunError] = useState("");
   const [commercialJudgeEnabled, setCommercialJudgeEnabled] = useState(false);
   const [activeAgent, setActiveAgent] = useState("security");
   const [liveRun, dispatchLiveRun] = useReducer(liveRunReducer, createLiveRunState("proposed"));
   const streamControllerRef = useRef<AbortController | null>(null);
-  const selectedResult = result.agents.find((agent) => agent.id === activeAgent) ?? result.agents[0];
-  const selectedCount = running
-    ? Object.values(liveRun.agents).filter((agent) => agent.selected).length
-    : hasRun ? result.agents.filter((agent) => agent.selected).length : 0;
+  const activeRequestIdRef = useRef<string | null>(null);
   const boundaryMode = running ? liveRun.mode : mode;
   const dataBoundaryNotice =
     boundaryMode === "managed"
@@ -1215,42 +1223,161 @@ export default function Home() {
 
   useEffect(() => () => streamControllerRef.current?.abort(), []);
 
-  const comparison = useMemo(() => {
-    return [
-      { id: "centralized" as const, name: "중앙집중형" },
-      { id: "parallel" as const, name: "병렬 Multi-Agent" },
-      { id: "managed" as const, name: "Managed Supervisor" },
-      { id: "masrouter" as const, name: "MasRouter-inspired" },
-      { id: "remoterag" as const, name: "RemoteRAG-inspired" },
-      { id: "proposed" as const, name: "제안 방식" },
-    ].map((item) => ({
-      ...item,
-      metrics: benchmarks[item.id]?.metrics ?? buildFallbackResult(query, item.id).metrics,
-      judge: benchmarks[item.id]?.commercialJudge,
-      measured: Boolean(benchmarks[item.id]),
-    }));
-  }, [benchmarks, query]);
-  const liveComparison = useMemo(() => {
-    const measured = comparison.filter((row) => row.measured);
-    const judged = measured.filter((row) => row.judge?.overall != null);
-    const bestQuality = judged.length
-      ? Math.max(...judged.map((row) => row.judge?.overall ?? 0))
-      : null;
-    const proposed = measured.find((row) => row.id === "proposed");
-    const centralized = measured.find((row) => row.id === "centralized");
-    return {
-      complete: measured.length === 6 && judged.length === 6,
-      bestQuality,
-      qualityRetention:
-        proposed?.judge?.overall != null && bestQuality
-          ? Math.round(proposed.judge.overall / bestQuality * 100)
-          : null,
-      boundaryGain:
-        proposed && centralized && centralized.metrics.boundaryBytes
-          ? Math.round((1 - proposed.metrics.boundaryBytes / centralized.metrics.boundaryBytes) * 100)
-          : null,
+  const fetchRunSnapshot = useCallback(async (requestId: string, signal?: AbortSignal) => {
+    const response = await fetch(`/api/runs/${encodeURIComponent(requestId)}`, {
+      cache: "no-store",
+      signal,
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      const code = payload.error ?? `HTTP_${response.status}`;
+      throw new RunApiError(response.status, code, code === "RUN_NOT_FOUND"
+        ? "이전 실행 정보가 만료되었습니다. 새 요청으로 다시 시작해 주세요."
+        : "실행 상태를 조회하지 못했습니다.");
+    }
+    return response.json() as Promise<RunApiSnapshot>;
+  }, []);
+
+  const pollingDelay = useCallback((signal: AbortSignal, ms = 650) => {
+    return new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        signal.removeEventListener("abort", abort);
+        resolve();
+      }, ms);
+      const abort = () => {
+        window.clearTimeout(timeout);
+        signal.removeEventListener("abort", abort);
+        reject(signal.reason ?? new DOMException("Run observation cancelled", "AbortError"));
+      };
+      if (signal.aborted) abort();
+      else signal.addEventListener("abort", abort, { once: true });
+    });
+  }, []);
+
+  const observeRun = useCallback(async (
+    requestId: string,
+    targetMode: RunResult["mode"],
+    controller: AbortController,
+  ): Promise<RunResult> => {
+    activeRequestIdRef.current = requestId;
+    window.localStorage.setItem(
+      ACTIVE_RUN_STORAGE_KEY,
+      JSON.stringify({ requestId, mode: targetMode }),
+    );
+    const eventSource = new EventSource(`/api/runs/${encodeURIComponent(requestId)}/events`);
+    eventSource.addEventListener("progress", (message) => {
+      try {
+        dispatchLiveRun({ type: "event", event: JSON.parse(message.data) as ProgressEvent });
+      } catch {
+        // Polling remains authoritative if an individual event is malformed.
+      }
+    });
+    eventSource.onerror = () => {
+      // EventSource reconnects with Last-Event-ID; polling covers SSE/proxy failures.
     };
-  }, [comparison]);
+    const close = () => eventSource.close();
+    controller.signal.addEventListener("abort", close, { once: true });
+    let releaseActiveRun = false;
+    try {
+      while (!controller.signal.aborted) {
+        const snapshot = await fetchRunSnapshot(requestId, controller.signal);
+        dispatchLiveRun({ type: "snapshot", snapshot });
+        if (isRunStartStalled(snapshot)) {
+          releaseActiveRun = true;
+          window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+          void fetch(`/api/runs/${encodeURIComponent(requestId)}`, {
+            method: "DELETE",
+            keepalive: true,
+          }).catch(() => undefined);
+          throw new RunApiError(
+            409,
+            "RUN_START_STALLED",
+            "실행 엔진이 시작되지 않아 중단했습니다. 잠시 후 새 요청으로 다시 시도해 주세요.",
+          );
+        }
+        if (snapshot.status === "completed" || snapshot.status === "partial_failed") {
+          if (!snapshot.result) throw new Error("완료된 실행에 결과가 없습니다.");
+          releaseActiveRun = true;
+          window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+          return snapshot.result;
+        }
+        if (snapshot.status === "failed" || snapshot.status === "cancelled") {
+          releaseActiveRun = true;
+          window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+          throw new Error(snapshot.status === "cancelled" ? "요청 처리가 취소되었습니다." : "요청 처리에 실패했습니다.");
+        }
+        await pollingDelay(controller.signal);
+      }
+      throw controller.signal.reason ?? new DOMException("Run observation cancelled", "AbortError");
+    } catch (error) {
+      if (error instanceof RunApiError && error.code === "RUN_NOT_FOUND") {
+        releaseActiveRun = true;
+        window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+      }
+      throw error;
+    } finally {
+      eventSource.close();
+      controller.signal.removeEventListener("abort", close);
+      if (releaseActiveRun && activeRequestIdRef.current === requestId) {
+        activeRequestIdRef.current = null;
+      }
+    }
+  }, [fetchRunSnapshot, pollingDelay]);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
+    if (!stored) return;
+
+    let parsed: { requestId?: unknown; mode?: unknown };
+    try {
+      parsed = JSON.parse(stored) as typeof parsed;
+    } catch {
+      window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+      return;
+    }
+
+    const resumableModes: RunResult["mode"][] = [
+      "proposed", "parallel", "centralized", "managed", "masrouter", "remoterag",
+    ];
+    if (typeof parsed.requestId !== "string" || !resumableModes.includes(parsed.mode as RunResult["mode"])) {
+      window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+      return;
+    }
+
+    const requestId = parsed.requestId;
+    const resumedMode = parsed.mode as RunResult["mode"];
+    const controller = new AbortController();
+    let mounted = true;
+    const resumeTimer = window.setTimeout(() => {
+      if (!mounted) return;
+      streamControllerRef.current = controller;
+      setMode(resumedMode);
+      setRunning(true);
+      dispatchLiveRun({ type: "reset", mode: resumedMode, label: "기존 요청에 다시 연결하는 중" });
+      void observeRun(requestId, resumedMode, controller)
+        .then((next) => {
+          if (!mounted) return;
+          setResult(next);
+          const first = next.agents.find((agent) => agent.selected);
+          if (first) setActiveAgent(first.id);
+        })
+        .catch((error) => {
+          if (!mounted || controller.signal.aborted) return;
+          const message = error instanceof Error ? error.message : "기존 요청에 다시 연결하지 못했습니다.";
+          dispatchLiveRun({ type: "error", message });
+          setRunError(message);
+        })
+        .finally(() => {
+          if (mounted) setRunning(false);
+        });
+    }, 0);
+
+    return () => {
+      mounted = false;
+      window.clearTimeout(resumeTimer);
+      controller.abort("page unmounted");
+    };
+  }, [observeRun]);
 
   async function executeMode(targetMode: RunResult["mode"], label?: string): Promise<RunResult> {
     streamControllerRef.current?.abort();
@@ -1258,46 +1385,38 @@ export default function Home() {
     streamControllerRef.current = controller;
     dispatchLiveRun({ type: "reset", mode: targetMode, label });
 
+    let handshakeTimedOut = false;
+    const handshakeTimeout = window.setTimeout(() => {
+      handshakeTimedOut = true;
+      controller.abort(new DOMException("Run start handshake timed out", "TimeoutError"));
+    }, 10_000);
+
     try {
-      const response = await fetch("/api/orchestrate/stream", {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/x-ndjson" },
-        body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled }),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(payload.error ?? "오케스트레이션 요청에 실패했습니다.");
+      let response: Response;
+      try {
+        response = await fetch("/api/runs", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+            "idempotency-key": `browser-${crypto.randomUUID()}`,
+          },
+          body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled }),
+          signal: controller.signal,
+        });
+      } catch (error) {
+        if (handshakeTimedOut) {
+          throw new Error("실행 서버가 10초 안에 요청을 접수하지 못했습니다. 서버 상태를 확인해 주세요.");
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(handshakeTimeout);
       }
-      if (!response.body) throw new Error("진행 스트림을 열 수 없습니다.");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      const outcome: { result?: RunResult } = {};
-      const consumeLine = (line: string) => {
-        if (!line.trim()) return;
-        const packet = JSON.parse(line) as
-          | { type: "progress"; event: ProgressEvent }
-          | { type: "result"; result: RunResult }
-          | { type: "error"; error: string };
-        if (packet.type === "progress") dispatchLiveRun({ type: "event", event: packet.event });
-        if (packet.type === "result") outcome.result = packet.result;
-        if (packet.type === "error") throw new Error(packet.error);
-      };
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split(/\r?\n/);
-        buffer = lines.pop() ?? "";
-        for (const line of lines) consumeLine(line);
+      const payload = await response.json().catch(() => ({})) as { requestId?: string; error?: string };
+      if (!response.ok || !payload.requestId) {
+        throw new Error(payload.error ?? "비동기 실행을 시작하지 못했습니다.");
       }
-      buffer += decoder.decode();
-      if (buffer.trim()) consumeLine(buffer);
-      if (!outcome.result) throw new Error("최종 실행 결과가 전달되지 않았습니다.");
-      return outcome.result;
+      return await observeRun(payload.requestId, targetMode, controller);
     } finally {
       if (streamControllerRef.current === controller) streamControllerRef.current = null;
     }
@@ -1306,12 +1425,9 @@ export default function Home() {
   async function run() {
     setRunning(true);
     setRunError("");
-    setRunProgress("선택 방식 실행 중");
     try {
       const next = await executeMode(mode, modeLabels[mode]);
       setResult(next);
-      setHasRun(true);
-      setBenchmarks((current) => ({ ...current, [next.mode]: next }));
       const first = next.agents.find((agent) => agent.selected);
       if (first) setActiveAgent(first.id);
       await holdCompletedLiveState();
@@ -1321,50 +1437,18 @@ export default function Home() {
       setRunError(`${message} Local LLM 연결 상태를 확인한 뒤 다시 시도해 주세요.`);
     } finally {
       setRunning(false);
-      setRunProgress("");
-    }
-  }
-
-  async function runAllModes() {
-    setRunning(true);
-    setRunError("");
-    setBenchmarks({});
-    const sequence: Array<{ mode: RunResult["mode"]; label: string }> = [
-      { mode: "centralized", label: "중앙집중형" },
-      { mode: "parallel", label: "전체 Multi-Agent" },
-      { mode: "managed", label: "Managed Supervisor" },
-      { mode: "masrouter", label: "MasRouter-inspired" },
-      { mode: "remoterag", label: "RemoteRAG-inspired" },
-      { mode: "proposed", label: "제안 방식" },
-    ];
-    try {
-      for (let index = 0; index < sequence.length; index += 1) {
-        const item = sequence[index];
-        setRunProgress(`${index + 1}/${sequence.length} ${item.label} 실측 중`);
-        const next = await executeMode(item.mode, `${index + 1}/${sequence.length} ${item.label}`);
-        setBenchmarks((current) => ({ ...current, [next.mode]: next }));
-        setResult(next);
-        setHasRun(true);
-        const first = next.agents.find((agent) => agent.selected);
-        if (first) setActiveAgent(first.id);
-        await holdCompletedLiveState();
-      }
-      setMode("proposed");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "전체 비교 실행이 중단되었습니다.";
-      dispatchLiveRun({ type: "error", message });
-      setRunError(`${message} 연결 상태를 확인한 뒤 다시 시도해 주세요.`);
-    } finally {
-      setRunning(false);
-      setRunProgress("");
     }
   }
 
   function startNewRequest() {
+    const requestId = activeRequestIdRef.current;
     streamControllerRef.current?.abort();
-    setHasRun(false);
+    window.localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+    if (requestId) {
+      void fetch(`/api/runs/${encodeURIComponent(requestId)}`, { method: "DELETE", keepalive: true });
+    }
+    setResult(null);
     setRunError("");
-    setRunProgress("");
     setQuery("");
     dispatchLiveRun({ type: "reset", mode });
   }
@@ -1372,9 +1456,8 @@ export default function Home() {
   const requestView = (
     <section className="focusShell requestFocus" aria-labelledby="request-title">
       <div className="requestIntro">
-        <span>BOUNDARY-CONSTRAINED MULTI-AGENT</span>
-        <h1 id="request-title">요청을 입력하면<br /><em>적합한 주관기관부터 찾습니다.</em></h1>
-        <p>중앙 Router가 요청의 의미와 필수 검토 규칙을 분석하고, 선택된 Agent의 근거만 안전하게 통합합니다.</p>
+        <h1 id="request-title">AXNetCC</h1>
+        <p>공공기관과 기업 AX를 위한<br /><strong>분산형 Multi-Agent RAG</strong> 및<br /><strong lang="en">Security-Aware Evidence Acquisition</strong><br />연구 구현</p>
       </div>
       <form className="requestComposer" onSubmit={(event) => { event.preventDefault(); void run(); }}>
         <label htmlFor="work-request"><span>업무 요청</span><small>검토할 배경과 원하는 결과를 함께 적어 주세요.</small></label>
@@ -1453,7 +1536,7 @@ export default function Home() {
             ? <FocusedProcessingPanel state={liveRun} />
             : runError
               ? errorView
-              : hasRun
+              : result
                 ? <FocusedResultPanel result={result} activeAgent={activeAgent} onAgentChange={setActiveAgent} onNewRequest={startNewRequest} />
                 : requestView}
         </div>

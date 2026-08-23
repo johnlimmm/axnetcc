@@ -1,4 +1,11 @@
 import { readFile, writeFile } from "node:fs/promises";
+import {
+  PRIVACY_REPORT_SCHEMA_VERSION,
+  PRIVACY_RISK_VERSION,
+  assertPrivacyRowsV2,
+  normalizePrivacyBreakdownV2,
+  summarizePrivacyRowsV2,
+} from "./privacy-report-contract.mjs";
 
 const root = new URL("../", import.meta.url);
 const cases = (await readFile(new URL("data/evaluation/ax-golden-set-40.jsonl", root), "utf8"))
@@ -98,6 +105,10 @@ for (const item of cases) {
       retrievalRecallAtK * 0.20 +
       citationValidity * 0.15 +
       privacyPass * 0.10;
+    const privacyRisk = normalizePrivacyBreakdownV2(
+      result.metrics,
+      `${item.id}/${mode}.metrics`,
+    );
     rows.push({
       id: item.id,
       domain: item.domain,
@@ -115,18 +126,22 @@ for (const item of cases) {
       evidenceIds,
       relevantDocumentFamilies: [...relevantFamilies],
       citationValidity,
-      privacyPass,
+      forbiddenOutputPass: privacyPass,
       objectiveQuality,
       boundaryBytes: result.metrics.boundaryBytes,
       rawDataLeavesEdge: result.metrics.rawDataLeavesEdge,
+      privacyRiskVersion: PRIVACY_RISK_VERSION,
+      privacyRisk,
     });
   }
   process.stderr.write(`완료: ${item.id} (${rows.length}/${cases.length * modes.length})\n`);
 }
 
 const round = (value) => Number(value.toFixed(1));
+assertPrivacyRowsV2(rows, "expanded evaluation rows");
 const summaries = Object.fromEntries(modes.map((mode) => {
   const modeRows = rows.filter((row) => row.mode === mode);
+  const privacyRisk = summarizePrivacyRowsV2(modeRows, `expanded ${mode} rows`);
   const truePositive = modeRows.reduce((sum, row) => sum + row.truePositive, 0);
   const falsePositive = modeRows.reduce((sum, row) => sum + row.falsePositive, 0);
   const falseNegative = modeRows.reduce((sum, row) => sum + row.falseNegative, 0);
@@ -147,9 +162,11 @@ const summaries = Object.fromEntries(modes.map((mode) => {
     retrievalRecallAtK: round(mean(modeRows.map((row) => row.retrievalRecallAtK)) * 100),
     retrievalMrr: round(mean(modeRows.map((row) => row.reciprocalRank)) * 100),
     citationValidity: round(mean(modeRows.map((row) => row.citationValidity)) * 100),
-    privacyPassRate: round(mean(modeRows.map((row) => row.privacyPass)) * 100),
+    forbiddenOutputPassRate: round(mean(modeRows.map((row) => row.forbiddenOutputPass)) * 100),
     averageBoundaryBytes: Math.round(mean(modeRows.map((row) => row.boundaryBytes))),
     rawDataLeavesEdge: modeRows.some((row) => row.rawDataLeavesEdge),
+    averagePrivacyRiskScore: privacyRisk.averageScore,
+    privacyRisk,
   }];
 }));
 
@@ -173,10 +190,15 @@ for (const baseline of modes.filter((mode) => mode !== "proposed")) {
 }
 
 const report = {
+  schemaVersion: PRIVACY_REPORT_SCHEMA_VERSION,
+  privacyRiskVersion: PRIVACY_RISK_VERSION,
+  status: "measured",
   generatedAt: new Date().toISOString(),
   cases: cases.length,
   modes,
   runs: rows.length,
+  expectedRuns: cases.length * modes.length,
+  completedRuns: rows.length,
   evaluationType: "author-labeled fixed AX golden set; deterministic generation; not independently adjudicated",
   retrievalK: "source-family Recall@K over up to 3 evidence chunks per selected agent",
   qualityDefinition: {
@@ -184,8 +206,9 @@ const report = {
     expectedAgentRecall: 20,
     retrievalRecallAtK: 20,
     citationValidity: 15,
-    privacyPass: 10,
+    forbiddenOutputPass: 10,
   },
+  legacyReportsExcluded: ["data/evaluation/expanded-report.json"],
   bestQuality,
   summaries,
   pairedComparisons,
@@ -193,7 +216,14 @@ const report = {
 };
 
 await writeFile(
-  new URL("data/evaluation/expanded-report.json", root),
+  new URL("data/evaluation/expanded-report-v2.json", root),
   `${JSON.stringify(report, null, 2)}\n`,
 );
-console.log(JSON.stringify(report, null, 2));
+console.log(JSON.stringify({
+  output: "data/evaluation/expanded-report-v2.json",
+  status: report.status,
+  runs: report.runs,
+  bestQuality: report.bestQuality,
+  summaries: report.summaries,
+  pairedComparisons: report.pairedComparisons,
+}, null, 2));

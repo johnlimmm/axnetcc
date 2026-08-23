@@ -203,6 +203,25 @@ function normalize(text) {
   return text.normalize("NFKC").toLowerCase();
 }
 
+function sanitizeBenchmarkQuery(text) {
+  const patterns = [
+    ["주민등록번호", /\b\d{6}-?[1-4]\d{6}\b/g],
+    ["휴대전화", /\b01[016789]-?\d{3,4}-?\d{4}\b/g],
+    ["이메일", /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi],
+    ["내부 IP", /\b(?:10|172\.(?:1[6-9]|2\d|3[01])|192\.168)(?:\.\d{1,3}){2}\b/g],
+  ];
+  const filteredFields = [];
+  let sanitized = text.trim();
+  for (const [label, pattern] of patterns) {
+    pattern.lastIndex = 0;
+    if (!pattern.test(sanitized)) continue;
+    filteredFields.push(label);
+    pattern.lastIndex = 0;
+    sanitized = sanitized.replace(pattern, `[${label} 제거]`);
+  }
+  return { sanitized, filteredFields };
+}
+
 function tokenize(text) {
   return normalize(text).replace(/[^\p{L}\p{N}]+/gu, " ").split(/\s+/).filter((token) => token.length > 1);
 }
@@ -745,6 +764,7 @@ async function collectCurrentRuntimeRecords(cases) {
   const context = { waitUntil() {}, passThroughOnException() {} };
 
   async function run(item) {
+    const protectedInput = sanitizeBenchmarkQuery(item.query);
     const startedAt = process.hrtime.bigint();
     const response = await runtime.fetch(
       new Request("http://localhost/api/orchestrate", {
@@ -773,8 +793,8 @@ async function collectCurrentRuntimeRecords(cases) {
         policyOutcome: primary.edgePolicyOutcome,
         evidenceCoverage: primary.evidencePlan,
       },
-      routingQuery: result.query,
-      inputWasFiltered: result.query !== item.query.trim(),
+      routingQuery: protectedInput.sanitized,
+      inputWasFiltered: protectedInput.filteredFields.length > 0,
       orchestrationLatencyMs: Number(result.metrics?.latencyMs ?? wallMilliseconds),
     };
   }
@@ -1033,7 +1053,11 @@ const report = {
     predictionSource,
     timingScope,
   })),
-  summary: evaluations.map(({ rows: _rows, ...summary }) => summary),
+  summary: evaluations.map((evaluation) => {
+    const { rows, ...summary } = evaluation;
+    void rows;
+    return summary;
+  }),
   perQuery: evaluations.flatMap((evaluation) => evaluation.rows),
   caveats: [
     "Development-set diagnostic; no independent holdout.",

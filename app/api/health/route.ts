@@ -1,6 +1,17 @@
 import { agentProfiles, type AgentId } from "../../../lib/agent-registry";
+import { executionSchedulerSnapshot } from "../../../lib/execution-scheduler";
 
 export const dynamic = "force-dynamic";
+
+const publicResourceIds = new Map<string, string>();
+
+function publicResourceId(resourceKey: string) {
+  const existing = publicResourceIds.get(resourceKey);
+  if (existing) return existing;
+  const id = `resource-${publicResourceIds.size + 1}`;
+  publicResourceIds.set(resourceKey, id);
+  return id;
+}
 
 export async function GET() {
   const ids = Object.keys(agentProfiles) as AgentId[];
@@ -42,6 +53,33 @@ export async function GET() {
     }),
   );
   const connected = agents.filter((agent) => agent.connected).length;
+  const queueSnapshots = executionSchedulerSnapshot();
+  const schedulerSummary = queueSnapshots.reduce(
+    (summary, queue) => ({
+      resourceCount: summary.resourceCount + 1,
+      activeCount: summary.activeCount + queue.activeCount,
+      queueDepth: summary.queueDepth + queue.queueDepth,
+      oldestWaitMs: Math.max(summary.oldestWaitMs, queue.oldestWaitMs),
+    }),
+    { resourceCount: 0, activeCount: 0, queueDepth: 0, oldestWaitMs: 0 },
+  );
+  const observedAt = Date.now();
+  const scheduler = {
+    ...schedulerSummary,
+    resources: queueSnapshots.map((queue) => ({
+      id: publicResourceId(queue.resourceKey),
+      capacity: queue.capacity,
+      activeCount: queue.activeCount,
+      queueDepth: queue.queueDepth,
+      oldestWaitMs: queue.oldestWaitMs,
+      running: queue.active.map((task) => ({
+        taskKind: task.taskKind,
+        agentId: task.agentId ?? null,
+        stage: task.stage,
+        runningForMs: Math.max(0, observedAt - task.dispatchedAt),
+      })),
+    })),
+  };
   return Response.json(
     {
       status: connected === agents.length ? "connected" : connected ? "degraded" : "disconnected",
@@ -50,6 +88,7 @@ export async function GET() {
       model: [...new Set(agents.map((agent) => agent.model))].join(", "),
       edgeMode,
       agents,
+      scheduler,
     },
     { headers: { "cache-control": "no-store" } },
   );

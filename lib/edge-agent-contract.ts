@@ -46,13 +46,13 @@ export type PublicEvidenceReference = {
   retrievalScore: number;
 };
 
-export type RestrictedEvidenceReference = {
+export type ReferenceOnlyEvidenceReference = {
   referenceId: string;
-  classification: "internal" | "confidential";
+  classification: Classification;
   disclosure: "reference-only";
 };
 
-export type EdgeEvidenceReference = PublicEvidenceReference | RestrictedEvidenceReference;
+export type EdgeEvidenceReference = PublicEvidenceReference | ReferenceOnlyEvidenceReference;
 
 export type EdgePolicyDecision = {
   decisionId: string;
@@ -65,13 +65,17 @@ export type EdgePolicyDecision = {
 
 export type EdgeAgentMetrics = {
   backend: "ollama" | "deterministic";
+  answerSource: "local-llm" | "deterministic-fallback";
   model: string;
+  fallbackReason?: string;
   evidenceCount: number;
   sourceBytesProcessed: number;
   egressBytes: number;
   latencyMs: number;
   ttftMs: number | null;
   tpotMs: number | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
   corpusChunks: number;
 };
 
@@ -315,7 +319,7 @@ function validateEvidenceReference(input: unknown, path: string): EdgeEvidenceRe
   const classification = asClassification(evidence.classification, `${path}.classification`);
   const referenceId = asString(evidence.referenceId, `${path}.referenceId`, 256);
 
-  if (classification === "public") {
+  if (classification === "public" && evidence.disclosure === "excerpt") {
     return {
       referenceId,
       classification,
@@ -328,7 +332,7 @@ function validateEvidenceReference(input: unknown, path: string): EdgeEvidenceRe
     };
   }
 
-  for (const forbidden of ["title", "section", "excerpt", "sourceUrl", "text", "rawText"]) {
+  for (const forbidden of ["title", "section", "excerpt", "sourceUrl", "retrievalScore", "text", "rawText"]) {
     if (hasOwn(evidence, forbidden)) {
       throw new EdgeContractValidationError(
         `${path}.${forbidden}`,
@@ -427,8 +431,10 @@ function validateEvidencePlan(
       throw new EdgeContractValidationError(path, "반환된 evidence reference와 일치해야 합니다.");
     }
     const mode = asEnum(decision.mode, ["sanitized", "metadata-only"] as const, `${path}.mode`);
-    if ((classification === "public" && mode !== "sanitized") ||
-        (classification !== "public" && mode !== "metadata-only")) {
+    const expectedMode = returnedEvidence.disclosure === "reference-only"
+      ? "metadata-only"
+      : "sanitized";
+    if (mode !== expectedMode) {
       throw new EdgeContractValidationError(`${path}.mode`, "classification의 Edge 공개 정책과 일치하지 않습니다.");
     }
     const decisionCovered = asStringArray(decision.coveredConceptIds, `${path}.coveredConceptIds`, 32);
@@ -602,13 +608,23 @@ export function validateEdgeAgentResponse(input: unknown): EdgeAgentResponse {
     },
     metrics: {
       backend: asEnum(metricsInput.backend, ["ollama", "deterministic"] as const, "response.metrics.backend"),
+      answerSource: asEnum(
+        metricsInput.answerSource,
+        ["local-llm", "deterministic-fallback"] as const,
+        "response.metrics.answerSource",
+      ),
       model: asString(metricsInput.model, "response.metrics.model", 256),
+      ...(metricsInput.fallbackReason === undefined
+        ? {}
+        : { fallbackReason: asString(metricsInput.fallbackReason, "response.metrics.fallbackReason", 512) }),
       evidenceCount,
       sourceBytesProcessed: asInteger(metricsInput.sourceBytesProcessed, "response.metrics.sourceBytesProcessed"),
       egressBytes: asInteger(metricsInput.egressBytes, "response.metrics.egressBytes"),
       latencyMs: asInteger(metricsInput.latencyMs, "response.metrics.latencyMs"),
       ttftMs: asNullableFiniteNumber(metricsInput.ttftMs, "response.metrics.ttftMs"),
       tpotMs: asNullableFiniteNumber(metricsInput.tpotMs, "response.metrics.tpotMs"),
+      promptTokens: asNullableFiniteNumber(metricsInput.promptTokens, "response.metrics.promptTokens"),
+      completionTokens: asNullableFiniteNumber(metricsInput.completionTokens, "response.metrics.completionTokens"),
       corpusChunks: asInteger(metricsInput.corpusChunks, "response.metrics.corpusChunks"),
     },
     boundary: {

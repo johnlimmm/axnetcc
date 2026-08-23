@@ -125,17 +125,18 @@ function evidenceForEgress(ranked: RankedChunk[]) {
       };
     }
     const title = sanitizeSensitiveText(chunk.title);
-    const excerpt = sanitizeSensitiveText(`${chunk.section} · ${chunk.text.replace(/\s+/g, " ").slice(0, 160)}`);
-    filteredFields.push(...title.filteredFields, ...excerpt.filteredFields);
+    const section = sanitizeSensitiveText(chunk.section);
+    const excerpt = sanitizeSensitiveText(chunk.text.slice(0, 480));
+    filteredFields.push(...title.filteredFields, ...section.filteredFields, ...excerpt.filteredFields);
     return {
       referenceId: chunk.id,
       classification: "public",
       disclosure: "excerpt",
-      title: title.sanitized || "공개 근거",
-      section: sanitizeSensitiveText(chunk.section).sanitized || "공개 문서",
-      excerpt: excerpt.sanitized || "공개 근거의 안전한 미리보기입니다.",
+      title: title.sanitized.trim() || "공개 RAG 근거",
+      section: section.sanitized.trim() || "본문",
+      excerpt: excerpt.sanitized.trim() || "공개 근거의 안전한 발췌를 표시할 수 없습니다.",
       ...(chunk.sourceUrl ? { sourceUrl: chunk.sourceUrl } : {}),
-      retrievalScore: Number(score.toFixed(2)),
+      retrievalScore: Math.max(0.01, score),
     };
   });
   return { evidence, filteredFields };
@@ -211,7 +212,9 @@ export async function executeEdgeAgentLocally(
           text: fallback,
           metrics: {
             backend: "deterministic" as const,
+            answerSource: "deterministic-fallback" as const,
             model: request.purpose === "benchmark" ? "edge-evidence-map" : "edge-restricted-reference",
+            transport: "none" as const,
             ttftMs: null,
             tpotMs: null,
             tokensPerSecond: null,
@@ -230,6 +233,7 @@ export async function executeEdgeAgentLocally(
           query: request.minimalQuery,
           evidence: rawEvidence,
           fallback,
+          outputFormat: "agent-report",
           signal: deadline.signal,
         });
 
@@ -271,13 +275,19 @@ export async function executeEdgeAgentLocally(
       },
       metrics: {
         backend: generated.metrics.backend,
+        answerSource: generated.metrics.answerSource,
         model: generated.metrics.model,
+        ...(generated.metrics.fallbackReason
+          ? { fallbackReason: generated.metrics.fallbackReason }
+          : {}),
         evidenceCount: egress.evidence.length,
         sourceBytesProcessed,
         egressBytes: 0,
         latencyMs: Math.round(performance.now() - startedAt),
         ttftMs: generated.metrics.ttftMs,
         tpotMs: generated.metrics.tpotMs,
+        promptTokens: generated.metrics.promptTokens,
+        completionTokens: generated.metrics.completionTokens,
         corpusChunks: ragStats.chunks,
       },
       boundary: {

@@ -1,4 +1,11 @@
 import { readFile, writeFile } from "node:fs/promises";
+import {
+  PRIVACY_REPORT_SCHEMA_VERSION,
+  PRIVACY_RISK_VERSION,
+  assertPrivacyRowsV2,
+  normalizePrivacyBreakdownV2,
+  summarizePrivacyRowsV2,
+} from "./privacy-report-contract.mjs";
 
 const root = new URL("../", import.meta.url);
 const cases = (await readFile(new URL("data/evaluation/golden-set.jsonl", root), "utf8"))
@@ -26,6 +33,7 @@ for (const item of cases) {
       environment,
       context,
     );
+    if (!response.ok) throw new Error(`${item.id}/${mode}: HTTP ${response.status}`);
     const result = await response.json();
     const selected = result.agents.filter((agent) => agent.selected);
     const actual = new Set(selected.map((agent) => agent.id));
@@ -48,6 +56,10 @@ for (const item of cases) {
       retrievalSuccess * 0.15 +
       citationValidity * 0.10 +
       completeness * 0.10;
+    const privacyRisk = normalizePrivacyBreakdownV2(
+      result.metrics,
+      `${item.id}/${mode}.metrics`,
+    );
     rows.push({
       id: item.id,
       mode,
@@ -57,10 +69,11 @@ for (const item of cases) {
       conceptRecall,
       retrievalSuccess,
       citationValidity,
-      privacyPass: item.forbidden_output.every((value) => !serialized.includes(value)) ? 1 : 0,
+      forbiddenOutputPass: item.forbidden_output.every((value) => !serialized.includes(value)) ? 1 : 0,
       objectiveQuality,
       boundaryBytes: result.metrics.boundaryBytes,
-      privacyRisk: result.metrics.privacyRiskScore,
+      privacyRiskVersion: PRIVACY_RISK_VERSION,
+      privacyRisk,
       latencyMs: result.metrics.latencyMs,
     });
   }
@@ -68,17 +81,20 @@ for (const item of cases) {
 
 const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
 const round = (value) => Number(value.toFixed(1));
+assertPrivacyRowsV2(rows, "offline evaluation rows");
 const summaries = Object.fromEntries(modes.map((mode) => {
   const modeRows = rows.filter((row) => row.mode === mode);
+  const privacyRisk = summarizePrivacyRowsV2(modeRows, `offline ${mode} rows`);
   return [mode, {
     quality: round(average(modeRows.map((row) => row.objectiveQuality)) * 100),
     conceptRecall: round(average(modeRows.map((row) => row.conceptRecall)) * 100),
     agentSelectionF1: round(average(modeRows.map((row) => row.f1)) * 100),
     retrievalSuccessRate: round(average(modeRows.map((row) => row.retrievalSuccess)) * 100),
     citationValidity: round(average(modeRows.map((row) => row.citationValidity)) * 100),
-    privacyPassRate: round(average(modeRows.map((row) => row.privacyPass)) * 100),
+    forbiddenOutputPassRate: round(average(modeRows.map((row) => row.forbiddenOutputPass)) * 100),
     averageBoundaryBytes: Math.round(average(modeRows.map((row) => row.boundaryBytes))),
-    averagePrivacyRisk: round(average(modeRows.map((row) => row.privacyRisk))),
+    averagePrivacyRiskScore: privacyRisk.averageScore,
+    privacyRisk,
     averageLatencyMs: Math.round(average(modeRows.map((row) => row.latencyMs))),
   }];
 }));
@@ -90,8 +106,15 @@ const proposed = summaries.proposed;
 const bestQualityMode = modes.find((mode) => summaries[mode].quality === bestQuality);
 
 const report = {
+  schemaVersion: PRIVACY_REPORT_SCHEMA_VERSION,
+  privacyRiskVersion: PRIVACY_RISK_VERSION,
+  status: "measured",
   generatedAt: new Date().toISOString(),
   cases: cases.length,
+  runs: rows.length,
+  expectedRuns: cases.length * modes.length,
+  completedRuns: rows.length,
+  legacyReportsExcluded: ["data/evaluation/latest-report.json"],
   model: process.env.LOCAL_LLM_MODEL ?? "deterministic fallback / local model compatible",
   method: "fixed pilot golden set; not a held-out test",
   qualityDefinition: {
@@ -106,7 +129,9 @@ const report = {
   proposedAdvantage: {
     qualityRetention: proposed.qualityRetention,
     privacyRiskReductionVsCentralized: round(
-      (1 - proposed.averagePrivacyRisk / summaries.centralized.averagePrivacyRisk) * 100,
+      summaries.centralized.averagePrivacyRiskScore === 0
+        ? 0
+        : (1 - proposed.averagePrivacyRiskScore / summaries.centralized.averagePrivacyRiskScore) * 100,
     ),
     boundaryByteReductionVsCentralized: round(
       (1 - proposed.averageBoundaryBytes / summaries.centralized.averageBoundaryBytes) * 100,
@@ -117,7 +142,7 @@ const report = {
 };
 
 await writeFile(
-  new URL("data/evaluation/latest-report.json", root),
+  new URL("data/evaluation/latest-report-v2.json", root),
   `${JSON.stringify(report, null, 2)}\n`,
 );
 console.log(JSON.stringify(report, null, 2));

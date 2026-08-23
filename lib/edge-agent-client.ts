@@ -1,10 +1,13 @@
 import type { AgentId, Classification } from "./agent-registry";
 import { sanitizeSensitiveText } from "./data-loss-prevention";
 import {
+  projectEdgeAgentResponseForCore,
+  validateCoreEdgeAgentResponse,
+  type CoreEdgeAgentResponse,
+} from "./edge-core-contract";
+import {
   validateEdgeAgentRequest,
-  validateEdgeAgentResponse,
   type EdgeAgentRequest,
-  type EdgeAgentResponse,
 } from "./edge-agent-contract";
 
 const MAX_EDGE_RESPONSE_BYTES = 256 * 1024;
@@ -80,15 +83,8 @@ async function readLimitedResponse(response: Response) {
   }
 }
 
-function assertNoSensitiveEgress(response: EdgeAgentResponse) {
-  const fields = [response.answer.text];
-  for (const evidence of response.evidence) {
-    if (evidence.classification === "public") {
-      fields.push(evidence.title, evidence.section, evidence.excerpt);
-      if (evidence.sourceUrl) fields.push(evidence.sourceUrl);
-    }
-  }
-  if (fields.some((field) => sanitizeSensitiveText(field).filteredFields.length > 0)) {
+function assertNoSensitiveEgress(response: CoreEdgeAgentResponse) {
+  if (sanitizeSensitiveText(JSON.stringify(response)).filteredFields.length > 0) {
     throw new Error("Remote Edge Agent response failed egress DLP validation");
   }
 }
@@ -134,9 +130,9 @@ async function executeRemote(
     const declaredLength = Number(response.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_EDGE_RESPONSE_BYTES) throw new Error("Edge Agent response size limit exceeded");
     const body = await readLimitedResponse(response);
-    let parsed: EdgeAgentResponse;
+    let parsed: CoreEdgeAgentResponse;
     try {
-      parsed = validateEdgeAgentResponse(JSON.parse(body));
+      parsed = validateCoreEdgeAgentResponse(JSON.parse(body));
     } catch {
       throw new Error("Edge Agent returned an invalid response");
     }
@@ -157,7 +153,7 @@ async function executeRemote(
     }
     assertNoSensitiveEgress(parsed);
     const actualBytes = new TextEncoder().encode(body).length;
-    const evidenceBytes = new TextEncoder().encode(JSON.stringify(parsed.evidence)).length;
+    const evidenceBytes = new TextEncoder().encode(JSON.stringify(parsed.evidenceRefs)).length;
     if (parsed.boundary.returnedBytes !== actualBytes ||
         parsed.metrics.egressBytes !== actualBytes ||
         parsed.boundary.evidencePayloadBytes !== evidenceBytes) {
@@ -174,7 +170,7 @@ async function executeRemote(
 export async function executeEdgeAgent(
   untrustedRequest: unknown,
   signal?: AbortSignal,
-): Promise<EdgeAgentResponse> {
+): Promise<CoreEdgeAgentResponse> {
   const validatedRequest = validateEdgeAgentRequest(untrustedRequest);
   const request: EdgeAgentRequest = {
     ...validatedRequest,
@@ -194,5 +190,8 @@ export async function executeEdgeAgent(
   }
   // 단일 프로세스 프로토타입용 논리 경계다. 운영에서는 EDGE_AGENT_MODE=remote를 사용한다.
   const { executeEdgeAgentLocally } = await import("./edge-agent-service");
-  return executeEdgeAgentLocally(request, signal);
+  const localResponse = await executeEdgeAgentLocally(request, signal);
+  const projected = projectEdgeAgentResponseForCore(localResponse, "local");
+  assertNoSensitiveEgress(projected);
+  return projected;
 }
