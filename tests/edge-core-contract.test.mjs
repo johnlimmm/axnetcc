@@ -148,6 +148,21 @@ test("projects public previews while restricted Edge state remains reference-onl
   assert.equal(parsed.metrics.fallbackReasonCode, "unknown");
 });
 
+test("explicit public passage carries bounded provenance without widening legacy previews", () => {
+  const internal = internalEdgeResponse();
+  Object.assign(internal.evidence[0], { excerpt: "Public evidence. ".repeat(60), excerptMode: "public-passage", publishedAt: "2025-01-01", sourceSha256: "a".repeat(64), licenseReview: "required" });
+  const projected = projectEdgeAgentResponseForCore(internal, "http");
+  const parsed = validateCoreEdgeAgentResponse(JSON.parse(JSON.stringify(projected)));
+  assert.equal(parsed.evidenceRefs[0].excerpt, internal.evidence[0].excerpt);
+  assert.equal(parsed.evidenceRefs[0].publishedAt, "2025-01-01");
+  assert.equal(parsed.evidenceRefs[0].section, internal.evidence[0].section);
+  assert.equal(parsed.evidenceRefs[0].licenseReview, "required");
+  const legacy = structuredClone(projected); delete legacy.evidenceRefs[0].excerptMode;
+  assert.throws(() => validateCoreEdgeAgentResponse(legacy));
+  const oversized = structuredClone(projected); oversized.evidenceRefs[0].excerpt = "x".repeat(1201);
+  assert.throws(() => validateCoreEdgeAgentResponse(oversized));
+});
+
 test("rejects unknown keys at the top level and restricted references", () => {
   const valid = projectEdgeAgentResponseForCore(internalEdgeResponse(), "http");
   const topLevel = structuredClone(valid);

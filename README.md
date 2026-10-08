@@ -1,5 +1,11 @@
 # MNC FLOW
 
+## 구현 현황과 화면 안내 (2026-09-08)
+
+응답 서비스(`:3100`)와 운영 콘솔(`:3200`)은 별도 프로세스입니다. 서비스는 요청·답변·피드백에 집중하고, `pnpm run monitor`로 실행하는 독립 수집기가 5초마다 지표를 수집해 SQLite에 저장합니다. 콘솔은 지연 추이·P50/P95·오류율·Agent 상태·구현 현황을 제공합니다. 브라우저를 닫아도 콘솔 서버가 실행 중이면 수집을 계속합니다. [모니터링 실행과 구조](docs/MONITORING.md)를 참고하세요.
+
+8개 전문 Agent, Boundary Router v2, Edge RAG와 통합 보고서, 비동기 실행·복구, Privacy Risk v2 및 실행 지표에 더해 응답별 피드백의 서버 저장을 지원합니다. 자세한 범위와 저장소 설정은 [구현 현황](docs/IMPLEMENTATION_STATUS.md)을 참고하세요.
+
 ## Privacy Risk v2 평가 보고서
 
 개인정보 위험도는 API가 반환하는 동일한 `privacyRiskVersion: "v2"` breakdown을 보고서와

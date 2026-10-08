@@ -26,6 +26,10 @@ export type CorePublicEvidenceReference = {
   title: string;
   section: string;
   excerpt: string;
+  excerptMode?: "public-passage";
+  publishedAt?: string;
+  sourceSha256?: string;
+  licenseReview?: string;
   sourceUrl?: string;
   retrievalScore: number;
 };
@@ -101,6 +105,7 @@ export type CoreEdgeAgentResponse = {
     latencyMs: number;
     ttftMs: number | null;
     tpotMs: number | null;
+    tokensPerSecond?: number | null;
     promptTokens: number | null;
     completionTokens: number | null;
     corpusChunks: number;
@@ -422,7 +427,7 @@ export function validateCoreEdgeAgentResponse(input: unknown): CoreEdgeAgentResp
         "disclosure",
         "title",
         "section",
-        "excerpt",
+        "excerpt", "excerptMode", "publishedAt", "sourceSha256", "licenseReview",
         "sourceUrl",
         "retrievalScore",
       ], path);
@@ -432,7 +437,11 @@ export function validateCoreEdgeAgentResponse(input: unknown): CoreEdgeAgentResp
         disclosure: asEnum(reference.disclosure, ["sanitized-preview"] as const, `${path}.disclosure`),
         title: asDlpSafeString(reference.title, `${path}.title`, 512),
         section: asDlpSafeString(reference.section, `${path}.section`, 512),
-        excerpt: asDlpSafeString(reference.excerpt, `${path}.excerpt`, 500),
+        excerpt: asDlpSafeString(reference.excerpt, `${path}.excerpt`, reference.excerptMode === "public-passage" ? 1200 : 500),
+        ...(reference.excerptMode === undefined ? {} : { excerptMode: asEnum(reference.excerptMode, ["public-passage"] as const, `${path}.excerptMode`) }),
+        ...(reference.publishedAt === undefined ? {} : { publishedAt: asDlpSafeString(reference.publishedAt, `${path}.publishedAt`, 100) }),
+        ...(reference.sourceSha256 === undefined ? {} : { sourceSha256: asDlpSafeString(reference.sourceSha256, `${path}.sourceSha256`, 64) }),
+        ...(reference.licenseReview === undefined ? {} : { licenseReview: asDlpSafeString(reference.licenseReview, `${path}.licenseReview`, 100) }),
         ...(reference.sourceUrl === undefined
           ? {}
           : { sourceUrl: asHttpUrl(reference.sourceUrl, `${path}.sourceUrl`) }),
@@ -508,6 +517,7 @@ export function validateCoreEdgeAgentResponse(input: unknown): CoreEdgeAgentResp
     "latencyMs",
     "ttftMs",
     "tpotMs",
+    "tokensPerSecond",
     "promptTokens",
     "completionTokens",
     "corpusChunks",
@@ -616,6 +626,9 @@ export function validateCoreEdgeAgentResponse(input: unknown): CoreEdgeAgentResp
       latencyMs: asInteger(metricsInput.latencyMs, "response.metrics.latencyMs"),
       ttftMs: asNullableNumber(metricsInput.ttftMs, "response.metrics.ttftMs"),
       tpotMs: asNullableNumber(metricsInput.tpotMs, "response.metrics.tpotMs"),
+      ...(metricsInput.tokensPerSecond === undefined ? {} : {
+        tokensPerSecond: asNullableNumber(metricsInput.tokensPerSecond, "response.metrics.tokensPerSecond"),
+      }),
       promptTokens: asNullableNumber(metricsInput.promptTokens, "response.metrics.promptTokens"),
       completionTokens: asNullableNumber(metricsInput.completionTokens, "response.metrics.completionTokens"),
       corpusChunks: asInteger(metricsInput.corpusChunks, "response.metrics.corpusChunks"),
@@ -673,6 +686,10 @@ export function projectEdgeAgentResponseForCore(
         title: sanitizeSensitiveText(item.title).sanitized,
         section: sanitizeSensitiveText(item.section).sanitized,
         excerpt: sanitizeSensitiveText(item.excerpt).sanitized,
+        ...(item.excerptMode ? { excerptMode: item.excerptMode } : {}),
+        ...(item.publishedAt ? { publishedAt: item.publishedAt } : {}),
+        ...(item.sourceSha256 ? { sourceSha256: item.sourceSha256 } : {}),
+        ...(item.licenseReview ? { licenseReview: item.licenseReview } : {}),
         ...(item.sourceUrl ? { sourceUrl: item.sourceUrl } : {}),
         retrievalScore: item.retrievalScore,
       };
@@ -741,6 +758,7 @@ export function projectEdgeAgentResponseForCore(
       latencyMs: response.metrics.latencyMs,
       ttftMs: response.metrics.ttftMs,
       tpotMs: response.metrics.tpotMs,
+      ...(response.metrics.tokensPerSecond === undefined ? {} : { tokensPerSecond: response.metrics.tokensPerSecond }),
       promptTokens: response.metrics.promptTokens,
       completionTokens: response.metrics.completionTokens,
       corpusChunks: response.metrics.corpusChunks,

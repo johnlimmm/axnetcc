@@ -1,3 +1,4 @@
+import { authorizeDemoRequest } from "../../../../../lib/demo-profile";
 import {
   publicRunEventIsTerminal,
   RunRegistryError,
@@ -17,6 +18,8 @@ function parseLastEventId(request: Request) {
 }
 
 export async function GET(request: Request, context: RouteContext) {
+  const denied = authorizeDemoRequest(request);
+  if (denied) return denied;
   const { requestId } = await context.params;
   if (!runRegistry.get(requestId)) {
     return Response.json({ error: "RUN_NOT_FOUND" }, { status: 404 });

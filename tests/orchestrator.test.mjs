@@ -80,8 +80,8 @@ test("serves the finished Korean governance workspace", async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /MNC FLOW/);
-  assert.match(html, /AXNetCC/);
-  assert.match(html, /Security-Aware Evidence Acquisition/);
+  assert.match(html, /응답 서비스/);
+  assert.doesNotMatch(html, />성능 분석<|>구현 현황</);
   assert.match(html, /요청 처리 시작/);
   assert.doesNotMatch(html, /Your site is taking shape|codex-preview/);
 });
@@ -122,27 +122,20 @@ test("report components render integrated and Agent report documents", async () 
   assert.match(source, /data-evidence-id/);
 });
 
-test("result page owns the Agent processing path and reports but no evaluation metrics", async () => {
+test("result page prioritizes the report, evidence, and routing explanation without evaluation metrics", async () => {
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const pathStart = source.indexOf("function AgentProcessingPath");
-  const panelStart = source.indexOf("function FocusedResultPanel", pathStart);
+  const panelStart = source.indexOf("function FocusedResultPanel");
   const panelEnd = source.indexOf("export default function Home", panelStart);
-  assert.ok(pathStart >= 0 && panelStart > pathStart && panelEnd > panelStart);
-
-  const processingPath = source.slice(pathStart, panelStart);
+  assert.ok(panelStart >= 0 && panelEnd > panelStart);
   const panel = source.slice(panelStart, panelEnd);
-  assert.match(processingPath, /data-testid="agent-processing-path"/);
-  assert.match(processingPath, /<RouterDecisionCard/);
-  assert.match(processingPath, /executionRole === "required-reviewer"/);
-  assert.match(processingPath, /agent\.evidence\.length/);
-  assert.match(processingPath, /integrationLabel/);
-
-  assert.match(panel, /<AgentProcessingPath/);
+  assert.ok(panel.indexOf("<IntegratedReportDocument") < panel.indexOf("result-agent-evidence"));
+  assert.ok(panel.indexOf("result-agent-evidence") < panel.indexOf("<RoutingExplanation"));
   assert.match(panel, /<IntegratedReportDocument/);
   assert.match(panel, /<AgentReportDocument/);
   assert.match(panel, /data-testid="result-agent-evidence"/);
   assert.match(panel, /source\.excerpt/);
-  assert.match(panel, /\/evaluation\?run=/);
+  assert.doesNotMatch(panel, /\/evaluation\?run=/);
+  assert.match(panel, /<FeedbackForm/);
 
   for (const forbidden of [
     /privacyRiskPanel/,
@@ -580,7 +573,7 @@ test("records an empty Ollama response as a deterministic fallback", async () =>
     const result = await orchestrate("budget operating plan evidence", "centralized");
     assert.equal(result.integration.backend, "deterministic");
     assert.equal(result.integration.answerSource, "deterministic-fallback");
-    assert.equal(result.integration.fallbackReason, "Ollama returned an empty response");
+    assert.equal(result.integration.fallbackReason, "invalid-response");
     assert.equal(result.metrics.llmBackend, "deterministic");
     assert.ok(result.conclusion.trim().length > 0);
   } finally {
@@ -631,7 +624,7 @@ test("releases the Ollama inference slot after HTTP and timeout fallbacks", { ti
       "centralized",
     );
     assert.equal(httpFailure.integration.answerSource, "deterministic-fallback");
-    assert.equal(httpFailure.integration.fallbackReason, "Ollama HTTP 503");
+    assert.equal(httpFailure.integration.fallbackReason, "provider-error");
 
     const runtime = await worker();
     const timeoutRun = orchestrateWithRuntime(runtime, "budget timeout evidence", "centralized");
@@ -760,9 +753,10 @@ test("terminates the full request graph after an Agent dispatch failure", { time
     ));
     const failedAgent = result.execution.tasks.find((task) => task.kind === "agent" && task.required);
     assert.equal(failedAgent?.status, "failed");
-    assert.equal(failedAgent?.scheduler?.outcome, "failed");
-    assert.equal(failedAgent?.scheduler?.resourceKey, `edge:${baseUrl}/api/edge/agent`);
-    assert.equal(result.execution.scheduling.scheduledTaskCount, 2);
+    // Remote physical attempts no longer masquerade as the logical task slot.
+    // Configuration rejection may happen before any physical attempt exists.
+    assert.equal(failedAgent?.scheduler, null);
+    assert.equal(result.execution.scheduling.scheduledTaskCount, requestCount + 1);
   } finally {
     delete process.env.EDGE_AGENT_MODE;
     delete process.env.EDGE_AGENT_BASE_URL;

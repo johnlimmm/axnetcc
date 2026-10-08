@@ -37,6 +37,8 @@ export type PrimaryRoutingScore = {
   matchedTerms: string[];
   matchedEntities: string[];
   matchedConceptIds: string[];
+  profileMatches: Array<{ requestToken: string; profileToken: string; affinity: number; contribution: number }>;
+  weightedComponents: Record<keyof PrimaryRoutingScore["components"], number>;
 };
 
 export type PrimaryRoutingSelection = {
@@ -71,6 +73,7 @@ export type BoundaryRoutingDecision = {
   predictedCoverage: number;
   objectiveCost: number;
   adaptiveAdditions: AgentId[];
+  supportSelection?: Array<{ agentId: AgentId; reason: "required-review" | "coverage-gap"; missingConceptIds: string[] }>;
   humanReviewRequired: boolean;
   rationale: string[];
 };
@@ -285,7 +288,7 @@ function tokenAffinity(left: string, right: string) {
 }
 
 /** 요청의 모든 의미 토큰을 Agent 프로필에 대조한다. 단일 최고 단어만으로 주관기관을 고르지 않는다. */
-function profileSimilarity(query: string, agentId: AgentId) {
+function profileComparison(query: string, agentId: AgentId) {
   const profile = agentProfiles[agentId];
   const profileDocument = [
     agentId,
@@ -297,13 +300,16 @@ function profileSimilarity(query: string, agentId: AgentId) {
   ].join(" ");
   const queryTokens = semanticTokens(query);
   const profileTokens = semanticTokens(profileDocument);
-  if (!queryTokens.length || !profileTokens.length) return 0;
-  const affinities = queryTokens.map((queryToken) =>
-    Math.max(...profileTokens.map((profileToken) => tokenAffinity(queryToken, profileToken))),
-  );
+  if (!queryTokens.length || !profileTokens.length) return { score: 0, matches: [] };
+  const matches = queryTokens.map((requestToken) => {
+    const best = profileTokens.map((profileToken) => ({ profileToken, affinity: tokenAffinity(requestToken, profileToken) }))
+      .reduce((best, next) => next.affinity > best.affinity ? next : best);
+    return { requestToken, ...best, contribution: (best.affinity * 0.7 + (best.affinity >= 0.72 ? 0.3 : 0)) / queryTokens.length * hybridWeights.profileSimilarity };
+  });
+  const affinities = matches.map((match) => match.affinity);
   const averageAffinity = affinities.reduce((sum, value) => sum + value, 0) / affinities.length;
   const meaningfulCoverage = affinities.filter((value) => value >= 0.72).length / affinities.length;
-  return rounded(averageAffinity * 0.7 + meaningfulCoverage * 0.3);
+  return { score: rounded(averageAffinity * 0.7 + meaningfulCoverage * 0.3), matches };
 }
 
 function conceptMatches(agentId: AgentId, query: string) {
@@ -343,6 +349,7 @@ function buildPrimaryRoutingScores(
   ])) as Record<AgentId, number>;
   const maximumLexical = Math.max(1, ...Object.values(semanticLexicalScores));
   const scored = agentIds.map((agentId) => {
+    const profile = profileComparison(scoringQuery, agentId);
     const matchedTerms = unique(agentProfiles[agentId].keywords.filter((keyword) =>
       normalizedQuery.includes(normalized(keyword)),
     ));
@@ -353,7 +360,7 @@ function buildPrimaryRoutingScores(
       (purpose === "decision" ? 1.15 : 1) *
       ((securityLevel === "personal" || securityLevel === "confidential") && (agentId === "security" || agentId === "legal") ? 1.3 : 1);
     const components = {
-      profileSimilarity: profileSimilarity(scoringQuery, agentId),
+      profileSimilarity: profile.score,
       keywordEntity: rounded(
         (semanticLexicalScores[agentId] / maximumLexical) * 0.6 +
         Math.min(1, matchedEntities.length / 2) * 0.4,
@@ -371,7 +378,8 @@ function buildPrimaryRoutingScores(
       (sum, [component, weight]) => sum + components[component as keyof typeof components] * weight,
       0,
     ));
-    return { agentId, rank: 0, totalScore, components, matchedTerms, matchedEntities, matchedConceptIds };
+    const weightedComponents = Object.fromEntries(Object.entries(hybridWeights).map(([key, weight]) => [key, components[key as keyof typeof components] * weight])) as PrimaryRoutingScore["weightedComponents"];
+    return { agentId, rank: 0, totalScore, components, weightedComponents, profileMatches: profile.matches, matchedTerms, matchedEntities, matchedConceptIds };
   }).sort((left, right) => right.totalScore - left.totalScore || agentIds.indexOf(left.agentId) - agentIds.indexOf(right.agentId));
   return scored.map((score, index): PrimaryRoutingScore => ({ ...score, rank: index + 1 }));
 }

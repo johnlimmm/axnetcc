@@ -1,4 +1,8 @@
-import type { AgentId, Classification } from "./agent-registry";
+import { resolveEdgeReplicas, type EdgeReplica } from "./edge-replicas";
+import { scheduleEdgeAttempt, remoteAgentBudget } from "./execution-scheduler";
+import { EndpointSchedulerError } from "./endpoint-scheduler";
+import { recordEdgeAttempt, type EdgeAttempt } from "./distributed-metrics";
+import type { Classification } from "./agent-registry";
 import { sanitizeSensitiveText } from "./data-loss-prevention";
 import {
   projectEdgeAgentResponseForCore,
@@ -18,49 +22,37 @@ const classificationRank: Record<Classification, number> = {
   confidential: 2,
 };
 
-function isLoopback(hostname: string) {
-  return hostname === "127.0.0.1" || hostname === "localhost" ||
-    hostname === "::1" || hostname === "[::1]";
-}
-
-function environmentKey(agentId: AgentId, suffix: "BASE_URL" | "TOKEN") {
-  return `EDGE_AGENT_${agentId.toUpperCase()}_${suffix}`;
-}
-
-function resolveRemote(agentId: AgentId) {
-  const baseUrl = process.env[environmentKey(agentId, "BASE_URL")] ?? process.env.EDGE_AGENT_BASE_URL ?? "";
-  const agentToken = process.env[environmentKey(agentId, "TOKEN")] ?? "";
-  const token = process.env.NODE_ENV === "production"
-    ? agentToken
-    : agentToken || process.env.EDGE_AGENT_TOKEN || "";
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), token };
-}
-
-function edgeEndpoint(baseUrl: string) {
-  const url = new URL(baseUrl);
-  const loopback = isLoopback(url.hostname);
-  const developmentLoopback = url.protocol === "http:" && loopback && process.env.NODE_ENV !== "production";
-  if (url.protocol !== "https:" && !developmentLoopback) {
-    throw new Error("Edge Agent 연결은 HTTPS가 필수이며 HTTP는 loopback 개발 환경에서만 허용됩니다.");
+class EdgeAttemptFailure extends Error {
+  readonly reasonCode: string;
+  readonly retryable: boolean;
+  constructor(reasonCode: string, retryable = false) {
+    super(reasonCode); this.name = "EdgeAttemptFailure";
+    this.reasonCode = reasonCode; this.retryable = retryable;
   }
-  if (url.username || url.password || url.search || url.hash) {
-    throw new Error("Edge Agent endpoint must not contain credentials, query parameters, or fragments");
+}
+function failure(error: unknown): EdgeAttemptFailure {
+  if (error instanceof EdgeAttemptFailure) return error;
+  if (error instanceof EndpointSchedulerError) {
+    if (error.code === "TASK_CANCELLED") return new EdgeAttemptFailure("cancelled");
+    if (error.code === "TASK_DEADLINE_EXCEEDED") return new EdgeAttemptFailure("attempt-timeout", true);
+    return failure(error.cause);
   }
-  if (!url.pathname.endsWith("/api/edge/agent")) {
-    url.pathname = `${url.pathname.replace(/\/+$/, "")}/api/edge/agent`;
+  if (error && typeof error === "object") {
+    const code = "code" in error ? error.code : undefined;
+    if (["ECONNREFUSED", "ECONNRESET", "EHOSTUNREACH", "ENETUNREACH", "ETIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET"].includes(String(code))) {
+      return new EdgeAttemptFailure("connection-unavailable", true);
+    }
+    if ("cause" in error && error.cause !== error) return failure(error.cause);
   }
-  return url.toString();
+  return new EdgeAttemptFailure("invalid-response-or-transport");
+}
+function configuredTimeout() {
+  const value = Number(process.env.EDGE_AGENT_TIMEOUT_MS ?? 30_000);
+  if (!Number.isFinite(value) || value < 100) throw new Error("EDGE_AGENT_TIMEOUT_MS must be at least 100ms");
+  return Math.floor(value);
 }
 
-function remoteTimeoutMs(deadlineMs: number) {
-  const configured = Number(process.env.EDGE_AGENT_TIMEOUT_MS ?? 30_000);
-  if (!Number.isFinite(configured) || configured < 100) {
-    throw new Error("EDGE_AGENT_TIMEOUT_MS must be a finite number of at least 100ms");
-  }
-  return Math.min(deadlineMs, Math.floor(configured));
-}
-
-async function readLimitedResponse(response: Response) {
+async function readLimitedResponse(response: Response, observe: (bytes: number) => void) {
   if (!response.body) return "";
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -71,6 +63,7 @@ async function readLimitedResponse(response: Response) {
       const { done, value } = await reader.read();
       if (done) break;
       bytes += value.byteLength;
+      observe(value.byteLength);
       if (bytes > MAX_EDGE_RESPONSE_BYTES) {
         await reader.cancel();
         throw new Error("Edge Agent response size limit exceeded");
@@ -89,47 +82,63 @@ function assertNoSensitiveEgress(response: CoreEdgeAgentResponse) {
   }
 }
 
+function assertReplicaIdentity(response: Response, replica: EdgeReplica) {
+    for (const [header, expected] of [
+      ["x-edge-node-id", replica.nodeId === "unconfigured" ? null : replica.nodeId],
+      ["x-edge-replica-id", replica.replicaId === "unconfigured" ? null : replica.replicaId],
+      ["x-edge-corpus-version", replica.corpusVersion],
+      ["x-edge-model-version", replica.modelVersion],
+    ]) {
+      if (expected && response.headers.get(header!) !== expected) throw new EdgeAttemptFailure("replica-identity-mismatch");
+    }
+}
+
 async function executeRemote(
   request: EdgeAgentRequest,
-  baseUrl: string,
-  token: string,
-  signal?: AbortSignal,
+  replica: EdgeReplica,
+  attempt: EdgeAttempt,
+  signal: AbortSignal,
 ) {
-  const endpoint = edgeEndpoint(baseUrl);
-  if (!token) {
-    throw new Error("Remote Edge Agent authentication token is required");
-  }
-  if (process.env.NODE_ENV === "production" && process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
-    throw new Error("TLS certificate verification must not be disabled for remote Edge Agents");
-  }
-  const controller = new AbortController();
-  const abort = () => controller.abort(signal?.reason);
-  if (signal?.aborted) {
-    abort();
-  } else {
-    signal?.addEventListener("abort", abort, { once: true });
-  }
-  const timeout = setTimeout(
-    () => controller.abort(new DOMException("Edge Agent timeout", "TimeoutError")),
-    remoteTimeoutMs(request.limits.deadlineMs),
-  );
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(replica.endpoint, {
       method: "POST",
       redirect: "error",
       headers: {
         "content-type": "application/json",
         accept: "application/json",
         "x-edge-agent-id": request.agentId,
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        authorization: `Bearer ${replica.token}`,
+        "x-edge-attempt-id": attempt.attemptId,
       },
       body: JSON.stringify(request),
-      signal: controller.signal,
+      signal,
     });
-    if (!response.ok) throw new Error(`Edge Agent HTTP ${response.status}`);
+
     const declaredLength = Number(response.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_EDGE_RESPONSE_BYTES) throw new Error("Edge Agent response size limit exceeded");
-    const body = await readLimitedResponse(response);
+    const body = await readLimitedResponse(response, bytes => { attempt.responseBytesReceived += bytes; });
+    if (!response.ok) {
+      let code: unknown;
+      let envelope: Record<string, unknown> = {};
+      try { envelope = JSON.parse(body); code = envelope.code; } catch { /* Unknown failures are terminal. */ }
+      if (envelope && typeof envelope === "object" && "usage" in envelope) {
+        assertReplicaIdentity(response, replica);
+        if (Object.keys(envelope).some(key => !["error", "code", "requestId", "agentId", "usage"].includes(key)) || envelope.requestId !== request.requestId || envelope.agentId !== request.agentId || !["inference-invalid", "inference-unavailable"].includes(String(code))) throw new EdgeAttemptFailure("invalid-response-or-transport");
+        const usage = envelope.usage as Record<string, unknown>;
+        if (!usage || typeof usage !== "object" || Array.isArray(usage) || Object.keys(usage).some(key => !["model", "promptTokens", "completionTokens", "providerFinalObserved"].includes(key)) || typeof usage.model !== "string" || usage.model.length > 256 || sanitizeSensitiveText(JSON.stringify(usage)).filteredFields.length) throw new EdgeAttemptFailure("invalid-response-or-transport");
+        for (const value of [usage.promptTokens, usage.completionTokens]) if (value !== null && (!Number.isSafeInteger(value) || Number(value) < 0)) throw new EdgeAttemptFailure("invalid-response-or-transport");
+        if (usage.providerFinalObserved !== undefined && typeof usage.providerFinalObserved !== "boolean") throw new EdgeAttemptFailure("invalid-response-or-transport");
+        attempt.providerFinalObserved = usage.providerFinalObserved === true && replica.nodeId !== "unconfigured" && replica.replicaId !== "unconfigured" && Boolean(replica.corpusVersion && replica.modelVersion);
+        attempt.model = usage.model; attempt.backend = "ollama";
+        attempt.promptTokens = usage.promptTokens as number | null;
+        attempt.completionTokens = usage.completionTokens as number | null;
+        attempt.usageStatus = usage.promptTokens !== null && usage.completionTokens !== null ? "measured" : "unknown";
+      } else if (response.headers.has("x-edge-node-id")) assertReplicaIdentity(response, replica);
+      if ([502, 503, 504].includes(response.status) && (code === "inference-unavailable" || code === "edge-unavailable")) throw new EdgeAttemptFailure(code, true);
+      if (code === "inference-invalid") throw new EdgeAttemptFailure("inference-invalid");
+      throw new EdgeAttemptFailure(`http-${response.status}`);
+    }
+    assertReplicaIdentity(response, replica);
     let parsed: CoreEdgeAgentResponse;
     try {
       parsed = validateCoreEdgeAgentResponse(JSON.parse(body));
@@ -159,11 +168,21 @@ async function executeRemote(
         parsed.boundary.evidencePayloadBytes !== evidenceBytes) {
       throw new Error("Remote Edge Agent response boundary metrics are inconsistent");
     }
+    attempt.backend = parsed.metrics.backend;
+    attempt.model = parsed.metrics.model;
+    attempt.promptTokens = parsed.metrics.promptTokens;
+    attempt.completionTokens = parsed.metrics.completionTokens;
+    attempt.ttftMs = parsed.metrics.ttftMs;
+    attempt.tpotMs = parsed.metrics.tpotMs;
+    // Provider generation rate inferred from measured provider time/token (rounded upstream).
+    attempt.tokensPerSecond = parsed.metrics.backend === "ollama" && parsed.metrics.tpotMs !== null && parsed.metrics.tpotMs > 0
+      ? 1000 / parsed.metrics.tpotMs : null;
+    attempt.usageStatus = parsed.metrics.backend === "deterministic" && ["not-configured", "edge-status"].includes(parsed.metrics.fallbackReasonCode ?? "") ? "not-started" :
+      parsed.metrics.promptTokens !== null && parsed.metrics.completionTokens !== null ? "measured" : "unknown";
+    signal.throwIfAborted();
     return parsed;
-  } finally {
-    clearTimeout(timeout);
-    signal?.removeEventListener("abort", abort);
-  }
+  } catch (error) { throw failure(error); }
+
 }
 
 /** Core가 사용하는 유일한 RAG/Agent 진입점. corpus 모듈을 정적으로 import하지 않는다. */
@@ -177,10 +196,64 @@ export async function executeEdgeAgent(
     minimalQuery: sanitizeSensitiveText(validatedRequest.minimalQuery).sanitized,
   };
   const mode = (process.env.EDGE_AGENT_MODE ?? "auto").trim().toLowerCase();
-  const remote = resolveRemote(request.agentId);
-  if (mode === "remote" || (mode === "auto" && remote.baseUrl)) {
-    if (!remote.baseUrl) throw new Error(`${request.agentId} Edge Agent endpoint가 설정되지 않았습니다.`);
-    return executeRemote(request, remote.baseUrl, remote.token, signal);
+  const baseUrl = process.env[`EDGE_AGENT_${request.agentId.toUpperCase()}_BASE_URL`] ?? process.env.EDGE_AGENT_BASE_URL;
+  if (mode === "remote" || (mode === "auto" && baseUrl)) {
+    signal?.throwIfAborted();
+    const replicas = resolveEdgeReplicas(request.agentId);
+    const timeoutMs = configuredTimeout();
+    const runId = request.traceId ?? request.requestId;
+    const deadlineAt = Math.min(Date.now() + request.limits.deadlineMs, remoteAgentBudget(runId, request.agentId) ?? Infinity);
+    let finalError: unknown;
+    for (const [index, replica] of replicas.entries()) {
+      signal?.throwIfAborted();
+      const remaining = deadlineAt - Date.now();
+      if (remaining <= 0) throw new EdgeAttemptFailure("agent-budget-exceeded");
+      const reserve = replicas.length > 1 && index === 0 ? Math.min(timeoutMs, Math.floor(remaining / 2)) : 0;
+      const attemptDeadline = Math.min(deadlineAt - reserve, Date.now() + timeoutMs);
+      const attempt: EdgeAttempt = {
+        attemptId: `${request.requestId}-${crypto.randomUUID()}`, requestId: runId, agentId: request.agentId,
+        nodeId: replica.nodeId, replicaId: replica.replicaId, role: replica.role,
+        startedAt: Date.now(), completedAt: Date.now(), elapsedMs: 0, queueWaitMs: 0,
+        requestBytesPrepared: 0, responseBytesReceived: 0, status: "failed", reasonCode: null,
+        backend: null, model: null, promptTokens: null, completionTokens: null, usageStatus: "not-started", adopted: false,
+      };
+      let dispatchedAt: number | null = null;
+      let finished = false;
+      try {
+        const scheduled = await scheduleEdgeAttempt({
+          requestId: runId, agentId: request.agentId, attemptId: attempt.attemptId,
+          endpoint: replica.endpoint, nodeId: replica.nodeId,
+          deadlineAt: attemptDeadline, attempt: index + 1, signal,
+          async execute(scheduledSignal) {
+            dispatchedAt = Date.now();
+            if (attemptDeadline - Date.now() < 100) throw new EdgeAttemptFailure("attempt-timeout", true);
+            const budgetedRequest = { ...request, limits: { ...request.limits, deadlineMs: Math.max(1, attemptDeadline - Date.now()) } };
+            attempt.requestBytesPrepared = new TextEncoder().encode(JSON.stringify(budgetedRequest)).length;
+            attempt.usageStatus = "unknown";
+            try { return await executeRemote(budgetedRequest, replica, attempt, scheduledSignal); }
+            finally { if (finished) recordEdgeAttempt(runId, attempt); }
+          },
+        });
+        signal?.throwIfAborted();
+        if (Date.now() >= deadlineAt) throw new EdgeAttemptFailure("agent-budget-exceeded");
+        attempt.status = "succeeded";
+        attempt.adopted = true;
+        return scheduled.value;
+      } catch (error) {
+        const classified = failure(error);
+        attempt.status = signal?.aborted || classified.reasonCode === "cancelled" ? "cancelled" : "failed";
+        attempt.reasonCode = signal?.aborted ? "caller-cancelled" : classified.reasonCode;
+        finalError = classified;
+        if (signal?.aborted || !classified.retryable || index === replicas.length - 1 || Date.now() >= deadlineAt) throw classified;
+      } finally {
+        finished = true;
+        attempt.completedAt = Date.now();
+        attempt.elapsedMs = attempt.completedAt - attempt.startedAt;
+        attempt.queueWaitMs = (dispatchedAt ?? attempt.completedAt) - attempt.startedAt;
+        recordEdgeAttempt(runId, attempt);
+      }
+    }
+    throw finalError;
   }
   if (mode !== "auto" && mode !== "local") {
     throw new Error(`지원하지 않는 EDGE_AGENT_MODE: ${mode}`);

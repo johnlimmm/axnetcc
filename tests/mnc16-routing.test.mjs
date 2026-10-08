@@ -68,6 +68,14 @@ test("MNC-16 exposes exactly one primary and skips support for a single-domain r
   assert.equal(selection.rankedCandidates.length, 8);
   assert.equal(selection.hardGate.applied, false);
   assert.equal(selection.rankedCandidates[0].agentId, "finance");
+  const trace = selection.rankedCandidates[0];
+  assert.ok(trace.profileMatches.some(match => match.requestToken.includes("예산") && match.affinity === 1));
+  assert.ok(Math.abs(Object.values(trace.weightedComponents).reduce((sum, value) => sum + value, 0) - trace.totalScore) <= .00051);
+  assert.ok(Math.abs(trace.profileMatches.reduce((sum, match) => sum + match.contribution, 0) - trace.weightedComponents.profileSimilarity) <= .00011);
+  for (const match of trace.profileMatches) {
+    assert.ok(match.affinity >= 0 && match.affinity <= 1);
+    assert.ok(match.contribution >= 0 && match.contribution <= .2);
+  }
   assert.equal(selection.rankedCandidates[0].rank, 1);
   assert.ok(selection.confidence >= 0 && selection.confidence <= 1);
   assert.ok(selection.top1Top2Margin >= 0 && selection.top1Top2Margin <= 1);
@@ -182,6 +190,10 @@ test("adaptive support starts only after the primary Edge result and reports the
   assert.equal(result.routerDecision.primaryAgent, "tech");
   assert.ok(result.routerDecision.adaptiveAdditions.includes("operations"));
   assert.ok(result.routerDecision.supportingAgents.includes("operations"));
+  const supportTrace = result.routerDecision.supportSelection.find(item => item.agentId === "operations");
+  assert.equal(supportTrace.reason, "coverage-gap");
+  assert.ok(supportTrace.missingConceptIds.length > 0);
+  assert.ok(supportTrace.missingConceptIds.every(id => result.routerDecision.requiredConcepts.some(concept => concept.id === id && concept.owner === "operations")));
   const primaryComplete = events.findIndex((event) =>
     event.stage === "agent.completed" && event.agentId === result.routerDecision.primaryAgent
   );

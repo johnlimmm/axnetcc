@@ -87,6 +87,7 @@ export async function GET() {
       total: agents.length,
       model: [...new Set(agents.map((agent) => agent.model))].join(", "),
       edgeMode,
+      publicEvidenceOnly: process.env.EVALUATION_PUBLIC_EVIDENCE_ONLY === "true",
       agents,
       scheduler,
     },

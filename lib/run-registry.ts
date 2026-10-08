@@ -1,4 +1,7 @@
+import { getDistributedRun } from "./distributed-metrics.ts";
+import { createDemoDeadline } from "./demo-profile.ts";
 import { sanitizeSensitiveText } from "./data-loss-prevention.ts";
+import { telemetry } from "./telemetry.ts";
 import type {
   OrchestrationProgressEvent,
   RunMode,
@@ -58,11 +61,14 @@ export type PublicRunSnapshot = {
     remainingCount: number;
   };
   tasks: PublicRunTask[];
+  executionSettled: boolean;
+  deadlineAt: number | null;
   result?: unknown;
-  errorCode?: "EXECUTION_FAILED" | "CANCELLED";
+  errorCode?: "EXECUTION_FAILED" | "CANCELLED" | "DEADLINE_EXCEEDED";
 };
 
 export type StartRunInput = {
+  acceptedAt?: number;
   query: string;
   mode: RunMode;
   commercialJudge: boolean;
@@ -93,6 +99,8 @@ type StoredRun = {
   events: PublicRunEvent[];
   listeners: Set<(event: PublicRunEvent) => void>;
   execution: Promise<void> | null;
+  executionSettled: boolean;
+  deadline: ReturnType<typeof createDemoDeadline>;
 };
 
 type IdempotencyEntry = {
@@ -268,6 +276,7 @@ export class RunRegistry {
     input: StartRunInput,
     registerLifetime?: (execution: Promise<void>) => void,
   ): Promise<{ requestId: string; reused: boolean }> {
+    const acceptedAt = input.acceptedAt ?? Date.now();
     this.prune();
     const idempotencyKey = input.idempotencyKey?.trim();
     if (idempotencyKey && !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/.test(idempotencyKey)) {
@@ -297,6 +306,7 @@ export class RunRegistry {
 
     const requestId = this.idFactory();
     const now = this.clock();
+    const deadline = createDemoDeadline(undefined, acceptedAt);
     const record: StoredRun = {
       requestId,
       coordinatorRequestId: null,
@@ -313,7 +323,19 @@ export class RunRegistry {
       events: [],
       listeners: new Set(),
       execution: null,
+      executionSettled: false,
+      deadline,
     };
+    const expire = () => {
+      if (!deadline.expired || record.completedAt !== null) return;
+      record.controller.abort(deadline.signal.reason);
+      if (record.coordinatorRequestId) {
+        try { requestCoordinator.cancelRequest(record.coordinatorRequestId, this.clock()); } catch { /* already terminal */ }
+      }
+      this.finish(record, "cancelled", "DEADLINE_EXCEEDED");
+      telemetry.finish(requestId, "cancelled");
+    };
+    deadline.signal.addEventListener("abort", expire, { once: true });
     this.runs.set(requestId, record);
     if (idempotencyKey) {
       this.idempotency.set(idempotencyKey, { requestId, fingerprint: requestFingerprint });
@@ -377,6 +399,8 @@ export class RunRegistry {
           }
         : { ...record.progress },
       tasks,
+      executionSettled: record.executionSettled,
+      deadlineAt: record.deadline.deadlineAt,
       ...(record.result === undefined ? {} : { result: record.result }),
       ...(record.errorCode ? { errorCode: record.errorCode } : {}),
     };
@@ -395,6 +419,7 @@ export class RunRegistry {
       }
     }
     this.finish(record, "cancelled", "CANCELLED");
+    telemetry.finish(requestId, "cancelled");
     return this.get(requestId)!;
   }
 
@@ -421,6 +446,10 @@ export class RunRegistry {
       capturedAt: this.clock(),
       total: runs.length,
       active: runs.filter((run) => !terminalStatuses.has(run.status)).length,
+      recent: runs.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20).map((run) => ({
+        requestId: run.requestId, mode: run.mode, status: run.status,
+        createdAt: run.createdAt, completedAt: run.completedAt,
+      })),
       byStatus: Object.fromEntries(
         ["queued", "running", "integrating", "completed", "partial_failed", "failed", "cancelled"]
           .map((status) => [status, runs.filter((run) => run.status === status).length]),
@@ -429,8 +458,9 @@ export class RunRegistry {
   }
 
   private async execute(record: StoredRun, input: StartRunInput & { requestId: string }) {
-    this.touch(record, "running");
+    if (record.completedAt === null) this.touch(record, "running");
     try {
+      record.controller.signal.throwIfAborted();
       const result = await this.executor(
         input,
         (event) => this.onProgress(record, event),
@@ -444,6 +474,13 @@ export class RunRegistry {
       const finalStatus: RequestStatus = terminalStatuses.has(executionStatus as RequestStatus)
         ? executionStatus as RequestStatus
         : "completed";
+      const distributed = getDistributedRun(record.requestId);
+      if (isRecord(safeResult) && distributed) {
+        safeResult.resilience = {
+          recoveredAgents: new Set(distributed.attempts.filter(attempt => attempt.adopted && attempt.role === "backup" && attempt.backend === "ollama").map(attempt => attempt.agentId)).size,
+          degraded: finalStatus !== "completed" || distributed.attempts.some(attempt => attempt.adopted && attempt.backend !== "ollama") || distributed.stages.some(stage => stage.backend !== "ollama"),
+        };
+      }
       record.result = safeResult;
       this.finish(record, finalStatus);
     } catch {
@@ -452,6 +489,9 @@ export class RunRegistry {
       } else {
         this.finish(record, "failed", "EXECUTION_FAILED");
       }
+    } finally {
+      record.executionSettled = true;
+      record.deadline.dispose();
     }
   }
 
@@ -481,6 +521,7 @@ export class RunRegistry {
     errorCode?: PublicRunSnapshot["errorCode"],
   ) {
     if (terminalStatuses.has(record.status) && record.completedAt !== null) return;
+    record.deadline.dispose();
     record.status = status;
     record.errorCode = errorCode;
     record.completedAt = this.clock();

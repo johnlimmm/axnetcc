@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { isRunStartStalled } from "../lib/run-observation";
+import WorkspaceNav from "./components/WorkspaceNav";
+import FeedbackForm from "./components/FeedbackForm";
+import AgentTopology from "./components/AgentTopology";
+import RoutingExplanation from "./components/RoutingExplanation";
 
-type RouterDecisionView = {
+export type RouterDecisionView = {
   version: "2";
   strategy: "boundary-constrained";
   securityLevel: "public" | "internal" | "confidential" | "personal";
@@ -18,6 +22,7 @@ type RouterDecisionView = {
   predictedCoverage: number;
   objectiveCost: number;
   adaptiveAdditions: string[];
+  supportSelection?: Array<{ agentId: string; reason: "required-review" | "coverage-gap"; missingConceptIds: string[] }>;
   humanReviewRequired: boolean;
   rationale: string[];
   primarySelection?: {
@@ -42,6 +47,8 @@ type RouterDecisionView = {
       matchedTerms?: string[];
       matchedEntities?: string[];
       matchedConceptIds?: string[];
+      profileMatches?: Array<{ requestToken: string; profileToken: string; affinity: number; contribution: number }>;
+      weightedComponents?: Record<string, number>;
     }>;
     confidence: number;
     top1Top2Margin: number;
@@ -133,6 +140,7 @@ type AgentResult = {
     excerpt: string;
     sourceUrl?: string;
     effectiveDate?: string;
+    section?: string;
     classification?: "public" | "internal" | "confidential";
     disclosure?: "reference-only" | "sanitized-preview";
   }[];
@@ -158,6 +166,7 @@ type AgentResult = {
 };
 
 type RunResult = {
+  resilience?: { recoveredAgents: number; degraded: boolean };
   runId: string;
   mode:
     | "proposed"
@@ -526,7 +535,7 @@ function liveRunReducer(state: LiveRunState, action: LiveRunAction): LiveRunStat
           ...nextAgents,
           [task.assignee]: {
             ...current,
-            selected: task.status !== "skipped",
+            selected: task.status === "skipped" ? false : task.status === "queued" ? task.required || current.selected === true : true,
             stage,
             queuePosition: task.queuePosition,
             waitingMs: task.waitingMs,
@@ -708,7 +717,7 @@ function liveRunReducer(state: LiveRunState, action: LiveRunAction): LiveRunStat
 }
 
 const exampleRequests = [
-  "민원 상담용 생성형 AI 서비스를 도입하려고 합니다. 개인정보 보호, 클라우드 보안, 법적 책임과 예산 타당성을 종합 검토해 주세요.",
+  "공공부문 AI 도입 가이드(2026.5.)에서 RAG 도구의 파싱, 청킹, 임베딩, 검색 API 구성은 어떻게 설명하나요? 제공된 공개 근거에 있는 내용만 요약해 주세요.",
   "내부 연구자료 검색 AI를 구축하려고 합니다. 기술 구성과 보안 통제 방안을 중심으로 검토해 주세요.",
   "고객 응대 챗봇 외주 계약을 추진합니다. 계약상 책임과 예상 운영비를 검토해 주세요.",
   "권한경계 기밀 대응 절차를 보안과 운영 관점에서 검토해 주세요.",
@@ -718,44 +727,6 @@ const ACTIVE_RUN_STORAGE_KEY = "mnc-flow-active-run-v2";
 
 function holdCompletedLiveState() {
   return new Promise<void>((resolve) => window.setTimeout(resolve, 320));
-}
-
-function agentLabel(agentId: string) {
-  return agents.find((agent) => agent.id === agentId)?.shortName ?? agentId;
-}
-
-function RouterDecisionCard({ decision, compact = false }: { decision: RouterDecisionView; compact?: boolean }) {
-  const primary = agents.find((agent) => agent.id === decision.primaryAgent);
-  return (
-    <section className={`routerDecisionCard ${compact ? "compact" : ""}`} aria-label="Boundary Router 결정">
-      <header>
-        <div><span>BOUNDARY ROUTER V2</span><strong>주관 Agent와 검토 경계를 결정했습니다</strong></div>
-        <div className="routerBadges"><b>{decision.securityLevel}</b><b>{decision.purpose}</b></div>
-      </header>
-      <div className="routerFlow">
-        <div className="routerPrimary" style={{ "--agent": primary?.color ?? "#5B8CFF" } as React.CSSProperties}>
-          <small>PRIMARY</small><strong>{agentLabel(decision.primaryAgent)} Agent</strong><span>1차 처리 책임</span>
-        </div>
-        <i aria-hidden="true">→</i>
-        <div className="routerSupports">
-          <small>REVIEW / ADAPTIVE SUPPORT</small>
-          <p>{decision.supportingAgents.length
-            ? decision.supportingAgents.map((id) => <b key={id}>{agentLabel(id)}</b>)
-            : <span>추가 호출 없음</span>}</p>
-          {!!decision.adaptiveAdditions.length && <em>Coverage gap으로 {decision.adaptiveAdditions.map(agentLabel).join("·")} 추가</em>}
-        </div>
-      </div>
-      {!compact && (
-        <div className="routerStats">
-          <div><span>예측 Coverage</span><strong>{Math.round(decision.predictedCoverage * 100)}%</strong></div>
-          <div><span>Objective Cost</span><strong>{decision.objectiveCost.toFixed(3)}</strong></div>
-          <div><span>Required Concepts</span><strong>{decision.requiredConcepts.length}</strong></div>
-          <div><span>Required Review</span><strong>{decision.required.map(agentLabel).join(" · ")}</strong></div>
-        </div>
-      )}
-      <p className="routerRationale">{decision.rationale.at(-1)}</p>
-    </section>
-  );
 }
 
 type FocusPhase = "routing" | "assigned" | "retrieving" | "integrating";
@@ -813,7 +784,7 @@ function agentLiveLabel(stage: LiveAgentStage) {
     mapping: "근거를 응답에 연결 중",
     completed: "응답 수신 완료",
     mapped: "근거 연결 완료",
-    fallback: "안전 응답 수신 완료",
+    fallback: "규칙 기반 대체 응답 수신 완료",
     skipped: "호출하지 않음",
     error: "처리 오류",
   };
@@ -833,7 +804,7 @@ function executionStatusLabel(status: LiveRunState["execution"]["status"]) {
   return labels[status];
 }
 
-function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
+function FocusedProcessingPanel({ state, onCancel, cancelling, cancelError }: { state: LiveRunState; onCancel: () => void; cancelling: boolean; cancelError: string }) {
   const phase = getFocusPhase(state);
   const activeStep = phase === "routing" ? 0 : phase === "assigned" ? 1 : phase === "retrieving" ? 2 : 3;
   const selectedAgents = agents.filter((agent) => state.agents[agent.id]?.selected === true);
@@ -846,29 +817,30 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
   const phaseCopy = phase === "routing"
     ? {
         eyebrow: "REQUEST RECEIVED",
-        title: "요청의 업무영역과 정보 경계를 분석하고 있습니다",
-        detail: "요청 전체의 의미와 필수 검토 규칙을 함께 확인해 가장 적합한 주관기관을 결정합니다.",
+        title: "요청의 업무 영역과 검토 규칙을 확인 중입니다",
+        detail: "요청 단어와 Agent 프로필의 일치 점수, 필수 검토 규칙으로 주관 Agent를 선택합니다.",
       }
     : phase === "assigned"
       ? {
           eyebrow: "AGENT SELECTED",
-          title: `${primary?.shortName ?? "주관"} Agent를 주관기관으로 선택했습니다`,
-          detail: "주관기관과 필수 검토 Agent에 필요한 최소 질문만 전달합니다.",
+          title: `${primary?.shortName ?? "주관"} Agent를 주관 역할로 선택했습니다`,
+          detail: "선택된 Agent에 검토 요청을 전달합니다.",
         }
       : phase === "retrieving"
         ? {
             eyebrow: "EDGE RAG IN PROGRESS",
-            title: "선택된 Agent에게 근거와 답변을 받고 있습니다",
-            detail: "기관별 원문은 Edge에 남겨 두고, 중앙에는 안전한 요약과 근거 ID만 전달합니다.",
+            title: "Agent가 근거를 검색하고 답변을 생성 중입니다",
+            detail: "역할별 문서에서 근거를 검색하고, 허용된 근거 발췌와 출처 정보를 중앙으로 전달합니다.",
           }
         : {
             eyebrow: "CENTRAL INTEGRATION",
-            title: "중앙 모델이 근거와 응답을 통합하고 있습니다",
-            detail: `${completedCount || selectedAgents.length}개 Agent 응답의 충돌·누락·출처 연결을 검증합니다.`,
+            title: "중앙 모델이 Agent 답변을 통합 중입니다",
+            detail: `${completedCount || selectedAgents.length}개 Agent의 답변과 근거를 통합합니다.`,
           };
 
   return (
     <section className="focusShell processingFocus" aria-busy="true" aria-labelledby="processing-title">
+      <AgentTopology agents={agents} state={state} stageLabel={(stage) => agentLiveLabel(stage as LiveAgentStage)} />
       <FocusStepper activeStep={activeStep} />
       <div className={`processingHero phase-${phase}`}>
         <div className="processingSignal" aria-hidden="true"><i /><i /><b>{activeStep + 1}</b></div>
@@ -882,6 +854,11 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
       <p className="processingAnnouncement" aria-live="polite" aria-atomic="true">
         <span className="spinner dark" aria-hidden="true" />{state.message}
       </p>
+      <div className="processingControls">
+        <p>처리 단계를 실시간으로 표시합니다. 응답 시간은 질문과 대기열에 따라 달라집니다.</p>
+        <button type="button" onClick={onCancel} disabled={cancelling}>{cancelling ? "취소 확인 중…" : "요청 취소"}</button>
+      </div>
+      {cancelError && <p role="alert" className="requestPrivacy">{cancelError}</p>}
 
       {state.execution.totalCount > 0 && (
         <div className="processingWorkload" role="status" aria-label="전체 작업 처리 현황">
@@ -895,7 +872,7 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
       {phase !== "routing" && selectedAgents.length > 0 && (
         <section className="selectedAgentStage" aria-label="선택된 Agent 처리 현황">
           <header>
-            <div><span>SELECTED AGENTS</span><strong>선택된 기관만 안전하게 실행합니다</strong></div>
+            <div><span>SELECTED AGENTS</span><strong>선택된 Agent의 처리 상태</strong></div>
             <b>{completedCount} / {selectedAgents.length} 응답 완료</b>
           </header>
           <div className="selectedAgentList">
@@ -903,10 +880,10 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
               const live = state.agents[agent.id];
               const isPrimary = agent.id === primaryId || (!primaryId && agent.id === selectedAgents[0]?.id);
               const role = isPrimary
-                ? "주관기관"
+                ? "주관 역할"
                 : state.routerDecision?.required.includes(agent.id)
                   ? "필수 검토"
-                  : "지원기관";
+                  : "지원 역할";
               const finished = live.stage === "completed" || live.stage === "mapped" || live.stage === "fallback";
               const queueDetail = live.stage === "queued"
                 ? live.queuePosition
@@ -928,12 +905,12 @@ function FocusedProcessingPanel({ state }: { state: LiveRunState }) {
       {phase === "integrating" && (
         <section className="centralMergeCard" aria-label="중앙 통합 진행 상태">
           <div className="mergeMark" aria-hidden="true"><i /><i /><i /><b>CORE</b></div>
-          <div><span>AXNETCC CENTRAL MODEL</span><strong>Agent 근거를 하나의 답변으로 조정 중</strong><small>{state.core.model ?? "안전 요약·근거 ID 기반 통합"}</small></div>
+          <div><span>AXNETCC CENTRAL MODEL</span><strong>Agent 답변과 근거를 통합 중</strong><small>{state.core.model ?? "근거 발췌·근거 ID 기반 통합"}</small></div>
           <p><i />중앙 통합 중</p>
         </section>
       )}
 
-      <div className="privacyAssurance"><span aria-hidden="true">◆</span><p><strong>원문은 각 기관에 유지됩니다.</strong> 화면에는 민감 원문을 제외한 처리 상태만 표시합니다.</p></div>
+      <div className="privacyAssurance"><span aria-hidden="true">◆</span><p><strong>지원하는 공개 문서 범위에서 처리합니다.</strong> 화면에는 민감 원문을 제외한 처리 상태만 표시합니다.</p></div>
     </section>
   );
 }
@@ -942,19 +919,14 @@ function AppHeader({ health }: { health: LlmHealth | null }) {
   return (
     <header className="topbar focusTopbar">
       <Link className="brand" href="/" aria-label="MNC Flow 요청 화면">
-        <span className="brandMark" aria-hidden="true">M</span>
-        <div><strong>MNC FLOW</strong><small>Distributed AI Governance</small></div>
+        <span className="brandMark" aria-hidden="true">MNC</span>
+        <div><strong>MNC LAB</strong><small>Agent 라우팅 · 근거 검색</small></div>
       </Link>
-      <nav className="navLinks" aria-label="주요 페이지">
-        <Link className="aboutLink" href="/about">서비스 소개</Link>
-        <Link className="aboutLink" href="/evaluation">평가 결과</Link>
-      </nav>
+      <WorkspaceNav active="service" />
       <div className="networkState" role="status">
         <span aria-hidden="true" /> {!health
-          ? "Agent 연결 확인 중"
-          : health.status === "connected"
-            ? `${health.connected}/${health.total} Agent 준비됨`
-            : `${health.connected}/${health.total} Agent 연결`}
+          ? "Agent 구성 확인 중"
+          : `${health.total}개 Agent 구성 · 응답 시 상태 확인`}
       </div>
     </header>
   );
@@ -965,10 +937,32 @@ function CitationChips({ citations }: { citations: string[] }) {
   return (
     <span className="reportCitations" aria-label="연결된 RAG 근거">
       {citations.map((citation) => (
-        <b key={citation} data-evidence-id={citation}>[{citation}]</b>
+        <a key={citation} data-evidence-id={citation} href={"#" + encodeURIComponent("evidence-" + citation)}>[{citation}]</a>
       ))}
     </span>
   );
+}
+
+/** Presentation only: retain exact provider-validated text; do not imply semantic verification. */
+function GroundedAnswerContent({ text, evidenceIds }: { text: string; evidenceIds: string[] }) {
+  const generated = text.startsWith("공개 근거를 바탕으로 생성한 답변 (source-grounded generation");
+  const linkedText = (line: string) => line.split(/(\[[^\]\n]+\])/g).map((part, index) => {
+    const id = part.slice(1, -1);
+    return part.startsWith("[") && evidenceIds.includes(id)
+      ? <a key={index} className="groundedCitation" href={"#" + encodeURIComponent("evidence-" + id)}>{part}</a>
+      : part;
+  });
+  return <div className="groundedAnswer" data-testid="grounded-answer">
+    <p className="groundedMethod">{generated ? "공개 근거를 바탕으로 모델이 작성한 답변입니다. 생성된 주장에 대한 의미 검증은 완료되지 않았습니다." : "모델이 공개 문서의 근거를 선택하고 원문 발췌를 표시합니다."} 인용 연결은 답변의 적합성이나 실제 서비스의 요건 충족을 보증하지 않습니다.</p>
+    {text.split(/\n+/).filter(Boolean).map((line, index) => {
+      if (line.startsWith("요청 Q")) return <h3 key={index}>{line}</h3>;
+      if (line.startsWith("“")) return <blockquote key={index}>{linkedText(line)}</blockquote>;
+      if (line.startsWith("확인 불가 / 필요한 정보:")) return <aside key={index} className="groundedUnknown"><strong>확인 불가 · 필요한 정보</strong><p>{line.slice("확인 불가 / 필요한 정보:".length)}</p></aside>;
+      if (line.startsWith("적용 범위:")) return <aside key={index} className="groundedScope"><strong>적용 범위</strong><p>{line.slice("적용 범위:".length)}</p></aside>;
+      if (line.startsWith("판단 범위:")) return <aside key={index} className="groundedScope"><strong>판단 범위</strong><p>{line.slice("판단 범위:".length)}</p></aside>;
+      return <p key={index} className={line.startsWith("- 문서 발췌") ? "groundedSource" : undefined}>{linkedText(line)}</p>;
+    })}
+  </div>;
 }
 
 function IntegratedReportDocument({
@@ -1025,6 +1019,7 @@ function IntegratedReportDocument({
 }
 
 function AgentReportDocument({ agent }: { agent: AgentResult }) {
+  if (agent.summary.includes("model-guided extractive") || agent.summary.startsWith("공개 근거를 바탕으로 생성한 답변 (source-grounded generation")) return <article className="agentReportDocument" data-testid="agent-report"><h3>{agent.shortName} Agent · 공개 근거 기반 답변</h3><GroundedAnswerContent text={agent.summary} evidenceIds={agent.evidence.map(source => source.id)} /></article>;
   const report = agent.report;
   if (!report) {
     return (
@@ -1054,55 +1049,6 @@ function AgentReportDocument({ agent }: { agent: AgentResult }) {
   );
 }
 
-function AgentProcessingPath({ result, agents: selectedAgents }: { result: RunResult; agents: AgentResult[] }) {
-  const primaryId = result.report?.primaryAgentId ?? result.routerDecision?.primaryAgent ?? selectedAgents[0]?.id;
-  const integrationLabel = result.integration?.label ?? "Core Orchestrator";
-  const integrationModel = result.integration?.backend === "ollama"
-    ? result.integration.model ?? "Local LLM"
-    : "안전 응답 모드";
-
-  return (
-    <section className="agentProcessingPath" data-testid="agent-processing-path" aria-labelledby="agent-processing-path-title">
-      <header>
-        <div><span>RESPONSE GENERATION PATH</span><h2 id="agent-processing-path-title">Agent를 통해 응답을 생성한 과정</h2></div>
-        <p>중앙 라우터가 담당 영역을 정하고, 각 Agent의 RAG 검토보고서를 중앙에서 통합했습니다.</p>
-      </header>
-
-      {result.routerDecision && <RouterDecisionCard decision={result.routerDecision} compact />}
-
-      <div className="agentPathFlow">
-        <article className="agentPathNode routerNode">
-          <span>01 · ROUTING</span>
-          <strong>Boundary Router</strong>
-          <p>요청의 담당 영역을 분석해 주관·협력 Agent를 선택</p>
-        </article>
-        <i aria-hidden="true">→</i>
-        <div className="agentPathGroup" aria-label="응답 생성에 참여한 Agent">
-          {selectedAgents.map((agent) => {
-            const role = agent.id === primaryId
-              ? "주관 Agent"
-              : agent.executionRole === "required-reviewer"
-                ? "필수 검토 Agent"
-                : "협력 Agent";
-            return (
-              <article key={agent.id} className={agent.id === primaryId ? "primary" : "supporting"} style={{ "--agent": agent.color } as React.CSSProperties}>
-                <i aria-hidden="true">{agent.shortName.slice(0, 1)}</i>
-                <div><span>{role}</span><strong>{agent.shortName} Agent</strong><small>RAG 근거 {agent.evidence.length}건 검토 · 보고서 생성</small></div>
-              </article>
-            );
-          })}
-        </div>
-        <i aria-hidden="true">→</i>
-        <article className="agentPathNode integrationNode">
-          <span>03 · INTEGRATION</span>
-          <strong>{integrationLabel}</strong>
-          <p>{integrationModel}이 Agent 보고서와 근거를 중앙 통합</p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
 function FocusedResultPanel({
   result,
   activeAgent,
@@ -1117,71 +1063,68 @@ function FocusedResultPanel({
   const selectedAgents = result.agents.filter((agent) => agent.selected);
   const selected = selectedAgents.find((agent) => agent.id === activeAgent) ?? selectedAgents[0] ?? result.agents[0];
   const primaryId = result.report?.primaryAgentId ?? result.routerDecision?.primaryAgent;
+  const evidence = Array.from(new Map(selectedAgents.flatMap(agent => agent.evidence.map(source => [source.id, { ...source, agentName: agent.shortName }] as const))).values());
 
   return (
     <section className="focusShell finalFocus" aria-labelledby="final-result-title">
-      <FocusStepper activeStep={4} />
       <header className="finalHero">
         <div className="finalCheck" aria-hidden="true">{"\u2713"}</div>
         <div>
           <span>REQUEST COMPLETED · {result.runId}</span>
           <h1 id="final-result-title">{result.title}</h1>
-          <p>주관·협력 Agent의 RAG 검토와 중앙 통합이 완료되었습니다.</p>
+          <p>통합 답변, 근거 자료, Agent 선택 이유를 표시합니다.</p>
         </div>
         <b className={result.status}>{result.status === "ready" ? "응답 완료" : "검토 필요"}</b>
       </header>
 
-      <AgentProcessingPath result={result} agents={selectedAgents} />
-
-      {result.report
+      {result.resilience && (result.resilience.recoveredAgents > 0 || result.resilience.degraded) && (
+        <p className="requestPrivacy" role="status" data-testid="service-resilience-status">
+          {result.resilience.recoveredAgents > 0 ? `백업 Agent로 ${result.resilience.recoveredAgents}개 분야의 응답을 복구했습니다. ` : ""}
+          {result.resilience.degraded ? "일부 결과는 대체 처리되었거나 추가 검토가 필요합니다. 근거와 한계를 확인하세요." : ""}
+        </p>
+      )}
+      {result.conclusion.includes("model-guided extractive") || result.conclusion.startsWith("공개 근거를 바탕으로 생성한 답변 (source-grounded generation")
+        ? <section className="reportDocument" data-testid="integrated-report"><header><div><span>PUBLIC DOCUMENT EVIDENCE</span><h2>질문별 근거와 확인이 필요한 부분</h2></div></header><GroundedAnswerContent text={result.conclusion} evidenceIds={evidence.map(source => source.id)} /></section>
+        : result.report
         ? <IntegratedReportDocument report={result.report} agents={selectedAgents} />
         : <section className="reportDocument legacyIntegratedReport" data-testid="integrated-report"><header><div><span>INTEGRATED REVIEW</span><h2>중앙 통합 검토 의견</h2></div></header><article className="reportExecutiveSummary"><p>{result.conclusion}</p></article></section>}
 
       <section className="resultEvidence" data-testid="result-agent-evidence" aria-labelledby="evidence-title">
-        <header>
-          <div><span>AGENT REVIEW REPORTS</span><h2 id="evidence-title">Agent별 검토보고서와 RAG 근거</h2></div>
-          <p>Agent를 선택하면 주관·협력 기관의 검토보고서와 연결된 근거 문서를 확인할 수 있습니다.</p>
-        </header>
-        <div className="resultAgentTabs" role="tablist" aria-label="Agent별 근거">
-          {selectedAgents.map((agent) => {
-            const isPrimary = agent.id === primaryId;
-            return (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selected.id === agent.id}
-                className={selected.id === agent.id ? "active" : ""}
-                key={agent.id}
-                onClick={() => onAgentChange(agent.id)}
-              >
-                <i style={{ "--agent": agent.color } as React.CSSProperties}>{agent.shortName.slice(0, 1)}</i>
-                <span><strong>{agent.shortName} Agent</strong><small>{isPrimary ? "주관기관" : agent.executionRole === "required-reviewer" ? "필수 검토" : "지원기관"}</small></span>
-                <b>{agent.evidence.length}</b>
-              </button>
-            );
-          })}
+        <header><div><span>02 · REPORT EVIDENCE</span><h2 id="evidence-title">보고서의 근거 자료</h2></div><p>인용 번호를 누르면 해당 자료로 이동합니다. 아래에서 출처와 Agent별 검토 의견을 확인할 수 있습니다.</p></header>
+        <div className="reportEvidenceSources">
+          {evidence.length ? evidence.map((source) => {
+            const classification = source.classification ?? "public";
+            const referenceOnly = source.disclosure === "reference-only" || classification === "confidential";
+            return <article key={source.id} id={"evidence-" + source.id} tabIndex={-1}>
+              <div><b>[{source.id}]</b><span>{source.agentName} Agent · {classification}</span></div>
+              {source.sourceUrl && !referenceOnly ? <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title} ↗</a> : <h3>{source.title}</h3>}
+              <p>{referenceOnly ? "보호된 원문은 Edge에 보존되며 중앙에는 근거 ID만 전달되었습니다." : source.excerpt}</p>
+              <small>{source.section ? `문서 위치 ${source.section} · ` : ""}자료 기준일 {source.effectiveDate || "미상 · 원문 확인 필요"}</small>
+            </article>;
+          }) : <p className="noEvidence">표시할 수 있는 근거가 없습니다. 보고서의 검토 범위와 한계를 확인하세요.</p>}
         </div>
-        <div className="resultEvidenceBody" role="tabpanel" aria-label={`${selected.shortName} Agent 응답과 근거`}>
-          <AgentReportDocument agent={selected} />
-          <div className="evidenceList">
-            {selected.evidence.length ? selected.evidence.map((source) => {
-              const classification = source.classification ?? "public";
-              const referenceOnly = source.disclosure === "reference-only" || classification === "confidential";
-              return (
-                <article key={source.id}>
-                  <div><b>{source.id}</b><span>{classification}</span></div>
-                  {source.sourceUrl && !referenceOnly
-                    ? <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a>
-                    : <strong>{source.title}</strong>}
-                  <p>{referenceOnly ? "보호된 원문은 Edge에 보존되며 중앙에는 근거 ID만 전달되었습니다." : source.excerpt}</p>
-                </article>
-              );
-            }) : <p className="noEvidence">표시할 수 있는 근거가 없습니다. Agent 보고서의 검토 범위와 한계를 확인하세요.</p>}
+        {selected && <details className="agentReviewDetails"><summary>Agent별 세부 검토 의견 보기</summary>
+          <div className="resultAgentTabs" role="tablist" aria-label="Agent별 검토 의견">
+            {selectedAgents.map((agent) => <button type="button" role="tab" key={agent.id}
+              id={"review-tab-" + agent.id} aria-controls="agent-review-panel" aria-selected={selected.id === agent.id}
+              tabIndex={selected.id === agent.id ? 0 : -1} className={selected.id === agent.id ? "active" : ""}
+              onClick={() => onAgentChange(agent.id)} onKeyDown={(event) => {
+                const index = selectedAgents.findIndex(item => item.id === agent.id);
+                const next = event.key === "ArrowRight" ? (index + 1) % selectedAgents.length : event.key === "ArrowLeft" ? (index - 1 + selectedAgents.length) % selectedAgents.length : event.key === "Home" ? 0 : event.key === "End" ? selectedAgents.length - 1 : null;
+                if (next === null) return;
+                event.preventDefault(); onAgentChange(selectedAgents[next].id); document.getElementById("review-tab-" + selectedAgents[next].id)?.focus();
+              }}>
+              <i style={{ "--agent": agent.color } as React.CSSProperties}>{agent.shortName.slice(0, 1)}</i><span><strong>{agent.shortName} Agent</strong><small>{agent.id === primaryId ? "주관 역할" : agent.executionRole === "required-reviewer" ? "필수 검토" : "지원 역할"}</small></span>
+            </button>)}
           </div>
-        </div>
+          <div id="agent-review-panel" role="tabpanel" aria-labelledby={"review-tab-" + selected.id}><AgentReportDocument agent={selected} /></div>
+        </details>}
       </section>
 
-      <div className="resultActions"><button type="button" onClick={onNewRequest}>새 요청 시작</button><Link href={`/evaluation?run=${encodeURIComponent(result.runId)}`}>성능 평가 결과 보기</Link></div>
+      <RoutingExplanation decision={result.routerDecision} agents={selectedAgents} mode={result.mode} />
+
+      <FeedbackForm key={result.runId} runId={result.runId} />
+      <div className="resultActions"><button type="button" onClick={onNewRequest}>새 요청 시작</button></div>
     </section>
   );
 }
@@ -1193,7 +1136,8 @@ export default function Home() {
   const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState("");
-  const [commercialJudgeEnabled, setCommercialJudgeEnabled] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
   const [activeAgent, setActiveAgent] = useState("security");
   const [liveRun, dispatchLiveRun] = useReducer(liveRunReducer, createLiveRunState("proposed"));
   const streamControllerRef = useRef<AbortController | null>(null);
@@ -1204,7 +1148,7 @@ export default function Home() {
       ? "Agent 요약·근거 ID·계측값만 중앙 Supervisor로 전달됩니다."
       : boundaryMode === "centralized" || boundaryMode === "remoterag"
         ? "Edge에서 허용된 요약과 근거 ID만 중앙 통합 단계로 전달됩니다."
-        : "원문은 각 Edge에 유지되고 요약·근거 ID·계측값만 Core로 전달됩니다.";
+        : "허용된 근거 발췌·출처 정보·계측값만 중앙 통합 단계로 전달됩니다.";
 
   useEffect(() => {
     let active = true;
@@ -1325,7 +1269,28 @@ export default function Home() {
   }, [fetchRunSnapshot, pollingDelay]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
+    const linkedRun = new URLSearchParams(window.location.search).get("run");
+    let stored: string | null = null;
+    try { stored = window.localStorage.getItem(ACTIVE_RUN_STORAGE_KEY); } catch { /* URL-based results work without browser storage. */ }
+    if (linkedRun) {
+      if (!/^RUN-[A-Za-z0-9-]{3,64}$/.test(linkedRun)) {
+        queueMicrotask(() => setRunError("실행 ID 형식이 올바르지 않습니다."));
+        return;
+      }
+      const controller = new AbortController();
+      queueMicrotask(() => { if (!controller.signal.aborted) setRunning(true); });
+      void fetchRunSnapshot(linkedRun, controller.signal).then(async (snapshot) => {
+        if (controller.signal.aborted) return;
+        setMode(snapshot.mode);
+        const next = snapshot.result ?? await observeRun(linkedRun, snapshot.mode, controller);
+        if (controller.signal.aborted) return;
+        setResult(next);
+        const first = next.agents.find((agent) => agent.selected);
+        if (first) setActiveAgent(first.id);
+      }).catch((error) => { if (!controller.signal.aborted) setRunError(error instanceof Error ? error.message : "응답을 불러오지 못했습니다."); })
+        .finally(() => { if (!controller.signal.aborted) setRunning(false); });
+      return () => controller.abort();
+    }
     if (!stored) return;
 
     let parsed: { requestId?: unknown; mode?: unknown };
@@ -1377,7 +1342,7 @@ export default function Home() {
       window.clearTimeout(resumeTimer);
       controller.abort("page unmounted");
     };
-  }, [observeRun]);
+  }, [observeRun, fetchRunSnapshot]);
 
   async function executeMode(targetMode: RunResult["mode"], label?: string): Promise<RunResult> {
     streamControllerRef.current?.abort();
@@ -1401,7 +1366,7 @@ export default function Home() {
             accept: "application/json",
             "idempotency-key": `browser-${crypto.randomUUID()}`,
           },
-          body: JSON.stringify({ query, mode: targetMode, commercialJudge: commercialJudgeEnabled }),
+          body: JSON.stringify({ query, mode: "proposed", commercialJudge: false }),
           signal: controller.signal,
         });
       } catch (error) {
@@ -1425,8 +1390,11 @@ export default function Home() {
   async function run() {
     setRunning(true);
     setRunError("");
+    setCancelling(false);
+    setCancelError("");
     try {
-      const next = await executeMode(mode, modeLabels[mode]);
+      setMode("proposed");
+      const next = await executeMode("proposed", modeLabels.proposed);
       setResult(next);
       const first = next.agents.find((agent) => agent.selected);
       if (first) setActiveAgent(first.id);
@@ -1434,9 +1402,24 @@ export default function Home() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "실행에 실패했습니다.";
       dispatchLiveRun({ type: "error", message });
-      setRunError(`${message} Local LLM 연결 상태를 확인한 뒤 다시 시도해 주세요.`);
+      setRunError(message);
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function cancelRun() {
+    const requestId = activeRequestIdRef.current;
+    if (!requestId) { setCancelError("요청 접수를 확인 중입니다. 잠시 후 다시 취소해 주세요."); return; }
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const response = await fetch(`/api/runs/${encodeURIComponent(requestId)}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("CANCEL_NOT_CONFIRMED");
+      // Keep polling until the server reports a terminal state. A fetch abort is not compute termination.
+    } catch {
+      setCancelling(false);
+      setCancelError("취소 여부를 확인하지 못했습니다. 상태 확인은 계속되며 다시 취소할 수 있습니다.");
     }
   }
 
@@ -1450,14 +1433,19 @@ export default function Home() {
     setResult(null);
     setRunError("");
     setQuery("");
+    window.history.replaceState(null, "", "/");
     dispatchLiveRun({ type: "reset", mode });
   }
 
   const requestView = (
     <section className="focusShell requestFocus" aria-labelledby="request-title">
       <div className="requestIntro">
-        <h1 id="request-title">AXNetCC</h1>
-        <p>공공기관과 기업 AX를 위한<br /><strong>분산형 Multi-Agent RAG</strong> 및<br /><strong lang="en">Security-Aware Evidence Acquisition</strong><br />연구 구현</p>
+        <span className="serviceEyebrow">질문 입력</span>
+        <h1 id="request-title">MNC FLOW</h1>
+        <p>질문을 입력하면 Agent를 선택합니다.<br />선택된 Agent가 <strong>근거를 검색</strong>하고 중앙에서 답변을 통합합니다.</p>
+        <p className="serviceScope">등록된 공개 문서에서 근거를 검색합니다. 비공개 정보와 개인정보는 입력하지 마세요.</p>
+        <ul className="serviceRoleList" aria-label="지원하는 8개 업무 역할">{agents.map(agent => <li key={agent.id}>{agent.shortName}</li>)}</ul>
+        <ol className="serviceSteps"><li>질문 입력</li><li>Agent 선택·근거 검색·답변 통합</li><li>답변과 출처 확인</li></ol>
       </div>
       <form className="requestComposer" onSubmit={(event) => { event.preventDefault(); void run(); }}>
         <label htmlFor="work-request"><span>업무 요청</span><small>검토할 배경과 원하는 결과를 함께 적어 주세요.</small></label>
@@ -1470,41 +1458,10 @@ export default function Home() {
         />
         <div className="requestExamples" aria-label="요청 예시">
           {exampleRequests.map((example, index) => (
-            <button type="button" key={example} onClick={() => setQuery(example)}>예시 {index + 1}</button>
+            <button type="button" key={example} title={example} onClick={() => { setQuery(example); document.getElementById("work-request")?.focus(); }}>예시 {index + 1}</button>
           ))}
         </div>
-        <details className="requestOptions">
-          <summary><span><strong>실행 옵션</strong><small>기본값은 동적 Agent 선택 방식입니다.</small></span><b>설정</b></summary>
-          <div>
-            <label>실행 방식</label>
-            <div className="requestModeGrid" role="group" aria-label="실행 방식">
-              {[
-                ["proposed", "제안 방식", "의미 기반 동적 선택"],
-                ["managed", "Managed", "중앙 Supervisor 통합"],
-                ["parallel", "병렬 방식", "전체 Agent 호출"],
-                ["centralized", "중앙집중형", "중앙에서 전체 처리"],
-              ].map(([id, label, detail]) => (
-                <button
-                  type="button"
-                  key={id}
-                  aria-pressed={mode === id}
-                  className={mode === id ? "active" : ""}
-                  onClick={() => setMode(id as RunResult["mode"])}
-                >
-                  <strong>{label}</strong><small>{detail}</small>
-                </button>
-              ))}
-            </div>
-            <label className="judgeToggle compactToggle">
-              <input
-                type="checkbox"
-                checked={commercialJudgeEnabled}
-                onChange={(event) => setCommercialJudgeEnabled(event.target.checked)}
-              />
-              <span><strong>상용 LLM 전문가 평가</strong><small>외부 평가 API로 안전한 평가 payload가 전달됩니다.</small></span>
-            </label>
-          </div>
-        </details>
+
         <button className="primaryRequestButton" type="submit" disabled={!query.trim()}>
           요청 처리 시작 <span aria-hidden="true">→</span>
         </button>
@@ -1521,8 +1478,8 @@ export default function Home() {
       <h1 id="error-title">요청을 처리하지 못했습니다</h1>
       <p>{runError}</p>
       <div>
-        <button type="button" onClick={() => void run()}>다시 시도</button>
-        <button type="button" className="secondary" onClick={startNewRequest}>요청 수정</button>
+        <button type="button" onClick={() => query.trim() ? void run() : window.location.reload()}>다시 시도</button>
+        <button type="button" className="secondary" onClick={startNewRequest}>{query.trim() ? "요청 수정" : "새 요청 작성"}</button>
       </div>
     </section>
   );
@@ -1533,14 +1490,14 @@ export default function Home() {
         <AppHeader health={llmHealth} />
         <div className="focusViewport">
           {running
-            ? <FocusedProcessingPanel state={liveRun} />
+            ? <FocusedProcessingPanel state={liveRun} onCancel={() => void cancelRun()} cancelling={cancelling} cancelError={cancelError} />
             : runError
               ? errorView
               : result
                 ? <FocusedResultPanel result={result} activeAgent={activeAgent} onAgentChange={setActiveAgent} onNewRequest={startNewRequest} />
                 : requestView}
         </div>
-        <footer className="focusFooter"><span>MNC Lab. · Korea University</span><span>KOREN 기반 분산 AI Agent 협력 거버넌스 플랫폼</span></footer>
+        <footer className="focusFooter"><span>MNC LAB</span><span>Agent 라우팅 · 근거 검색 · 답변 통합</span></footer>
       </div>
     </main>
   );

@@ -129,3 +129,24 @@ test("report generation sends every supplied RAG item to Ollama", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("demo strict integrated report preserves citation-free insufficiency with public references or zero evidence", () => {
+  for (const evidenceIds of [["PUB-1"], []]) {
+    const agents = [{ id: "tech", evidenceIds, report: buildAgentEvidenceReport({ agentId: "tech", agentName: "Tech", responsibility: "public review", executionRole: "primary", summary: "Agent public finding", evidenceIds }) }];
+    const report = buildIntegratedEvidenceReport({ title: "Public synthesis", conclusion: "Insufficient public evidence [CONF-1]", primaryAgentId: "tech", agents, preserveConclusionCitations: true });
+    assert.equal(report.sections[0].content, "Insufficient public evidence");
+    assert.deepEqual(report.sections[0].citations, []);
+    assert.equal(report.executiveSummary, "Insufficient public evidence");
+    assert.doesNotMatch(report.sections[0].content, /PUB-1|CONF-1/);
+    const ordinary = buildIntegratedEvidenceReport({ title: "Ordinary report", conclusion: "Original conclusion", primaryAgentId: "tech", agents });
+    assert.deepEqual(ordinary.sections[0].citations, evidenceIds);
+    if (evidenceIds.length) assert.match(ordinary.sections[0].content, /\[PUB-1\]/);
+  }
+});
+test("demo strict report retains valid source citations and removes excluded IDs without remapping", () => {
+  const evidenceIds = ["PUB-1"];
+  const report = buildIntegratedEvidenceReport({ title: "Public synthesis", conclusion: "Supported point [PUB-1]; excluded [INT-1]", primaryAgentId: "tech", preserveConclusionCitations: true,
+    agents: [{ id: "tech", evidenceIds, report: buildAgentEvidenceReport({ agentId: "tech", agentName: "Tech", responsibility: "public review", executionRole: "primary", summary: "Finding [PUB-1]", evidenceIds }) }] });
+  assert.deepEqual(report.sections[0].citations, ["PUB-1"]);
+  assert.equal(report.sections[0].content, "Supported point [PUB-1]; excluded");
+});

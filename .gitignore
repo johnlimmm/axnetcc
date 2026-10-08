@@ -48,6 +48,9 @@ next-env.d.ts
 public/*.js
 public/index-*.css
 /.local-edge/
+/.local-feedback/
+/.local-monitor/
+/.omx/
 /corpus/raw/
 /corpus/processed/
 /corpus/index/

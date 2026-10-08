@@ -88,6 +88,7 @@ function reportPriority(index: number): ReportPriority {
  * the same Agent actually retrieved.
  */
 export function buildAgentEvidenceReport(input: {
+  grounded?: boolean;
   agentId: AgentId;
   agentName: string;
   responsibility: string;
@@ -97,6 +98,13 @@ export function buildAgentEvidenceReport(input: {
   evidenceTitles?: Array<{ id: string; title: string }>;
 }): AgentEvidenceReport {
   const evidenceIds = unique(input.evidenceIds);
+  if (input.grounded) {
+    const content = cleanUnsupportedCitations(input.summary, evidenceIds);
+    const citations = citationsIn(content, evidenceIds);
+    return { version: "1", title: `${input.agentName} public evidence`, executiveSummary: content,
+      findings: [{ title: "Public-source answer", content, citations }],
+      recommendations: [], limitations: ["Source citation membership does not establish semantic support or organizational compliance."], citationIds: citations };
+  }
   const rawSentences = sentences(input.summary);
   const usefulSentences = rawSentences.length ? rawSentences : ["확인 가능한 검토 의견이 없습니다."];
   const findings = usefulSentences.slice(0, 3).map((sentence, index) => {
@@ -143,6 +151,8 @@ export function buildAgentEvidenceReport(input: {
 }
 
 export function buildIntegratedEvidenceReport(input: {
+  grounded?: boolean;
+  preserveConclusionCitations?: boolean;
   title: string;
   conclusion: string;
   primaryAgentId: AgentId;
@@ -174,8 +184,12 @@ export function buildIntegratedEvidenceReport(input: {
   const conclusionCitations = citationsIn(input.conclusion, allEvidenceIds);
   sections.unshift({
     title: "중앙 통합 결론",
-    content: withCitation(input.conclusion, conclusionCitations.length ? conclusionCitations : allEvidenceIds.slice(0, 1)),
-    citations: conclusionCitations.length ? conclusionCitations : allEvidenceIds.slice(0, 1),
+    content: input.preserveConclusionCitations
+      ? cleanUnsupportedCitations(input.conclusion, allEvidenceIds)
+      : withCitation(input.conclusion, conclusionCitations.length ? conclusionCitations : allEvidenceIds.slice(0, 1)),
+    citations: input.preserveConclusionCitations
+      ? conclusionCitations
+      : conclusionCitations.length ? conclusionCitations : allEvidenceIds.slice(0, 1),
     sourceAgentIds: participatingAgentIds,
   });
   const recommendations = input.agents.flatMap((agent) =>
@@ -191,7 +205,7 @@ export function buildIntegratedEvidenceReport(input: {
     primaryAgentId: input.primaryAgentId,
     participatingAgentIds,
     sections,
-    recommendations,
+    recommendations: input.grounded ? [] : recommendations,
     limitations: unique(input.agents.flatMap((agent) => agent.report.limitations)),
     references: [...evidenceOwner].map(([evidenceId, agentId]) => ({ evidenceId, agentId })),
   };

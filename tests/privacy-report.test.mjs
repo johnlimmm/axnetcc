@@ -28,8 +28,7 @@ async function renderEvaluationPage() {
     workerEnvironment,
     workerContext,
   );
-  assert.equal(response.status, 200);
-  return response.text();
+  return response;
 }
 
 function breakdown(overrides = {}) {
@@ -297,89 +296,22 @@ test("repeat report is either estimate-free pending or a complete 3×5×5 v2 rep
   }
 });
 
-test("evaluation page reads versioned reports instead of hardcoded result arrays", async () => {
-  const source = await readFile(new URL("app/evaluation/page.tsx", root), "utf8");
-  assert.match(source, /latest-report-v2\.json/);
-  assert.match(source, /expanded-report-v2\.json/);
-  assert.match(source, /repeat-benchmark-report-v2\.json/);
-  assert.match(source, /LatestRunEvaluation/);
-  assert.match(source, /offline-performance-table/);
-  assert.match(source, /expanded-safety-table/);
-  assert.match(source, /repeat-detail-table/);
-  for (const field of [
-    "citationValidity",
-    "forbiddenOutputPassRate",
-    "averageLatencyMs",
-    "averageBoundaryBytes",
-    "ttftMs",
-    "tpotMs",
-  ]) {
-    assert.ok(source.includes(field), `evaluation page must render ${field} from the versioned reports`);
-  }
-  assert.doesNotMatch(source, /const\s+(?:fixedResults|results)\s*=/);
-  assert.doesNotMatch(source, /93\.8%|86\.6%|48\.2%/);
+test("independent monitor reads measured v2 benchmarks without inventing missing Judge scores", async () => {
+  const { readBenchmarks } = await import("../monitor/data.mjs");
+  const reports = await readBenchmarks();
+  const pilot = JSON.parse(await readFile(new URL("data/evaluation/latest-report-v2.json", root), "utf8"));
+  const expanded = JSON.parse(await readFile(new URL("data/evaluation/expanded-report-v2.json", root), "utf8"));
+  const repeat = JSON.parse(await readFile(new URL("data/evaluation/repeat-benchmark-report-v2.json", root), "utf8"));
+  assert.equal(reports[0].completedRuns, pilot.completedRuns);
+  assert.equal(reports[0].rows.find(row => row.mode === "proposed").privacyRisk, pilot.modes.proposed.averagePrivacyRiskScore);
+  assert.equal(reports[1].rows.find(row => row.mode === "proposed").quality, expanded.summaries.proposed.objectiveQuality);
+  assert.equal(reports[2].status, repeat.status);
+  assert.equal(reports[2].rows.find(row => row.mode === "proposed").quality, repeat.summary.find(row => row.mode === "proposed").overallMean);
+  assert.equal(reports[2].rows.find(row => row.mode === "proposed").ttftMs, repeat.summary.find(row => row.mode === "proposed").ttftMs);
 });
 
-test("latest run evaluation reads one public run snapshot and separates all execution diagnostics", async () => {
-  const source = await readFile(new URL("app/evaluation/LatestRunEvaluation.tsx", root), "utf8");
-  assert.match(source, /new URLSearchParams\(window\.location\.search\)\.get\("run"\)/);
-  assert.match(source, /fetch\(`\/api\/runs\/\$\{encodeURIComponent\(runId\)\}`/);
-  assert.match(source, /cache:\s*"no-store"/);
-  assert.match(source, /setTimeout\(\(\) => void load\(\), 1_000\)/);
-
-  for (const field of [
-    "sensitiveTransmissionRatio",
-    "agentSelectionRatio",
-    "originalDisclosureRatio",
-    "qualityScore",
-    "citationCoverage",
-    "citationValidity",
-    "citationRecall",
-    "calls",
-    "tokens",
-    "queueWaitMs",
-    "inferenceMs",
-    "boundaryBytes",
-    "rankedCandidates",
-    "evidencePlan",
-    "coveredConceptIds",
-    "missingConceptIds",
-    "checks",
-    "timeline",
-  ]) {
-    assert.ok(source.includes(field), `latest run evaluation must render ${field}`);
-  }
-
-  assert.match(source, /return finite\(value\)[\s\S]*: "—"/);
-  assert.match(source, /값이 없는 항목은 추정하지 않고 —로 표시/);
-});
-
-test("built evaluation page renders status and measured values from the v2 reports", async () => {
-  const [offline, expanded, repeat, html] = await Promise.all([
-    readFile(new URL("data/evaluation/latest-report-v2.json", root), "utf8").then(JSON.parse),
-    readFile(new URL("data/evaluation/expanded-report-v2.json", root), "utf8").then(JSON.parse),
-    readFile(new URL("data/evaluation/repeat-benchmark-report-v2.json", root), "utf8").then(JSON.parse),
-    renderEvaluationPage(),
-  ]);
-  assert.match(html, /VERSIONED PERFORMANCE EVALUATION/);
-  assert.match(html, /최근 실행 성능 진단/);
-  assert.match(html, /파일럿 모드별 평가/);
-  assert.match(html, /40문항 × 5모드 고정 정답 평가/);
-  assert.match(html, /적용 안정성 반복 벤치마크/);
-  assert.match(html, /품질·인용·출력보호·운영 성능/);
-  assert.match(html, /Judge·생성 지연 상세/);
-  assert.ok(html.includes(String(offline.completedRuns)));
-  if (expanded.status === "measured") {
-    assert.ok(html.includes(expanded.summaries.proposed.objectiveQuality.toFixed(1)));
-    assert.ok(html.includes(expanded.summaries.proposed.averagePrivacyRiskScore.toFixed(1)));
-  } else {
-    assert.match(html, /재실행 대기/);
-  }
-  if (repeat.status !== "pending-replay") {
-    const proposed = repeat.summary.find((item) => item.mode === "proposed");
-    assert.ok(proposed);
-    assert.ok(html.includes(proposed.averagePrivacyRiskScore.toFixed(1)));
-  } else {
-    assert.match(html, /반복 평가[\s\S]*재실행 대기/);
-  }
+test("legacy evaluation route moves to the independent monitor origin", async () => {
+  const response = await renderEvaluationPage();
+  assert.ok([302, 303, 307, 308].includes(response.status));
+  assert.equal(response.headers.get("location"), "http://localhost:3200/evaluation");
 });

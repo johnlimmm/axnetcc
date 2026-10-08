@@ -9,6 +9,7 @@
     "dev": "vinext dev",
     "build": "node scripts/sync-public-css.mjs && vinext build && node scripts/sync-built-assets.mjs && vinext build",
     "start": "vinext start",
+    "monitor": "node --experimental-strip-types monitor/server.mjs",
     "test": "npm run build && npm run test:all",
     "test:all": "node scripts/run-all-tests.mjs",
     "test:repeat": "node scripts/run-all-tests.mjs",

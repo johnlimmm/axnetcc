@@ -1,3 +1,4 @@
+import { groundedAnswersEnabled, groundedUnavailable } from "./grounded-answer";
 import { agentProfiles, type AgentId, type Classification, type KnowledgeChunk } from "./agent-registry";
 import {
   EDGE_AGENT_CONTRACT_VERSION,
@@ -11,8 +12,17 @@ import { sanitizeSensitiveText } from "./data-loss-prevention";
 import { planEvidenceAtEdge } from "./evidence-acquisition";
 import { resolveConceptsForAgent } from "./boundary-router";
 import { knowledge } from "./knowledge";
-import { generateLocalAnswer } from "./local-llm";
-import { ragStats, searchRag } from "./rag";
+import { generateLocalAnswer, type LocalLlmMetrics } from "./local-llm";
+import { ragStats, searchRag, searchPublicRag } from "./rag";
+
+export class EdgeInferenceError extends Error {
+  readonly code: "inference-unavailable" | "inference-invalid";
+  readonly usage: Pick<LocalLlmMetrics, "model" | "promptTokens" | "completionTokens" | "providerFinalObserved"> | null;
+  constructor(code: "inference-unavailable" | "inference-invalid", usage: LocalLlmMetrics | null = null) {
+    super(code); this.code = code;
+    this.usage = usage ? { providerFinalObserved: usage.providerFinalObserved === true, model: usage.model, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens } : null;
+  }
+}
 
 const POLICY_VERSION = "edge-rag-v1";
 const classificationRank: Record<Classification, number> = {
@@ -51,6 +61,9 @@ function maxClassification(classes: Classification[]) {
 
 function effectiveClasses(request: EdgeAgentRequest) {
   const allowed = agentProfiles[request.agentId].allowedClasses;
+  if (process.env.EVALUATION_PUBLIC_EVIDENCE_ONLY === "true") {
+    return allowed.filter((item) => item === "public");
+  }
   if (!request.requestedMaxClassification) return [...allowed];
   const ceiling = classificationRank[request.requestedMaxClassification];
   return allowed.filter((item) => classificationRank[item] <= ceiling);
@@ -60,6 +73,15 @@ function retrieveAtEdge(request: EdgeAgentRequest) {
   const profile = agentProfiles[request.agentId];
   const ragAgents = profile.ragAgents as readonly AgentId[];
   const allowedClasses = effectiveClasses(request);
+  if (groundedAnswersEnabled()) {
+    const ranked = allowedClasses.includes("public") ? searchPublicRag(request.minimalQuery, [...ragAgents], request.limits.topK).map(({ chunk, score, passage }) => ({
+      score, chunk: { id: chunk.id, agent: chunk.agent, title: chunk.title, section: chunk.section,
+        text: passage.text, sourceType: "public" as const, classification: "public" as const,
+        effectiveDate: chunk.publishedAt || "unknown", sourceUrl: chunk.sourceUrl,
+        sourceSha256: chunk.sourceSha256, licenseReview: chunk.licenseReview, tags: ["public-passage"] },
+    })) : [];
+    return { ranked, allowedClasses, blockedCount: 0 };
+  }
   const scopedInternal = knowledge.filter((chunk) => ragAgents.includes(chunk.agent));
   const blockedCount = scopedInternal.filter(
     (chunk) => !allowedClasses.includes(chunk.classification),
@@ -126,7 +148,7 @@ function evidenceForEgress(ranked: RankedChunk[]) {
     }
     const title = sanitizeSensitiveText(chunk.title);
     const section = sanitizeSensitiveText(chunk.section);
-    const excerpt = sanitizeSensitiveText(chunk.text.slice(0, 480));
+    const excerpt = sanitizeSensitiveText(groundedAnswersEnabled() ? chunk.text : chunk.text.slice(0, 480));
     filteredFields.push(...title.filteredFields, ...section.filteredFields, ...excerpt.filteredFields);
     return {
       referenceId: chunk.id,
@@ -136,6 +158,8 @@ function evidenceForEgress(ranked: RankedChunk[]) {
       section: section.sanitized.trim() || "본문",
       excerpt: excerpt.sanitized.trim() || "공개 근거의 안전한 발췌를 표시할 수 없습니다.",
       ...(chunk.sourceUrl ? { sourceUrl: chunk.sourceUrl } : {}),
+      ...(groundedAnswersEnabled() ? { excerptMode: "public-passage" as const,
+        publishedAt: chunk.effectiveDate, sourceSha256: chunk.sourceSha256, licenseReview: chunk.licenseReview } : {}),
       retrievalScore: Math.max(0.01, score),
     };
   });
@@ -201,13 +225,17 @@ export async function executeEdgeAgentLocally(
         })
       : undefined;
     const rawEvidence = ranked.map((item) => item.chunk);
+    const egress = evidenceForEgress(ranked);
+    const modelEvidence = groundedAnswersEnabled() ? egress.evidence.flatMap(item => item.disclosure === "excerpt" ? [{
+      ...rawEvidence.find(chunk => chunk.id === item.referenceId)!, title: item.title, section: item.section, text: item.excerpt,
+    }] : []) : rawEvidence;
     const sourceBytesProcessed = new TextEncoder().encode(JSON.stringify(rawEvidence)).length;
     const evidenceIds = rawEvidence.map((item) => item.id);
     const returnedClasses = [...new Set(rawEvidence.map((item) => item.classification))];
     const highest = returnedClasses.length ? maxClassification(returnedClasses) : "public";
     const hasConfidentialEvidence = highest === "confidential";
-    const fallback = deterministicSummary(request.agentId, ranked);
-    const generated = request.purpose === "benchmark" || hasConfidentialEvidence
+    const fallback = groundedAnswersEnabled() ? groundedUnavailable() : deterministicSummary(request.agentId, ranked);
+    const generated = request.purpose === "benchmark" || hasConfidentialEvidence || (!ranked.length && (groundedAnswersEnabled() || process.env.DEMO_REQUIRE_LLM === "true"))
       ? {
           text: fallback,
           metrics: {
@@ -231,19 +259,24 @@ export async function executeEdgeAgentLocally(
           agentName: agentProfiles[request.agentId].name,
           responsibility: agentProfiles[request.agentId].responsibility,
           query: request.minimalQuery,
-          evidence: rawEvidence,
+          evidence: modelEvidence,
           fallback,
           outputFormat: "agent-report",
           signal: deadline.signal,
         });
 
+    const inferenceMetrics = generated.metrics as LocalLlmMetrics;
+    if (process.env.DEMO_REQUIRE_LLM === "true" && ranked.length &&
+        request.purpose !== "benchmark" && !hasConfidentialEvidence && inferenceMetrics.backend !== "ollama") {
+      throw new EdgeInferenceError(inferenceMetrics.failureCode === "connection" || inferenceMetrics.failureCode === "timeout"
+        ? "inference-unavailable" : "inference-invalid", inferenceMetrics);
+    }
     const restrictedSummary = hasConfidentialEvidence
       ? `판단: ${highest} 등급 근거가 확인되었습니다. 세부 원문은 Edge에 보존되며 권한 있는 검토가 필요합니다. ${evidenceIds.map((id) => `[${id}]`).join(" ")}`
       : generated.text;
     const sanitizedAnswer = sanitizeSensitiveText(
-      enforceCitations(restrictedSummary, evidenceIds),
+      groundedAnswersEnabled() ? restrictedSummary : enforceCitations(restrictedSummary, evidenceIds),
     );
-    const egress = evidenceForEgress(ranked);
     const now = new Date().toISOString();
     const baseResponse: EdgeAgentResponse = {
       version: EDGE_AGENT_CONTRACT_VERSION,
@@ -255,7 +288,9 @@ export async function executeEdgeAgentLocally(
       answer: {
         text: sanitizedAnswer.sanitized || "허용된 범위에서 반환할 수 있는 답변이 없습니다.",
         classification: highest,
-        citations: evidenceIds,
+        citations: groundedAnswersEnabled()
+          ? evidenceIds.filter(id => sanitizedAnswer.sanitized.includes(`[${id}]`))
+          : evidenceIds,
       },
       evidence: egress.evidence,
       ...(evidencePlan ? { evidencePlan } : {}),
@@ -286,6 +321,7 @@ export async function executeEdgeAgentLocally(
         latencyMs: Math.round(performance.now() - startedAt),
         ttftMs: generated.metrics.ttftMs,
         tpotMs: generated.metrics.tpotMs,
+        tokensPerSecond: generated.metrics.tokensPerSecond,
         promptTokens: generated.metrics.promptTokens,
         completionTokens: generated.metrics.completionTokens,
         corpusChunks: ragStats.chunks,
@@ -305,6 +341,11 @@ export async function executeEdgeAgentLocally(
     };
     updatePayloadSize(baseResponse);
     return validateEdgeAgentResponse(baseResponse);
+  } catch (error) {
+    if (process.env.DEMO_REQUIRE_LLM === "true" && !signal?.aborted && deadline.signal.aborted) {
+      throw new EdgeInferenceError("inference-unavailable");
+    }
+    throw error;
   } finally {
     deadline.dispose();
   }

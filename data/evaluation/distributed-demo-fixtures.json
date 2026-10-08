@@ -1,0 +1,8 @@
+{
+  "version": "1", "classification": "public-synthetic", "seed": 20260923,
+  "fixtures": [
+    { "id": "public-architecture", "query": "공공부문 AI 도입 가이드(2026.5.)에서 RAG 도구의 파싱, 청킹, 임베딩, 검색 API 구성은 어떻게 설명하나요? 제공된 공개 근거에 있는 내용만 요약해 주세요.", "targetAgent": "tech", "expectedTerms": ["Parsing", "청킹", "임베딩"], "semanticRubric": { "supportedFactsOnly": true, "noUnsupportedNumbers": true, "noUnsupportedBackupGuarantees": true, "exactSourceCitationsRequired": true } },
+    { "id": "public-security", "query": "공공기관 AX 사업에서 접근 통제와 개인정보 최소 전송, 감사 로그를 적용하는 기술 아키텍처를 공개 근거로 설명해 주세요.", "targetAgent": "security", "expectedTerms": ["접근", "개인정보", "감사"] },
+    { "id": "public-data", "query": "공공기관 데이터 표준화와 품질 관리 및 분산 RAG 검색 API 연계 방안을 공개 근거로 설명해 주세요.", "targetAgent": "data", "expectedTerms": ["데이터", "품질", "RAG"] }
+  ]
+}

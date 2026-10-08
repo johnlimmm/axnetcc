@@ -4,7 +4,8 @@ import {
   validateEdgeAgentResponse,
 } from "../../../../lib/edge-agent-contract";
 import { projectEdgeAgentResponseForCore } from "../../../../lib/edge-core-contract";
-import { executeEdgeAgentLocally } from "../../../../lib/edge-agent-service";
+import { EdgeInferenceError, executeEdgeAgentLocally } from "../../../../lib/edge-agent-service";
+import { executionLog } from "../../../../lib/execution-log";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,15 @@ function isAgentId(value: string | null | undefined): value is AgentId {
 function isLoopback(hostname: string) {
   return hostname === "127.0.0.1" || hostname === "localhost" ||
     hostname === "::1" || hostname === "[::1]";
+}
+
+function replicaHeaders() {
+  return Object.fromEntries([
+    ["x-edge-node-id", process.env.EDGE_NODE_ID],
+    ["x-edge-replica-id", process.env.EDGE_REPLICA_ID],
+    ["x-edge-corpus-version", process.env.EDGE_CORPUS_VERSION],
+    ["x-edge-model-version", process.env.EDGE_MODEL_VERSION],
+  ].filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0));
 }
 
 function errorResponse(code: string, status: number) {
@@ -148,20 +158,32 @@ export async function POST(request: Request) {
     return errorResponse("EDGE_AGENT_ID_MISMATCH", 403);
   }
 
+  const logStartedAt = Date.now();
+  const logFields = { requestId: edgeRequest.traceId ?? edgeRequest.requestId, agentId: edgeRequest.agentId,
+    attemptId: request.headers.get("x-edge-attempt-id") ?? undefined,
+    nodeId: process.env.EDGE_NODE_ID, replicaId: process.env.EDGE_REPLICA_ID };
+  executionLog("edge-received", logFields);
   try {
     const localResult = await executeEdgeAgentLocally(edgeRequest, request.signal);
     localResult.boundary.transport = "http";
     const internalResult = validateEdgeAgentResponse(localResult);
     const result = projectEdgeAgentResponseForCore(internalResult, "http");
     const body = JSON.stringify(result);
+    executionLog("edge-completed", { ...logFields, status: "succeeded", elapsedMs: Date.now() - logStartedAt });
     return new Response(body, {
       status: 200,
       headers: {
         ...responseHeaders,
+        ...replicaHeaders(),
         "content-type": "application/json; charset=utf-8",
       },
     });
-  } catch {
+  } catch (error) {
+    executionLog("edge-failed", { ...logFields, status: request.signal.aborted ? "cancelled" : "failed", elapsedMs: Date.now() - logStartedAt });
+    if (error instanceof EdgeInferenceError) return Response.json({
+      error: error.code, code: error.code, requestId: edgeRequest.requestId, agentId: edgeRequest.agentId,
+      ...(error.usage ? { usage: error.usage } : {}),
+    }, { status: 503, headers: { ...responseHeaders, ...replicaHeaders() } });
     return errorResponse(request.signal.aborted ? "EDGE_REQUEST_ABORTED" : "EDGE_EXECUTION_FAILED", 500);
   }
 }

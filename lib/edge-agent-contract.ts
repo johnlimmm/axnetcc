@@ -42,6 +42,10 @@ export type PublicEvidenceReference = {
   title: string;
   section: string;
   excerpt: string;
+  excerptMode?: "public-passage";
+  publishedAt?: string;
+  sourceSha256?: string;
+  licenseReview?: string;
   sourceUrl?: string;
   retrievalScore: number;
 };
@@ -74,6 +78,7 @@ export type EdgeAgentMetrics = {
   latencyMs: number;
   ttftMs: number | null;
   tpotMs: number | null;
+  tokensPerSecond?: number | null;
   promptTokens: number | null;
   completionTokens: number | null;
   corpusChunks: number;
@@ -326,13 +331,17 @@ function validateEvidenceReference(input: unknown, path: string): EdgeEvidenceRe
       disclosure: asLiteral(evidence.disclosure, "excerpt", `${path}.disclosure`),
       title: asString(evidence.title, `${path}.title`, 512),
       section: asString(evidence.section, `${path}.section`, 512),
-      excerpt: asString(evidence.excerpt, `${path}.excerpt`, 500),
+      excerpt: asString(evidence.excerpt, `${path}.excerpt`, evidence.excerptMode === "public-passage" ? 1200 : 500),
+        ...(evidence.excerptMode === undefined ? {} : { excerptMode: asLiteral(evidence.excerptMode, "public-passage", `${path}.excerptMode`) }),
+        ...(evidence.publishedAt === undefined ? {} : { publishedAt: asString(evidence.publishedAt, `${path}.publishedAt`, 100) }),
+        ...(evidence.sourceSha256 === undefined ? {} : { sourceSha256: asString(evidence.sourceSha256, `${path}.sourceSha256`, 64) }),
+        ...(evidence.licenseReview === undefined ? {} : { licenseReview: asString(evidence.licenseReview, `${path}.licenseReview`, 100) }),
       ...(evidence.sourceUrl === undefined ? {} : { sourceUrl: asHttpUrl(evidence.sourceUrl, `${path}.sourceUrl`) }),
       retrievalScore: asFiniteNumber(evidence.retrievalScore, `${path}.retrievalScore`),
     };
   }
 
-  for (const forbidden of ["title", "section", "excerpt", "sourceUrl", "retrievalScore", "text", "rawText"]) {
+  for (const forbidden of ["title", "section", "excerpt", "excerptMode", "publishedAt", "sourceSha256", "licenseReview", "sourceUrl", "retrievalScore", "text", "rawText"]) {
     if (hasOwn(evidence, forbidden)) {
       throw new EdgeContractValidationError(
         `${path}.${forbidden}`,
@@ -623,6 +632,9 @@ export function validateEdgeAgentResponse(input: unknown): EdgeAgentResponse {
       latencyMs: asInteger(metricsInput.latencyMs, "response.metrics.latencyMs"),
       ttftMs: asNullableFiniteNumber(metricsInput.ttftMs, "response.metrics.ttftMs"),
       tpotMs: asNullableFiniteNumber(metricsInput.tpotMs, "response.metrics.tpotMs"),
+      ...(metricsInput.tokensPerSecond === undefined ? {} : {
+        tokensPerSecond: asNullableFiniteNumber(metricsInput.tokensPerSecond, "response.metrics.tokensPerSecond"),
+      }),
       promptTokens: asNullableFiniteNumber(metricsInput.promptTokens, "response.metrics.promptTokens"),
       completionTokens: asNullableFiniteNumber(metricsInput.completionTokens, "response.metrics.completionTokens"),
       corpusChunks: asInteger(metricsInput.corpusChunks, "response.metrics.corpusChunks"),

@@ -1,12 +1,15 @@
 /** Cloudflare Worker entry point for MNC FLOW. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { handleFeedbackRequest } from "../lib/feedback";
+import { databaseFeedbackStore, type FeedbackDatabase } from "../lib/feedback-store";
 
 interface Env {
   ASSETS: {
     fetch(input: Request | string | URL, init?: RequestInit): Promise<Response>;
   };
   DB: unknown;
+  FEEDBACK_DB?: FeedbackDatabase;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -30,6 +33,17 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/feedback" && request.method !== "POST") {
+      return new Response(null, { status: 405, headers: { allow: "POST", "cache-control": "no-store" } });
+    }
+
+    if (url.pathname === "/api/feedback" && env?.FEEDBACK_DB) {
+      return handleFeedbackRequest(request, databaseFeedbackStore(env.FEEDBACK_DB));
+    }
+    if (url.pathname === "/api/feedback" && typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers") {
+      return Response.json({ error: "FEEDBACK_STORAGE_UNAVAILABLE" }, { status: 503, headers: { "cache-control": "no-store" } });
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MNC Monitor · 운영 모니터링</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/feedback.css"><script type="module" src="/app.js"></script></head>
+<body>
+  <aside class="sidebar">
+    <a class="brand labWordmark" href="/" aria-label="MNC Lab 모니터링"><span><strong>MNC</strong> <b>LAB</b><small>AXNetCC · MONITOR</small></span></a>
+    <div class="navGroup">WORKSPACE</div>
+    <nav aria-label="운영 콘솔"><a href="/" data-page="overview"><span>▥</span>서비스 모니터링</a><a href="/evaluation" data-page="evaluation"><span>◈</span>실행 평가</a><a href="/runs" data-page="runs"><span>≡</span>실행 기록</a><a href="/implementation" data-page="implementation"><span>◇</span>구현 현황</a><a href="/feedback" data-page="feedback"><span>♡</span>사용자 피드백</a></nav>
+    <section class="collectorCard"><span class="dot" id="collector-dot"></span><strong id="collector-label">수집기 연결 중</strong><p>브라우저와 독립적으로<br>서버에서 지표를 수집합니다.</p><small id="collector-interval">5초 수집 · 30일 보관</small></section>
+    <a id="service-link" class="externalLink" target="_blank" rel="noopener noreferrer">응답 서비스 열기 ↗</a>
+    <div class="sidebarFooter">MNC Lab. / AXNetCC</div>
+  </aside>
+  <main>
+    <header class="topbar"><span>OBSERVABILITY <b>/</b> CORE SERVICE</span><div><span class="connection" id="connection">확인 중</span><time id="last-update">아직 수집하지 않음</time></div></header>
+    <div class="workspace">
+      <div class="pageHeading"><div><span class="eyebrow">MNC FLOW · TELEMETRY</span><h1 id="page-title">서비스 모니터링</h1><p id="page-description">별도 수집기가 기록한 실행 성능과 서비스 상태입니다.</p></div><a id="export" class="button secondary" href="/api/export.csv">최근 200건 CSV ↓</a></div>
+      <section class="filters" aria-label="모니터링 필터"><div><label>기간<select id="window"><option value="15m">최근 15분</option><option value="1h" selected>최근 1시간</option><option value="6h">최근 6시간</option><option value="24h">최근 24시간</option><option value="7d">최근 7일</option><option value="30d">최근 30일</option></select></label><label>실행 방식<select id="mode"><option value="all">전체 방식</option><option value="proposed">제안 방식</option><option value="managed">Managed</option><option value="parallel">전체 병렬</option><option value="centralized">중앙집중형</option><option value="masrouter">MasRouter</option><option value="remoterag">RemoteRAG</option></select></label><label>생성 방식<select id="backend"><option value="all">전체</option><option value="ollama">로컬 LLM</option><option value="deterministic">규칙 기반 대체</option></select></label></div><div><label class="refreshToggle"><input type="checkbox" id="auto" checked>화면 자동 갱신</label><button id="refresh" class="button" type="button">새로고침 ↻</button></div></section>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="content" aria-live="polite"><div class="emptyState">수집 기록을 불러오는 중입니다.</div></div>
+      <footer class="pageFooter"><span>요청·답변 본문을 수집하지 않습니다.</span><span>성능 지표 · 수집 상태 · 사용자 피드백</span></footer>
+    </div>
+  </main>
+  <dialog id="run-dialog"><div class="dialogHead"><div><span class="eyebrow">EXECUTION METRICS</span><h2 id="dialog-title">실행 상세</h2></div><button id="close-dialog" class="button" type="button">닫기 ×</button></div><div id="run-detail"></div></dialog>
+</body></html>

@@ -160,6 +160,7 @@ test("run API rejects malformed input and health exposes a stable no-store contr
       "connected",
       "edgeMode",
       "model",
+      "publicEvidenceOnly",
       "scheduler",
       "status",
       "total",
@@ -168,6 +169,7 @@ test("run API rejects malformed input and health exposes a stable no-store contr
     assert.equal(health.connected, 8);
     assert.equal(health.total, 8);
     assert.equal(health.edgeMode, "remote");
+    assert.equal(health.publicEvidenceOnly, false);
     assert.deepEqual(Object.keys(health.scheduler).sort(), [
       "activeCount",
       "oldestWaitMs",

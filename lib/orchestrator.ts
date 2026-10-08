@@ -1,3 +1,6 @@
+import { groundedAnswersEnabled, groundedUnavailable, groundedTopK } from "./grounded-answer";
+import { demoSynthesisEnabled, publicDemoSynthesis, filterDemoSynthesisCitations } from "./demo-synthesis";
+import { recordInferenceStage, markInferenceAccountingIncomplete } from "./distributed-metrics";
 import {
   agentProfiles,
   type AgentId,
@@ -26,6 +29,7 @@ import {
   scheduleLocalLlmTask,
 } from "./execution-scheduler";
 import { generateLocalAnswer } from "./local-llm";
+import { telemetry } from "./telemetry";
 import {
   METRIC_PROVENANCE_VERSION,
   aggregateInferenceTokenCounts,
@@ -185,6 +189,7 @@ function lexicalCoverage(expected: string, actual: string) {
 }
 
 function enforceEvidenceCitation(summary: string, evidenceIds: string[]) {
+  if (groundedAnswersEnabled()) return filterDemoSynthesisCitations(summary, new Set(evidenceIds));
   if (!evidenceIds.length) return summary;
   const valid = new Set(evidenceIds);
   const withoutInvalidIds = summary.replace(
@@ -272,6 +277,9 @@ type ProjectedEvidence = {
   sourceUrl?: string;
   sourceType: "public" | "edge-restricted";
   effectiveDate: string;
+  section?: string;
+  sourceSha256?: string;
+  licenseReview?: string;
   retrievalScore: number;
   classification: Classification;
   disclosure: "sanitized-preview" | "reference-only";
@@ -286,7 +294,10 @@ function projectEdgeEvidence(response: CoreEdgeAgentResponse) {
         excerpt: item.excerpt,
         ...(item.sourceUrl ? { sourceUrl: item.sourceUrl } : {}),
         sourceType: "public",
-        effectiveDate: item.section,
+        effectiveDate: item.publishedAt ?? "",
+        section: item.section,
+        sourceSha256: item.sourceSha256,
+        licenseReview: item.licenseReview,
         retrievalScore: item.retrievalScore,
         classification: "public",
         disclosure: "sanitized-preview",
@@ -324,6 +335,31 @@ function safeFallbackReason(code: CoreFallbackReasonCode | undefined, status: Co
 }
 
 export async function orchestrate(
+  rawQuery: string,
+  mode: RunMode = "proposed",
+  useCommercialJudge = false,
+  onProgress?: OrchestrationProgressReporter,
+  signal?: AbortSignal,
+  requestedRunId?: string,
+) {
+  const runId = requestedRunId && /^RUN-[A-Z0-9-]{8,64}$/.test(requestedRunId)
+    ? requestedRunId : `RUN-${crypto.randomUUID().slice(0, 12).toUpperCase()}`;
+  telemetry.begin(runId, mode);
+  try {
+    const result = await executeOrchestration(rawQuery, mode, useCommercialJudge, (event) => {
+      telemetry.progress(runId, event.stage);
+      onProgress?.(event);
+    }, signal, runId);
+    const status = result.executionStatus;
+    telemetry.finish(runId, status === "partial_failed" || status === "failed" || status === "cancelled" ? status : "completed", result);
+    return result;
+  } catch (error) {
+    telemetry.finish(runId, signal?.aborted ? "cancelled" : "failed");
+    throw error;
+  }
+}
+
+async function executeOrchestration(
   rawQuery: string,
   mode: RunMode = "proposed",
   useCommercialJudge = false,
@@ -519,7 +555,7 @@ export async function orchestrate(
     executionRole: AgentExecutionRole,
   ) => {
     const taskId = `${runId}_${id}`;
-    const retrievalQuery = mode === "remoterag" ? remoteRagQuery.query : `${query} ${retrievalFocus[id]}`;
+    const retrievalQuery = mode === "remoterag" ? remoteRagQuery.query : groundedAnswersEnabled() ? sanitize(query).sanitized : `${query} ${retrievalFocus[id]}`;
     const requiredConceptIds = routerDecision ? conceptIdsForAgent(routerDecision, id) : [];
     let response: CoreEdgeAgentResponse;
     try {
@@ -548,7 +584,7 @@ export async function orchestrate(
                 requiredConceptIds,
               },
             } : {}),
-            limits: { topK: 3, deadlineMs: 90_000 },
+            limits: { topK: groundedAnswersEnabled() ? groundedTopK() : 3, deadlineMs: 90_000 },
           }, scheduledSignal);
         },
       });
@@ -564,7 +600,9 @@ export async function orchestrate(
       executionRole,
       evidenceCount: response.evidenceRefs.length,
     });
-    report(benchmarkMode ? "agent.mapping" : "agent.generating", benchmarkMode
+    report(benchmarkMode ? "agent.mapping" : "agent.generating", groundedAnswersEnabled()
+      ? `${agentProfiles[id].shortName} Agent의 공개 근거와 응답 형식을 정리하는 중입니다.`
+      : benchmarkMode
       ? `${agentProfiles[id].shortName} Agent가 원문 없이 근거 ID를 검증하는 중입니다.`
       : `${agentProfiles[id].shortName} Agent의 Edge 로컬 생성 결과를 검증하는 중입니다.`, {
         agentId: id,
@@ -619,6 +657,7 @@ export async function orchestrate(
       question: questionFor(id),
       summary,
       report: buildAgentEvidenceReport({
+        grounded: groundedAnswersEnabled(),
         agentId: id,
         agentName: agentProfiles[id].name,
         responsibility: agentProfiles[id].responsibility,
@@ -653,7 +692,7 @@ export async function orchestrate(
         model: response.metrics.model,
         ttftMs: response.metrics.ttftMs,
         tpotMs: response.metrics.tpotMs,
-        tokensPerSecond: null,
+        tokensPerSecond: response.metrics.tokensPerSecond ?? null,
         promptTokens: response.metrics.promptTokens,
         completionTokens: response.metrics.completionTokens,
         totalMs: response.metrics.latencyMs,
@@ -694,6 +733,12 @@ export async function orchestrate(
       selected: [...selected],
       supportingAgents: additions,
       adaptiveAdditions: adaptiveOnly,
+      supportSelection: additions.map((agentId) => ({
+        agentId,
+        reason: routerDecision!.required.includes(agentId) ? "required-review" as const : "coverage-gap" as const,
+        missingConceptIds: adaptiveDecision!.missingConceptIds.filter((conceptId) =>
+          routerDecision!.requiredConcepts.some((concept) => concept.id === conceptId && concept.owner === agentId)),
+      })),
       humanReviewRequired: adaptiveDecision.humanReviewRequired,
       rationale: [...routerDecision.rationale, adaptiveDecision.rationale],
     };
@@ -770,7 +815,14 @@ export async function orchestrate(
       });
     }
   }
-  const safeIntegrationEvidence: KnowledgeChunk[] = selectedResults.map((result) => ({
+  const demoSynthesis = demoSynthesisEnabled() ? publicDemoSynthesis(selectedResults) : null;
+  const demoEvidenceInsufficient = demoSynthesis !== null && demoSynthesis.evidence.length === 0;
+  if (demoEvidenceInsufficient) {
+    for (const taskId of [`${runId}_central-integration`, `${runId}_managed-supervisor`]) {
+      if (requestCoordinator.getTask(taskId)?.status === "queued") requestCoordinator.transitionTask(taskId, "skipped");
+    }
+  }
+  const safeIntegrationEvidence: KnowledgeChunk[] = demoSynthesis?.evidence ?? selectedResults.map((result) => ({
     id: result.evidence[0]?.id ?? `EDGE-SUMMARY-${result.id}`,
     agent: result.id,
     title: `${result.shortName} Edge 응답 요약`,
@@ -786,8 +838,9 @@ export async function orchestrate(
   }));
 
   let centralizedGeneration: Awaited<ReturnType<typeof generateLocalAnswer>> | null = null;
-  if (benchmarkMode || mode === "proposed") {
+  if (!demoEvidenceInsufficient && (benchmarkMode || mode === "proposed")) {
     const centralTaskId = `${runId}_central-integration`;
+    const synthesisCallId = crypto.randomUUID();
     const evidenceCount = selectedResults.reduce((sum, result) => sum + result.evidence.length, 0);
     report("central.retrieved", `Edge에서 안전한 근거 참조 ${evidenceCount}건을 확보했습니다.`, {
       evidenceCount,
@@ -803,7 +856,8 @@ export async function orchestrate(
         taskKind: "central-integration",
         stage: "central-integration",
         signal,
-        execute: (scheduledSignal) => generateLocalAnswer({
+        execute: async (scheduledSignal) => {
+          const generated = await generateLocalAnswer({
       agent: "tech",
       agentName: mode === "proposed" ? "AXNetCC 중앙 통합 모델" : "중앙집중형 Core LLM",
       responsibility: mode === "proposed"
@@ -814,20 +868,32 @@ export async function orchestrate(
       fallback: selectedResults.map((result) => result.summary).join(" "),
       outputFormat: "integrated-report",
         signal: scheduledSignal,
-        }),
+        onAccountingFailure: (metrics) => markInferenceAccountingIncomplete(runId, "synthesis", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, synthesisCallId),
+        onMetrics: (metrics) => recordInferenceStage(runId, "synthesis", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, synthesisCallId),
+        });
+          if (groundedAnswersEnabled() && generated.metrics.backend !== "ollama") {
+            centralizedGeneration = generated;
+            throw new Error("Grounded integration output rejected");
+          }
+          return generated;
+        },
       });
       centralizedGeneration = scheduled.value;
       requestCoordinator.transitionTask(centralTaskId, "succeeded");
     } catch (error) {
       settleCoordinatorTaskAfterError(runId, centralTaskId, signal);
       if (signal?.aborted) throw error;
-      centralizedGeneration = deterministicIntegrationFailure(
+      centralizedGeneration ??= deterministicIntegrationFailure(
         selectedResults.map((result) => result.summary).join(" "),
         "Central integration execution failed",
       );
     }
   }
-  if (mode === "managed") {
+  if (demoEvidenceInsufficient) {
+    report("central.integrating", "확인 가능한 공개 근거가 없어 모델 합성을 실행하지 않았습니다.");
+  } else if (groundedAnswersEnabled()) {
+    report("central.integrating", "전달된 공개 근거와 출처를 모아 응답을 구성하는 중입니다. 답변 의미의 자동 검증은 수행하지 않습니다.");
+  } else if (mode === "managed") {
     report("central.integrating", "Managed Supervisor가 Agent 응답과 근거를 통합해 최종 응답을 생성하는 중입니다.");
   } else if (mode === "centralized" || mode === "remoterag") {
     report("central.integrating", "중앙 모델 응답과 전문영역별 근거의 정합성을 검증하는 중입니다.");
@@ -837,8 +903,9 @@ export async function orchestrate(
     report("central.integrating", "Core Orchestrator가 Agent 응답의 근거·누락·충돌을 검증하는 중입니다.");
   }
   let managedSupervisor: Awaited<ReturnType<typeof generateLocalAnswer>> | null = null;
-  if (mode === "managed") {
+  if (!demoEvidenceInsufficient && mode === "managed") {
     const supervisorTaskId = `${runId}_managed-supervisor`;
+    const supervisorCallId = crypto.randomUUID();
     try {
       const scheduled = await scheduleLocalLlmTask({
         requestId: runId,
@@ -847,7 +914,8 @@ export async function orchestrate(
         taskKind: "managed-supervisor",
         stage: "managed-supervisor",
         signal,
-        execute: (scheduledSignal) => generateLocalAnswer({
+        execute: async (scheduledSignal) => {
+          const generated = await generateLocalAnswer({
           agent: "tech",
           agentName: "Managed Platform Supervisor",
           responsibility: "중앙 Supervisor가 Edge의 안전 요약과 근거 식별자만 통합",
@@ -856,14 +924,22 @@ export async function orchestrate(
           fallback: selectedResults.map((result) => result.summary).join(" "),
           outputFormat: "integrated-report",
           signal: scheduledSignal,
-        }),
+          onAccountingFailure: (metrics) => markInferenceAccountingIncomplete(runId, "supervisor", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, supervisorCallId),
+          onMetrics: (metrics) => recordInferenceStage(runId, "supervisor", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, supervisorCallId),
+        });
+          if (groundedAnswersEnabled() && generated.metrics.backend !== "ollama") {
+            managedSupervisor = generated;
+            throw new Error("Grounded integration output rejected");
+          }
+          return generated;
+        },
       });
       managedSupervisor = scheduled.value;
       requestCoordinator.transitionTask(supervisorTaskId, "succeeded");
     } catch (error) {
       settleCoordinatorTaskAfterError(runId, supervisorTaskId, signal);
       if (signal?.aborted) throw error;
-      managedSupervisor = deterministicIntegrationFailure(
+      managedSupervisor ??= deterministicIntegrationFailure(
         selectedResults.map((result) => result.summary).join(" "),
         "Managed Supervisor execution failed",
       );
@@ -882,6 +958,7 @@ export async function orchestrate(
     0,
   );
   const validEvidenceIds = new Set(selectedResults.flatMap((result) => result.evidence.map((item) => item.id)));
+  const integrationEvidenceIds = demoSynthesis ? new Set(safeIntegrationEvidence.map(item => item.id)) : validEvidenceIds;
   const citations = selectedResults.flatMap((result) =>
     [...result.summary.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]),
   );
@@ -950,12 +1027,18 @@ export async function orchestrate(
   const defaultConclusion = "제한적 시범 도입을 권고합니다. 원문 데이터의 조직 내 보존, 역할 기반 접근통제, 담당자 최종 검토를 선행조건으로 설정하고 PoC 이후 품질·보안·비용 지표를 재평가해야 합니다.";
   const integratedGeneration = managedSupervisor ?? centralizedGeneration;
   const integratedRawConclusion = integratedGeneration
-    ? enforceEvidenceCitation(integratedGeneration.text, [...validEvidenceIds])
-    : defaultConclusion;
+    ? demoSynthesis
+      ? filterDemoSynthesisCitations(integratedGeneration.text, integrationEvidenceIds)
+      : enforceEvidenceCitation(integratedGeneration.text, [...integrationEvidenceIds])
+    : demoEvidenceInsufficient
+      ? "확인 가능한 공개 근거가 부족하여 답변을 생성하지 않았습니다. Agent 연결 상태와 공개 근거를 확인한 뒤 다시 요청해 주세요."
+      : groundedAnswersEnabled() ? groundedUnavailable() : defaultConclusion;
   const { sanitized: conclusion } = sanitize(integratedRawConclusion);
   const reportTitle = "신규 AI 서비스 도입 종합 검토보고서";
   const primaryAgentId = routerDecision?.primaryAgent ?? selectedResults[0]?.id ?? "tech";
   const integratedReport = buildIntegratedEvidenceReport({
+    preserveConclusionCitations: Boolean(demoSynthesis),
+    grounded: groundedAnswersEnabled(),
     title: reportTitle,
     conclusion,
     primaryAgentId,
@@ -964,7 +1047,7 @@ export async function orchestrate(
       .map((agent) => ({
         id: agent.id,
         report: agent.report!,
-        evidenceIds: agent.evidence.map((item) => item.id),
+        evidenceIds: agent.evidence.map((item) => item.id).filter(id => integrationEvidenceIds.has(id)),
       })),
   });
   const integration = managedSupervisor
@@ -994,19 +1077,21 @@ export async function orchestrate(
           label: "Core Orchestrator",
           backend: "deterministic" as const,
           answerSource: "deterministic-fallback" as const,
-          fallbackReason: "No integration LLM was scheduled for this mode",
+          fallbackReason: demoEvidenceInsufficient
+            ? "Insufficient approved public evidence; synthesis not attempted"
+            : "No integration LLM was scheduled for this mode",
           model: null,
         };
-  const integratedEvidenceText = selectedResults.flatMap((result) => result.evidence)
-    .map((item) => item.excerpt)
-    .join(" ");
+  const integratedEvidenceText = demoSynthesis
+    ? safeIntegrationEvidence.map(item => item.text.slice(0, 800)).join(" ")
+    : selectedResults.flatMap((result) => result.evidence).map(item => item.excerpt).join(" ");
   const integratedCitations = [...conclusion.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]);
-  const integratedValidCitations = integratedCitations.filter((id) => validEvidenceIds.has(id));
+  const integratedValidCitations = integratedCitations.filter((id) => integrationEvidenceIds.has(id));
   const integratedCitationValidity = integratedCitations.length
     ? Math.round(integratedValidCitations.length / integratedCitations.length * 100)
     : 0;
   const integratedCitationRecall = Math.round(
-    new Set(integratedValidCitations).size / Math.max(validEvidenceIds.size, 1) * 100,
+    new Set(integratedValidCitations).size / Math.max(integrationEvidenceIds.size, 1) * 100,
   );
   const integratedClaims = conclusion
     .split(/\n+|(?<=[.!?다요])\s+/)
@@ -1014,7 +1099,7 @@ export async function orchestrate(
     .filter((sentence) => terms(sentence.replace(/\[[^\]]+\]/g, "")).length >= 3);
   const integratedClaimSupport = Math.round(
     integratedClaims.filter((sentence) =>
-      [...sentence.matchAll(/\[([^\]]+)\]/g)].some((match) => validEvidenceIds.has(match[1])),
+      [...sentence.matchAll(/\[([^\]]+)\]/g)].some((match) => integrationEvidenceIds.has(match[1])),
     ).length / Math.max(integratedClaims.length, 1) * 100,
   );
   const integratedRelevance = lexicalCoverage(query, conclusion);
@@ -1149,7 +1234,7 @@ export async function orchestrate(
     totalAgentCount: ids.length,
     outputTexts: [conclusion, ...selectedResults.map((agent) => agent.summary)],
   });
-  const traceabilityReading = calculateCitationTraceability(conclusion, validEvidenceIds);
+  const traceabilityReading = calculateCitationTraceability(conclusion, integrationEvidenceIds);
   const conflictAnalysis = detectExplicitClaimConflicts(
     selectedResults.map((agent) => ({ agentId: agent.id, text: agent.summary })),
   );
@@ -1214,10 +1299,10 @@ export async function orchestrate(
     evidencePlan,
     status: reviewStatus,
     reviewStatus,
-    executionStatus: execution.status,
+    executionStatus: demoEvidenceInsufficient && execution.status === "completed" ? "partial_failed" : execution.status,
     execution: {
       requestId: execution.requestId,
-      executionStatus: execution.status,
+      executionStatus: demoEvidenceInsufficient && execution.status === "completed" ? "partial_failed" : execution.status,
       totalCount: execution.progress.total,
       terminalCount: execution.progress.total - execution.progress.remaining,
       remainingCount: execution.progress.remaining,
@@ -1322,7 +1407,7 @@ export async function orchestrate(
       answerCompleteness: reportedAnswerCompleteness,
       qualityScore: reportedQualityScore,
       ragChunks: Math.max(0, ...selectedResults.map((result) => result.edgeMetrics.corpusChunks)),
-      llmBackend: allInferenceResults.length > 0 && allInferenceResults.every((result) => result.backend === "ollama") ? "ollama" : "deterministic",
+      llmBackend: !demoEvidenceInsufficient && allInferenceResults.length > 0 && allInferenceResults.every((result) => result.backend === "ollama") ? "ollama" : "deterministic",
       model: integration.model ?? selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
       ttftMs: (() => {
         const values = allInferenceResults
@@ -1387,12 +1472,16 @@ export async function orchestrate(
           provenance: elapsedReading.provenance.kind,
         }],
   };
-  report("central.completed", `${integration.label}의 최종 통합이 완료됐습니다.`, {
+  report("central.completed", groundedAnswersEnabled() && result.executionStatus !== "completed"
+    ? `${integration.label}의 최종 통합에 실패했습니다. 최종 답변을 확정하지 못했습니다.`
+    : `${integration.label}의 최종 통합이 완료됐습니다.`, {
     backend: integration.backend,
     model: integration.model ?? undefined,
     evidenceCount,
   });
-  report("request.completed", "최종 응답과 검증 지표 생성이 완료됐습니다.", {
+  report("request.completed", groundedAnswersEnabled()
+    ? result.executionStatus === "completed" ? "최종 응답과 출처·실행 지표 생성이 완료됐습니다." : "최종 답변을 확정하지 못했습니다. 실패 상태와 출처·실행 지표를 표시합니다."
+    : "최종 응답과 검증 지표 생성이 완료됐습니다.", {
     evidenceCount,
   });
   return result;

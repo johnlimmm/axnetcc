@@ -8,6 +8,7 @@ import {
   type SchedulerTaskKind,
 } from "./endpoint-scheduler";
 import { resolveAgentRuntime } from "./local-llm";
+import { remoteAgentEnabled } from "./edge-replicas";
 import { requestCoordinator } from "./request-coordinator";
 
 const DEFAULT_TASK_DEADLINE_MS = 95_000;
@@ -148,6 +149,40 @@ function agentTaskDeadlineMs(agentId: AgentId) {
     : localLlmTaskDeadlineMs();
 }
 
+const remoteParents = new Map<string, { taskId: string; deadlineAt: number }>();
+const physicalParents = new Map<string, { taskId: string | null; current: boolean }>();
+export function remoteAgentBudget(requestId: string, agentId: AgentId) {
+  return remoteParents.get(`${requestId}:${agentId}`)?.deadlineAt;
+}
+export async function scheduleEdgeAttempt<T>(input: {
+  requestId: string; agentId: AgentId; attemptId: string; endpoint: string; nodeId?: string;
+  deadlineAt: number; attempt: number; signal?: AbortSignal;
+  execute: (signal: AbortSignal) => Promise<T>;
+}) {
+  const parent = remoteParents.get(`${input.requestId}:${input.agentId}`);
+  const mapping = { taskId: parent?.taskId ?? null, current: true };
+  physicalParents.set(input.attemptId, mapping);
+  try {
+    return await executionScheduler.enqueue({
+      requestId: input.requestId, taskId: input.attemptId, agentId: input.agentId,
+      taskKind: "edge-attempt", stage: "edge-attempt", attempt: input.attempt,
+      resourceKey: input.nodeId && input.nodeId !== "unconfigured" ? `edge-node:${input.nodeId}` : canonicalResourceKey(input.endpoint, "edge"),
+      deadlineAt: Math.min(input.deadlineAt, parent?.deadlineAt ?? Infinity), signal: input.signal,
+      execute(signal) {
+        if (mapping.taskId) {
+          const task = requestCoordinator.getTask(mapping.taskId);
+          if (task?.status === "queued") requestCoordinator.claimTask(mapping.taskId);
+          else if (task?.status !== "running") throw new Error("Logical Agent is not active");
+        }
+        return input.execute(signal);
+      },
+    });
+  } finally {
+    mapping.current = false;
+    physicalParents.delete(input.attemptId);
+  }
+}
+
 const taskMetrics = new Map<string, EndpointExecutionMetrics>();
 
 function rememberMetrics(metrics: Readonly<EndpointExecutionMetrics>) {
@@ -162,6 +197,7 @@ function rememberMetrics(metrics: Readonly<EndpointExecutionMetrics>) {
 
 function auditCoordinatedExecution(metrics: Readonly<EndpointExecutionMetrics>) {
   rememberMetrics(metrics);
+  if (metrics.taskKind === "edge-attempt") return;
   const task = requestCoordinator.getTask(metrics.taskId);
   if (!task || task.status !== "running") return;
 
@@ -209,6 +245,16 @@ export const executionScheduler = new EndpointScheduler({
     120_000,
   ),
   getDispatchContext(metadata) {
+    if (metadata.taskKind === "edge-attempt") {
+      const mapping = physicalParents.get(metadata.taskId);
+      if (!mapping?.current) return { cancelled: true };
+      if (!mapping.taskId) return { ready: true };
+      try {
+        const context = requestCoordinator.getDispatchContext(metadata.requestId, mapping.taskId);
+        return { ...context, ready: context.ready || context.taskStatus === "running",
+          taskStatus: context.taskStatus === "running" ? "queued" : context.taskStatus };
+      } catch { return { cancelled: true }; }
+    }
     return requestCoordinator.getDispatchContext(
       metadata.requestId,
       metadata.taskId,
@@ -253,10 +299,40 @@ export function scheduleCoordinatedTask<T>(
   });
 }
 
-export function scheduleAgentTask<T>(input: Omit<
+export async function scheduleAgentTask<T>(input: Omit<
   ScheduleCoordinatedTaskInput<T>,
   "taskKind" | "resourceKey" | "deadlineMs"
 > & { agentId: AgentId }) {
+  if (remoteAgentEnabled(input.agentId)) {
+    const key = `${input.requestId}:${input.agentId}`;
+    if (remoteParents.has(key)) throw new Error("Logical Agent already active");
+    const controller = new AbortController();
+    const abort = () => controller.abort(input.signal?.reason);
+    if (input.signal?.aborted) abort();
+    else input.signal?.addEventListener("abort", abort, { once: true });
+    const budget = boundedInteger(process.env.EDGE_AGENT_BUDGET_MS, 90_000, 100, 3_600_000);
+    remoteParents.set(key, { taskId: input.taskId, deadlineAt: Date.now() + budget });
+    const timer = setTimeout(() => controller.abort(new DOMException("Agent budget exceeded", "TimeoutError")), budget);
+    try {
+      controller.signal.throwIfAborted();
+      const value = await input.execute(controller.signal);
+      controller.signal.throwIfAborted();
+      requestCoordinator.transitionTask(input.taskId, "succeeded");
+      return { value };
+    } catch (error) {
+      const task = requestCoordinator.getTask(input.taskId);
+      if (task && (task.status === "queued" || task.status === "running")) {
+        if (task.status === "queued" && !input.signal?.aborted) requestCoordinator.claimTask(input.taskId);
+        requestCoordinator.transitionTask(input.taskId, input.signal?.aborted ? "cancelled" : "failed");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      input.signal?.removeEventListener("abort", abort);
+      remoteParents.delete(key);
+      executionScheduler.refresh();
+    }
+  }
   return scheduleCoordinatedTask({
     ...input,
     taskKind: "agent",

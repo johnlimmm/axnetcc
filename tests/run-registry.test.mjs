@@ -214,3 +214,34 @@ test("cancellation aborts execution and publishes exactly one terminal event", a
   assert.deepEqual(terminal, ["cancelled"]);
   subscription.unsubscribe();
 });
+
+test("service resilience is degraded when synthesis falls back despite successful Agent attempts", async () => {
+  const { recordInferenceStage } = await import("../lib/distributed-metrics.ts");
+  const registry = new RunRegistry({
+    idFactory: () => "RUN-SYNTHESIS-FALLBACK",
+    executor: async input => {
+      recordInferenceStage(input.requestId, "synthesis", { backend: "deterministic", model: "unavailable", promptTokens: null, completionTokens: null });
+      return { executionStatus: "completed", conclusion: "Fallback" };
+    },
+  });
+  await registry.start({ query: "Public synthesis fallback verification", mode: "proposed", commercialJudge: false });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(registry.get("RUN-SYNTHESIS-FALLBACK").result.resilience.degraded, true);
+});
+
+test("ordinary completed deterministic integration is not degraded when successful Edge inference intentionally needs no synthesis", async () => {
+  const { recordEdgeAttempt, getDistributedRun } = await import("../lib/distributed-metrics.ts");
+  const requestId = "RUN-SKIPPED-SYNTHESIS";
+  const registry = new RunRegistry({ idFactory: () => requestId, executor: async () => {
+    recordEdgeAttempt(requestId, { attemptId: "edge-one", requestId, agentId: "tech", nodeId: "primary", replicaId: "one", role: "primary",
+      startedAt: 1, completedAt: 2, elapsedMs: 1, queueWaitMs: 0, requestBytesPrepared: 10, responseBytesReceived: 20,
+      status: "succeeded", reasonCode: null, backend: "ollama", model: "test", promptTokens: 7, completionTokens: 3, usageStatus: "measured", adopted: true });
+    return { executionStatus: "completed", integration: { backend: "deterministic", model: null }, conclusion: "Insufficient public evidence" };
+  } });
+  await registry.start({ query: "Public evidence insufficiency verification", mode: "proposed", commercialJudge: false });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(registry.get(requestId).result.resilience.degraded, false);
+  assert.equal(registry.get(requestId).executionSettled, true);
+  assert.deepEqual(getDistributedRun(requestId).stages, []);
+  assert.equal(getDistributedRun(requestId).totals.promptTokens, 7);
+});

@@ -22,6 +22,8 @@ export type KnowledgeChunk = {
   classification: Classification;
   effectiveDate: string;
   sourceUrl?: string;
+  sourceSha256?: string;
+  licenseReview?: string;
   tags: string[];
 };
 
