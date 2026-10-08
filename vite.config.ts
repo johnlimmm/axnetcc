@@ -14,15 +14,16 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
+  d1_databases: [
+    { binding: "FEEDBACK_DB", database_name: "mnc-flow-feedback", database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID },
+    ...(d1 ? [
         {
           binding: d1,
           database_name: "site-creator-d1",
           database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
         },
-      ]
-    : [],
+      ] : []),
+  ],
   r2_buckets: r2
     ? [
         {

@@ -1,5 +1,41 @@
 # 로컬 LLM 1차 실측
 
+## Privacy Risk v2 보고 규칙 (MNC-12)
+
+최신 평가에서는 모드별 고정 상수 기반 proxy를 사용하지 않습니다. Orchestrator API가 반환한
+`privacyRiskVersion: "v2"`와 아래 S/A/O breakdown을 그대로 저장하고 표시합니다.
+
+```text
+Privacy Risk = 100 × (0.5 × S + 0.3 × A + 0.2 × O)
+S = sensitiveTransmittedCount / sensitiveDetectedCount
+A = selectedAgentCount / totalAgentCount
+O = transmittedOriginalBytes / originalBytes
+```
+
+분모가 0인 항목은 API 계산 규칙에 따라 비율 0으로 기록합니다. 보고서에는 점수뿐 아니라
+각 numerator, denominator, ratio를 함께 남깁니다. 민감정보가 없었던 실행과 탐지 후 완전히
+마스킹된 실행을 모두 0점이라고만 표현하지 않고 각각 `민감정보 미탐지`,
+`탐지 후 완전 마스킹`으로 구분하며, 하나라도 전달된 경우 `일부 노출`로 표시합니다.
+
+| 파일 | privacyRiskVersion | 현재 공개 규칙 |
+|---|---|---|
+| `latest-report-v2.json` | `v2` | 실제 재실행 결과만 표시 |
+| `expanded-report-v2.json` | `v2` | 40문항×5모드 200회 `measured` |
+| `repeat-benchmark-report-v2.json` | `v2` | 75회 실행·privacy 실측, 상용 판정기 미설정 품질은 `partial`·`—` |
+
+현재 v2 파일럿(6문항 × 4모드)의 평균 점수는 Centralized 30.0, Managed 10.8,
+Parallel 30.0, Proposed 9.0입니다. 네 모드 모두 S=0%, O=0%였고 A는 각각
+100.0%, 35.4%, 100.0%, 29.2%였습니다. 세부 numerator/denominator와 24개 행은
+`data/evaluation/latest-report-v2.json`을 단일 기준으로 사용합니다.
+
+확장 보고서의 제안 방식은 Macro-F1 96.8%, 객관 품질 54.6점, 최고 품질 유지율
+98.4%, 평균 Privacy Risk 9.7점입니다. 반복 보고서는 75개 행을 모두 저장했으며 상용
+판정기가 설정되지 않은 실행에서는 correctness/groundedness/completeness/overall을 `null`로
+유지합니다. 이 값들은 deterministic fallback 개발셋 결과이고 독립 전문가 평가는 아닙니다.
+
+미실행 값은 `—`로 두며 추정하지 않습니다. v1 또는 버전 없는 행/보고서가 섞이면 집계를
+중단합니다. 이 문서 아래쪽의 기존 고정 proxy 설명과 수치는 실험 이력일 뿐 v2 결과가 아닙니다.
+
 측정일: 2026-07-30  
 실행 환경: Windows, Ollama 0.32.5, CPU 추론  
 질의: `3년 예산과 총소유비용을 산정해 주세요.`

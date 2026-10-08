@@ -1,7 +1,55 @@
-import { agentProfiles, knowledge, type AgentId, type KnowledgeChunk } from "./knowledge";
+import { groundedAnswersEnabled, groundedUnavailable, groundedTopK } from "./grounded-answer";
+import { demoSynthesisEnabled, publicDemoSynthesis, filterDemoSynthesisCitations } from "./demo-synthesis";
+import { recordInferenceStage, markInferenceAccountingIncomplete } from "./distributed-metrics";
+import {
+  agentProfiles,
+  type AgentId,
+  type Classification,
+  type KnowledgeChunk,
+} from "./agent-registry";
 import { evaluateWithCommercialJudge } from "./commercial-judge";
+import {
+  conceptIdsForAgent,
+  planAdaptiveAdditions,
+  routeWithBoundaryConstraints,
+  type AgentExecutionRole,
+  type BoundaryRoutingDecision,
+  type ObservedAgentOutput,
+} from "./boundary-router";
+import { sanitizeSensitiveText } from "./data-loss-prevention";
+import { executeEdgeAgent } from "./edge-agent-client";
+import type {
+  CoreEdgeAgentResponse,
+  CoreFallbackReasonCode,
+} from "./edge-core-contract";
+import {
+  executionMetricsForRequest,
+  scheduleAgentTask,
+  scheduleCommercialJudgeTask,
+  scheduleLocalLlmTask,
+} from "./execution-scheduler";
 import { generateLocalAnswer } from "./local-llm";
-import { ragStats, searchRag } from "./rag";
+import { telemetry } from "./telemetry";
+import {
+  METRIC_PROVENANCE_VERSION,
+  aggregateInferenceTokenCounts,
+  calculateCitationTraceability,
+  calculateElapsedMetric,
+  derivedMetric,
+  detectExplicitClaimConflicts,
+} from "./metric-provenance";
+import {
+  calculatePrivacyRiskV2,
+  type EgressEnvelope,
+} from "./privacy-risk";
+import {
+  assertCoordinatorDeploymentSupported,
+  requestCoordinator,
+} from "./request-coordinator";
+import {
+  buildAgentEvidenceReport,
+  buildIntegratedEvidenceReport,
+} from "./report-contract";
 
 export type RunMode =
   | "proposed"
@@ -11,12 +59,74 @@ export type RunMode =
   | "masrouter"
   | "remoterag";
 
-const sensitivePatterns = [
-  { label: "주민등록번호", regex: /\b\d{6}-?[1-4]\d{6}\b/g },
-  { label: "휴대전화", regex: /\b01[016789]-?\d{3,4}-?\d{4}\b/g },
-  { label: "이메일", regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi },
-  { label: "내부 IP", regex: /\b(?:10|172\.(?:1[6-9]|2\d|3[01])|192\.168)(?:\.\d{1,3}){2}\b/g },
-];
+export type OrchestrationProgressStage =
+  | "request.received"
+  | "request.sanitized"
+  | "router.deciding"
+  | "router.decided"
+  | "router.review-required"
+  | "agents.selected"
+  | "agents.adapted"
+  | "agent.retrieving"
+  | "agent.retrieved"
+  | "agent.generating"
+  | "agent.mapping"
+  | "agent.completed"
+  | "agent.mapped"
+  | "agent.skipped"
+  | "central.retrieving"
+  | "central.retrieved"
+  | "central.generating"
+  | "central.integrating"
+  | "central.completed"
+  | "evidence.plan.ready"
+  | "judge.evaluating"
+  | "judge.completed"
+  | "request.completed";
+
+export type OrchestrationProgressEvent = {
+  runId: string;
+  mode: RunMode;
+  stage: OrchestrationProgressStage;
+  message: string;
+  timestamp: number;
+  sequence: number;
+  agentId?: AgentId;
+  agentName?: string;
+  selectedAgents?: AgentId[];
+  executionRole?: AgentExecutionRole;
+  routerDecision?: BoundaryRoutingDecision;
+  evidencePlan?: {
+    coverage: number | null;
+    coveredConceptIds: string[];
+    missingConceptIds: string[];
+    humanReviewRequired: boolean;
+    agentPlans: Array<{
+      agentId: AgentId;
+      status: "verified" | "partial" | "unknown" | "denied";
+      coverage: number | null;
+      modes: string[];
+      transfers: Array<{
+        referenceId: string;
+        plannedMode: string;
+        appliedMode: string;
+        egressBytes: number;
+      }>;
+    }>;
+  };
+  evidenceCount?: number;
+  backend?: "ollama" | "deterministic";
+  model?: string;
+  execution?: {
+    executionStatus: "queued" | "running" | "integrating" | "completed" | "partial_failed" | "failed" | "cancelled";
+    totalCount: number;
+    terminalCount: number;
+    remainingCount: number;
+    version: number;
+  };
+};
+
+export type OrchestrationProgressReporter = (event: OrchestrationProgressEvent) => void;
 
 function terms(text: string) {
   return text
@@ -79,74 +189,31 @@ function lexicalCoverage(expected: string, actual: string) {
 }
 
 function enforceEvidenceCitation(summary: string, evidenceIds: string[]) {
+  if (groundedAnswersEnabled()) return filterDemoSynthesisCitations(summary, new Set(evidenceIds));
   if (!evidenceIds.length) return summary;
   const valid = new Set(evidenceIds);
-  const cited = [...summary.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]);
-  if (cited.some((id) => valid.has(id))) return summary;
-  const withoutInvalidIds = summary.replace(/\[([^\]]+)\]/g, "");
-  return `${withoutInvalidIds.trim()} [${evidenceIds[0]}]`;
+  const withoutInvalidIds = summary.replace(
+    /\[([^\]]+)\]/g,
+    (citation, id: string) => valid.has(id) ? citation : "",
+  );
+  const cited = [...withoutInvalidIds.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]);
+  return cited.length
+    ? withoutInvalidIds.trim()
+    : `${withoutInvalidIds.trim()} (검증된 근거: [${evidenceIds[0]}])`;
 }
 
-function retrieveInternal(query: string, agent: AgentId, limit = 2) {
-  const queryTerms = new Set(terms(query));
-  return knowledge
-    .filter((chunk) => chunk.agent === agent)
-    .map((chunk) => {
-      const chunkTerms = terms(`${chunk.title} ${chunk.section} ${chunk.text} ${chunk.tags.join(" ")}`);
-      const hit = chunkTerms.filter((term) => queryTerms.has(term)).length;
-      const phrase = chunk.tags.filter((tag) => query.toLowerCase().includes(tag.toLowerCase())).length;
-      return { chunk, score: hit + phrase * 2 + 0.1 };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-}
+const sanitize = sanitizeSensitiveText;
 
-function retrieve(query: string, agent: AgentId, limit = 3) {
-  const publicHits = searchRag(query, agentProfiles[agent].ragAgents, limit);
-  if (publicHits.length) {
-    return publicHits.map(({ chunk, score }) => ({
-      score,
-      chunk: {
-        id: chunk.id,
-        agent: chunk.agent,
-        title: chunk.title,
-        section: chunk.section,
-        text: chunk.text,
-        sourceType: "public" as const,
-        classification: "public" as const,
-        effectiveDate: chunk.publishedAt ?? "발행일 미상",
-        sourceUrl: chunk.sourceUrl,
-        tags: [],
-      },
-    }));
-  }
-  return retrieveInternal(query, agent, limit);
-}
-
-function sanitize(text: string) {
-  const filteredFields: string[] = [];
-  let sanitized = text;
-  for (const pattern of sensitivePatterns) {
-    if (pattern.regex.test(sanitized)) {
-      filteredFields.push(pattern.label);
-      sanitized = sanitized.replace(pattern.regex, `[${pattern.label} 제거]`);
-    }
-    pattern.regex.lastIndex = 0;
-  }
-  return { sanitized, filteredFields };
-}
-
-function questionFor(agent: AgentId, query: string) {
-  const purpose = query.length > 74 ? `${query.slice(0, 74)}…` : query;
+function questionFor(agent: AgentId) {
   const questions: Record<AgentId, string> = {
-    tech: `“${purpose}”의 최소 기술 구성, 품질 기준과 운영 전환 조건은 무엇입니까?`,
-    data: `“${purpose}”에 필요한 데이터의 출처, 품질, 수명주기와 이용 조건은 무엇입니까?`,
-    security: `“${purpose}”에서 허용 가능한 데이터 범위와 필수 보안 통제는 무엇입니까?`,
-    legal: `“${purpose}”에 적용되는 법적 의무, 계약 조건과 최종 판단 책임은 무엇입니까?`,
-    policy: `“${purpose}”의 공공성, 투명성, 편향 및 영향평가 기준은 무엇입니까?`,
-    finance: `“${purpose}”의 PoC·운영 비용, 조달 절차와 비용 통제 기준은 무엇입니까?`,
-    procurement: `“${purpose}”의 발주 방식, 경쟁성, 규격서 및 계약상 위험은 무엇입니까?`,
-    operations: `“${purpose}”의 SLA, 품질측정, 장애대응과 운영 전환 기준은 무엇입니까?`,
+    tech: "요청을 위한 최소 기술 구성, 품질 기준과 운영 전환 조건은 무엇입니까?",
+    data: "필요 데이터의 출처, 품질, 수명주기와 이용 조건은 무엇입니까?",
+    security: "허용 가능한 데이터 범위와 필수 보안 통제는 무엇입니까?",
+    legal: "적용되는 법적 의무, 계약 조건과 최종 판단 책임은 무엇입니까?",
+    policy: "공공성, 투명성, 편향 및 영향평가 기준은 무엇입니까?",
+    finance: "PoC·운영 비용, 조달 절차와 비용 통제 기준은 무엇입니까?",
+    procurement: "발주 방식, 경쟁성, 규격서 및 계약상 위험은 무엇입니까?",
+    operations: "SLA, 품질측정, 장애대응과 운영 전환 기준은 무엇입니까?",
   };
   return questions[agent];
 }
@@ -162,171 +229,722 @@ const retrievalFocus: Record<AgentId, string> = {
   operations: "SLA P95 가용성 장애 복구시간 모니터링 검수 운영전환",
 };
 
-function synthesize(agent: AgentId, chunks: KnowledgeChunk[]) {
-  const lead: Record<AgentId, string> = {
-    tech: "검색·추론·검증 계층을 분리하고 측정 가능한 PoC 기준으로 단계적으로 도입해야 합니다.",
-    data: "데이터 출처와 이용조건을 확인하고 품질·최신성·메타데이터·폐기 기준을 수명주기 전체에 적용해야 합니다.",
-    security: "원문은 조직 경계에 유지하고 역할 기반 접근통제와 반환 전 민감정보 제거를 적용해야 합니다.",
-    legal: "최소처리 원칙을 준수하고 위탁·재위탁·삭제·산출물 책임을 계약과 업무절차에 명시해야 합니다.",
-    policy: "공공성·투명성·설명가능성 기준을 정하고 편향과 권리 영향을 사전에 평가해야 합니다.",
-    finance: "PoC와 본사업을 분리하고 모델 사용료와 운영·보안 비용까지 포함한 총소유비용을 산정해야 합니다.",
-    procurement: "특정 사업자 종속을 피하고 측정 가능한 요구조건, 경쟁성 및 계약 종료 시 데이터 이전 조건을 명시해야 합니다.",
-    operations: "응답시간·가용성·정확성 기준과 장애 대응, 모니터링, 운영 전환 게이트를 사전에 정의해야 합니다.",
+const corePayloadFields = ["summary", "evidenceRefs", "metrics", "policy", "audit"] as const;
+
+function settleCoordinatorTaskAfterError(
+  requestId: string,
+  taskId: string,
+  signal?: AbortSignal,
+) {
+  const request = requestCoordinator.getRequest(requestId);
+  if (signal?.aborted) {
+    if (request && !["completed", "partial_failed", "failed", "cancelled"].includes(request.status)) {
+      requestCoordinator.cancelRequest(requestId);
+    }
+    return;
+  }
+  const task = requestCoordinator.getTask(taskId);
+  if (task?.status === "running") requestCoordinator.transitionTask(taskId, "failed");
+  else if (task?.status === "queued") requestCoordinator.transitionTask(taskId, "cancelled");
+}
+
+function deterministicIntegrationFailure(
+  fallback: string,
+  reason: string,
+): Awaited<ReturnType<typeof generateLocalAnswer>> {
+  return {
+    text: fallback,
+    metrics: {
+      backend: "deterministic",
+      answerSource: "deterministic-fallback",
+      model: process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
+      transport: "none",
+      ttftMs: null,
+      tpotMs: null,
+      tokensPerSecond: null,
+      promptTokens: null,
+      completionTokens: null,
+      totalMs: 0,
+      fallbackReason: reason,
+    },
   };
-  const actions: Record<AgentId, string> = {
-    tech: "PoC에서 RAG 검색 정확도, 응답 품질, P95 지연과 장애 시 fallback을 검증한 뒤 운영 전환 여부를 결정합니다.",
-    data: "데이터 출처·이용조건·품질기준·갱신주기·메타데이터 책임자를 등록하고 수집부터 폐기까지 이력을 관리합니다.",
-    security: "원문은 조직 내부에 보존하고 최소권한 접근통제, 전송·저장 암호화, 질의 마스킹, 감사로그와 이상행위 탐지를 적용합니다.",
-    legal: "개인정보 처리목적과 법적 근거, 최소수집, 보유·삭제기간, 위탁·재위탁 조건, 담당자 최종 검토 책임을 문서화합니다.",
-    policy: "서비스 목적과 권리 영향을 공개하고 편향·설명가능성·이의제기 절차를 포함한 영향평가와 정기 재평가를 수행합니다.",
-    finance: "PoC와 본사업 예산을 분리하고 모델 서빙, 인프라, 보안, 운영인력, 유지보수와 종료·이전비용을 포함한 TCO를 산정합니다.",
-    procurement: "특정 모델 종속을 피하도록 성능·보안·데이터 이전 요구사항을 규격화하고 경쟁성, 계약 종료와 결과물 귀속 조건을 명시합니다.",
-    operations: "SLA에 P95 응답시간, 가용성, 근거 연결률, 장애 복구시간을 정의하고 운영 전환 기준과 지속 모니터링 책임자를 지정합니다.",
+}
+
+type ProjectedEvidence = {
+  id: string;
+  title: string;
+  excerpt: string;
+  sourceUrl?: string;
+  sourceType: "public" | "edge-restricted";
+  effectiveDate: string;
+  section?: string;
+  sourceSha256?: string;
+  licenseReview?: string;
+  retrievalScore: number;
+  classification: Classification;
+  disclosure: "sanitized-preview" | "reference-only";
+};
+
+function projectEdgeEvidence(response: CoreEdgeAgentResponse) {
+  const evidence = response.evidenceRefs.map((item): ProjectedEvidence => {
+    if (item.disclosure === "sanitized-preview") {
+      return {
+        id: item.referenceId,
+        title: item.title,
+        excerpt: item.excerpt,
+        ...(item.sourceUrl ? { sourceUrl: item.sourceUrl } : {}),
+        sourceType: "public",
+        effectiveDate: item.publishedAt ?? "",
+        section: item.section,
+        sourceSha256: item.sourceSha256,
+        licenseReview: item.licenseReview,
+        retrievalScore: item.retrievalScore,
+        classification: "public",
+        disclosure: "sanitized-preview",
+      };
+    }
+    return {
+      id: item.referenceId,
+      title: "제한 문서 · Edge 보존",
+      excerpt: "문서 원문과 URL은 Edge에 보존되며 Core에는 근거 ID와 등급만 전달됩니다.",
+      sourceType: "edge-restricted",
+      effectiveDate: "",
+      retrievalScore: 0.01,
+      classification: item.classification,
+      disclosure: "reference-only",
+    };
+  });
+  return { evidence, filteredFields: [] as string[] };
+}
+
+function edgeMode(response: CoreEdgeAgentResponse) {
+  return response.boundary.transport === "local" ? "local" as const : "remote" as const;
+}
+
+function safeFallbackReason(code: CoreFallbackReasonCode | undefined, status: CoreEdgeAgentResponse["status"]) {
+  const labels: Record<CoreFallbackReasonCode, string> = {
+    "not-configured": "Local LLM endpoint is not configured",
+    "empty-response": "Local LLM returned an empty response",
+    timeout: "Local LLM request timed out",
+    "http-error": "Local LLM returned an HTTP error",
+    "connection-error": "Local LLM connection failed",
+    "edge-status": `Edge status: ${status}`,
+    unknown: "Local LLM used a deterministic fallback",
   };
-  const primaryId = chunks[0]?.id;
-  const secondaryId = chunks[1]?.id ?? primaryId;
-  const primaryCitation = primaryId ? ` [${primaryId}]` : "";
-  const secondaryCitation = secondaryId ? ` [${secondaryId}]` : "";
-  return `판단: ${lead[agent]}${primaryCitation}\n필수 조치: ${actions[agent]}${secondaryCitation}`;
+  return code ? labels[code] : `Edge status: ${status}`;
 }
 
 export async function orchestrate(
   rawQuery: string,
   mode: RunMode = "proposed",
   useCommercialJudge = false,
+  onProgress?: OrchestrationProgressReporter,
+  signal?: AbortSignal,
+  requestedRunId?: string,
 ) {
+  const runId = requestedRunId && /^RUN-[A-Z0-9-]{8,64}$/.test(requestedRunId)
+    ? requestedRunId : `RUN-${crypto.randomUUID().slice(0, 12).toUpperCase()}`;
+  telemetry.begin(runId, mode);
+  try {
+    const result = await executeOrchestration(rawQuery, mode, useCommercialJudge, (event) => {
+      telemetry.progress(runId, event.stage);
+      onProgress?.(event);
+    }, signal, runId);
+    const status = result.executionStatus;
+    telemetry.finish(runId, status === "partial_failed" || status === "failed" || status === "cancelled" ? status : "completed", result);
+    return result;
+  } catch (error) {
+    telemetry.finish(runId, signal?.aborted ? "cancelled" : "failed");
+    throw error;
+  }
+}
+
+async function executeOrchestration(
+  rawQuery: string,
+  mode: RunMode = "proposed",
+  useCommercialJudge = false,
+  onProgress?: OrchestrationProgressReporter,
+  signal?: AbortSignal,
+  requestedRunId?: string,
+) {
+  assertCoordinatorDeploymentSupported();
+  signal?.throwIfAborted();
   const startedAt = Date.now();
+  const runId = requestedRunId && /^RUN-[A-Z0-9-]{8,64}$/.test(requestedRunId)
+    ? requestedRunId
+    : `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  let progressSequence = 0;
+  const report = (
+    stage: OrchestrationProgressStage,
+    message: string,
+    detail: Omit<OrchestrationProgressEvent, "runId" | "mode" | "stage" | "message" | "timestamp" | "sequence"> = {},
+  ) => {
+    try {
+      const execution = requestCoordinator.getRequest(runId);
+      onProgress?.({
+        runId,
+        mode,
+        stage,
+        message,
+        timestamp: Date.now(),
+        sequence: progressSequence += 1,
+        ...(execution ? {
+          execution: {
+            executionStatus: execution.status,
+            totalCount: execution.progress.total,
+            terminalCount: execution.progress.total - execution.progress.remaining,
+            remainingCount: execution.progress.remaining,
+            version: execution.version,
+          },
+        } : {}),
+        ...detail,
+      });
+    } catch {
+      // 진행 UI 전달 실패가 실제 오케스트레이션을 중단시키지 않도록 격리한다.
+    }
+  };
+
+  report("request.received", "업무 요청을 안전하게 접수했습니다.");
   const { sanitized: query, filteredFields: inputFiltered } = sanitize(rawQuery.trim());
+  report(
+    "request.sanitized",
+    inputFiltered.length
+      ? `민감정보 ${inputFiltered.length}개 필드를 마스킹했습니다.`
+      : "민감정보 노출 여부를 확인했습니다.",
+  );
   const ids = Object.keys(agentProfiles) as AgentId[];
   const scores = Object.fromEntries(
     ids.map((id) => [id, overlap(query, agentProfiles[id].keywords)]),
   ) as Record<AgentId, number>;
   const remoteRagQuery = perturbQueryForRemoteRag(query);
-  const selected =
-    mode === "masrouter"
+  let routerDecision: BoundaryRoutingDecision | null = null;
+  if (mode === "proposed" || mode === "managed") {
+    report("router.deciding", "중앙 Boundary Router가 주관 Agent와 필수 검토 조건을 계산하는 중입니다.");
+    routerDecision = routeWithBoundaryConstraints({
+      query,
+      lexicalScores: scores,
+      filteredFields: inputFiltered,
+    });
+    report("router.decided", `${agentProfiles[routerDecision.primaryAgent].shortName} Agent를 1차 처리 담당으로 결정했습니다.`, {
+      routerDecision,
+    });
+  }
+  let selected =
+    routerDecision
+      ? [...routerDecision.selected]
+      : mode === "masrouter"
       ? selectMasRouterInspired(ids, scores)
       : mode === "remoterag"
         ? selectMasRouterInspired(ids, scores)
-      : mode === "proposed" || mode === "managed"
+      : mode === "managed"
       ? ids.filter((id) => scores[id] > 0)
       : ids;
   if (!selected.length) selected.push("tech");
 
-  const centralizedEvidence =
-    mode === "centralized" || mode === "remoterag"
-      ? ids
-          .filter((id) => mode !== "remoterag" || selected.includes(id))
-          .flatMap((id) =>
-            retrieve(mode === "remoterag" ? remoteRagQuery.query : query, id, 1)
-              .map((item) => item.chunk),
-          )
-          .filter((chunk, index, items) => items.findIndex((item) => item.id === chunk.id) === index)
-      : [];
-  const centralizedGeneration =
-    mode === "centralized" || mode === "remoterag"
-      ? await generateLocalAnswer({
-          agent: "tech",
-          agentName: "중앙집중형 Core LLM",
-          responsibility: "전체 전문영역의 원문과 판단을 중앙에서 통합 처리",
-          query: mode === "remoterag" ? remoteRagQuery.query : query,
-          evidence: centralizedEvidence,
-          fallback: synthesize("tech", centralizedEvidence),
-        })
-      : null;
+  report("agents.selected", `${selected.length}개 전문 Agent를 선택했습니다.`, {
+    selectedAgents: [...selected],
+  });
 
-  const agentResults = await Promise.all(ids.map(async (id, index) => {
-    const isSelected = selected.includes(id);
-    const retrievalQuery =
-      mode === "remoterag" ? remoteRagQuery.query : `${query} ${retrievalFocus[id]}`;
-    const retrieved = isSelected ? retrieve(retrievalQuery, id) : [];
-    const fallbackSummary = isSelected
-      ? synthesize(id, retrieved.map((item) => item.chunk))
-      : "현재 질의에서는 이 Agent가 선택되지 않아 원문 검색과 로컬 LLM 추론을 실행하지 않았습니다.";
-    const generated = isSelected
-      ? centralizedGeneration ?? await generateLocalAnswer({
-          agent: id,
-          agentName: agentProfiles[id].name,
-          responsibility: agentProfiles[id].responsibility,
-          query,
-          evidence: retrieved.map((item) => item.chunk),
-          fallback: fallbackSummary,
-        })
-      : {
-          text: fallbackSummary,
-          metrics: {
-            backend: "deterministic" as const,
-            model: process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
-            ttftMs: null,
-            tpotMs: null,
-            tokensPerSecond: null,
-            promptTokens: null,
-            completionTokens: null,
-            totalMs: 0,
-            fallbackReason: "Agent not selected",
-          },
-        };
-    const modelAndEvidenceSummary =
-      generated.metrics.backend === "ollama"
-        ? fallbackSummary
-        : generated.text;
-    const rawSummary = enforceEvidenceCitation(
-      modelAndEvidenceSummary,
-      retrieved.map((item) => item.chunk.id),
+  const optionalAgents = routerDecision
+    ? routerDecision.candidateAgents.filter((id) => !selected.includes(id))
+    : [];
+  const executionPlan = requestCoordinator.planRequest({
+    requestId: runId,
+    mode,
+    selectedAgents: [...selected],
+    optionalAgents,
+    useCommercialJudge,
+    createdAt: startedAt,
+  });
+
+  // Managed keeps Supervisor integration, but now uses the same primary and
+  // supporting Agent routing contract as the proposed architecture.
+  const benchmarkMode = mode === "centralized" || mode === "remoterag";
+  if (benchmarkMode) {
+    report(
+      "central.retrieving",
+      mode === "remoterag"
+        ? "Edge Agent가 일반화된 질의로 안전한 근거 참조를 준비하는 중입니다."
+        : "Edge Agent가 중앙 비교용 근거 참조를 준비하는 중입니다.",
     );
-    const { sanitized: summary, filteredFields } = sanitize(rawSummary);
+  }
+
+  const skippedAgentResult = (id: AgentId) => {
+    report("agent.skipped", `${agentProfiles[id].shortName} Agent는 이번 요청에서 제외됐습니다.`, {
+      agentId: id,
+      agentName: agentProfiles[id].name,
+    });
+    const skippedMode = process.env.EDGE_AGENT_MODE?.toLowerCase() === "remote" ? "remote" as const : "local" as const;
+    const decisionId = `SKIP-${runId}-${id}`;
+    const allowedClasses = [...agentProfiles[id].allowedClasses];
+    const policy = {
+      allowedClasses,
+      returnedClasses: [] as Classification[],
+      blockedCount: 0,
+      decisionId,
+      egressFields: [...corePayloadFields],
+      edgeMode: skippedMode,
+      rawContentReturned: false as const,
+    };
     return {
       id,
       ...agentProfiles[id],
-      selected: isSelected,
-      selectionReason: scores[id] > 0
-        ? `질의의 ${agentProfiles[id].keywords.filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase())).slice(0, 3).join("·")} 신호와 역할이 일치합니다.`
-        : "현재 질의에서 이 역할의 직접 검토 신호가 발견되지 않았습니다.",
+      selected: false,
+      executionRole: "not-selected" as const,
+      selectionReason: "현재 질의에서 이 역할의 직접 검토 신호가 발견되지 않았습니다.",
       score: Math.min(99, 58 + scores[id] * 8),
-      question: questionFor(id, query),
-      summary,
-      evidence: retrieved.map(({ chunk, score }) => ({
-        id: chunk.id,
-        title: chunk.title,
-        excerpt: `${chunk.section} · ${chunk.text.replace(/\s+/g, " ").slice(0, 110)}…`,
-        sourceUrl: chunk.sourceUrl,
-        sourceType: chunk.sourceType,
-        effectiveDate: chunk.effectiveDate,
-        retrievalScore: Number(score.toFixed(2)),
-      })),
+      question: questionFor(id),
+      summary: "현재 질의에서는 이 Agent가 선택되지 않아 Edge 검색과 로컬 LLM 추론을 실행하지 않았습니다.",
+      report: undefined,
+      evidence: [] as ProjectedEvidence[],
+      evidencePlan: undefined,
+      edgeStatus: "not-selected" as const,
+      edgePolicyOutcome: "allow" as const,
       responsibility: agentProfiles[id].responsibility,
-      filteredFields: [...new Set([...inputFiltered, ...filteredFields])],
-      latencyMs: generated.metrics.backend === "ollama"
-        ? generated.metrics.totalMs
-        : 220 + index * 31 + retrieved.length * 18,
-      inference: generated.metrics,
+      filteredFields: [...inputFiltered],
+      latencyMs: 0,
+      policy,
+      audit: {
+        allowedClasses,
+        returnedClasses: [] as Classification[],
+        blockedCount: 0,
+        policyDecisionId: decisionId,
+        edgeMode: skippedMode,
+      },
+      edgeMetrics: { sourceBytesProcessed: 0, egressBytes: 0, corpusChunks: 0 },
+      inference: {
+        backend: "deterministic" as const,
+        answerSource: "deterministic-fallback" as const,
+        model: process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
+        transport: "none" as const,
+        ttftMs: null,
+        tpotMs: null,
+        tokensPerSecond: null,
+        promptTokens: null,
+        completionTokens: null,
+        totalMs: 0,
+        fallbackReason: "Agent not selected",
+        role: "not-selected" as const,
+      },
     };
-  }));
+  };
+
+  const failedAgentResult = (
+    id: AgentId,
+    executionRole: AgentExecutionRole,
+  ) => {
+    const fallback = skippedAgentResult(id);
+    return {
+      ...fallback,
+      selected: true,
+      executionRole,
+      selectionReason: "선택된 Agent 실행이 실패해 안전한 부분 결과로 처리했습니다.",
+      summary: "Agent 실행을 완료하지 못해 중앙 모델이 이용할 근거가 없습니다.",
+      report: undefined,
+      edgeStatus: "insufficient-evidence" as const,
+      inference: {
+        ...fallback.inference,
+        fallbackReason: "Agent execution failed",
+        role: benchmarkMode ? "evidence-projection" as const : "agent-llm" as const,
+      },
+    };
+  };
+
+  const executeSelectedAgent = async (
+    id: AgentId,
+    executionRole: AgentExecutionRole,
+  ) => {
+    const taskId = `${runId}_${id}`;
+    const retrievalQuery = mode === "remoterag" ? remoteRagQuery.query : groundedAnswersEnabled() ? sanitize(query).sanitized : `${query} ${retrievalFocus[id]}`;
+    const requiredConceptIds = routerDecision ? conceptIdsForAgent(routerDecision, id) : [];
+    let response: CoreEdgeAgentResponse;
+    try {
+      const scheduled = await scheduleAgentTask({
+        requestId: runId,
+        taskId,
+        agentId: id,
+        stage: benchmarkMode ? "agent-evidence-mapping" : "agent-inference",
+        signal,
+        execute: (scheduledSignal) => {
+          report("agent.retrieving", `${agentProfiles[id].shortName} Agent가 Edge RAG 근거를 검색하고 로컬 응답을 생성하는 중입니다.`, {
+            agentId: id,
+            agentName: agentProfiles[id].name,
+            executionRole,
+          });
+          return executeEdgeAgent({
+            version: "1",
+            requestId: `${runId}-${id}`,
+            traceId: runId,
+            agentId: id,
+            purpose: benchmarkMode ? "benchmark" : "orchestration",
+            minimalQuery: retrievalQuery,
+            ...(routerDecision ? {
+              evidenceRequirements: {
+                executionRole,
+                requiredConceptIds,
+              },
+            } : {}),
+            limits: { topK: groundedAnswersEnabled() ? groundedTopK() : 3, deadlineMs: 90_000 },
+          }, scheduledSignal);
+        },
+      });
+      response = scheduled.value;
+    } catch (error) {
+      settleCoordinatorTaskAfterError(runId, taskId, signal);
+      if (signal?.aborted) throw error;
+      return failedAgentResult(id, executionRole);
+    }
+    report("agent.retrieved", `${agentProfiles[id].shortName} Agent가 권한 필터를 통과한 근거 ${response.evidenceRefs.length}건을 준비했습니다.`, {
+      agentId: id,
+      agentName: agentProfiles[id].name,
+      executionRole,
+      evidenceCount: response.evidenceRefs.length,
+    });
+    report(benchmarkMode ? "agent.mapping" : "agent.generating", groundedAnswersEnabled()
+      ? `${agentProfiles[id].shortName} Agent의 공개 근거와 응답 형식을 정리하는 중입니다.`
+      : benchmarkMode
+      ? `${agentProfiles[id].shortName} Agent가 원문 없이 근거 ID를 검증하는 중입니다.`
+      : `${agentProfiles[id].shortName} Agent의 Edge 로컬 생성 결과를 검증하는 중입니다.`, {
+        agentId: id,
+        agentName: agentProfiles[id].name,
+        executionRole,
+      });
+
+    const projected = projectEdgeEvidence(response);
+    const summaryResult = sanitize(response.summary.text);
+    const summary = enforceEvidenceCitation(summaryResult.sanitized, projected.evidence.map((item) => item.id));
+    const returnedClasses = [...new Set(projected.evidence.map((item) => item.classification))];
+    const projectedEdgeMode = edgeMode(response);
+    const policy = {
+      allowedClasses: [...response.policy.effectiveClasses],
+      returnedClasses,
+      blockedCount: response.policy.blockedCount,
+      decisionId: response.policy.decisionId,
+      egressFields: [...corePayloadFields],
+      edgeMode: projectedEdgeMode,
+      rawContentReturned: false as const,
+    };
+    requestCoordinator.transitionTask(taskId, "succeeded");
+    report(benchmarkMode ? "agent.mapped" : "agent.completed", benchmarkMode
+      ? `${agentProfiles[id].shortName} 전문 근거 매핑이 완료됐습니다.`
+      : `${agentProfiles[id].shortName} Agent 응답 생성이 완료됐습니다.`, {
+        agentId: id,
+        agentName: agentProfiles[id].name,
+        executionRole,
+        evidenceCount: response.evidenceRefs.length,
+        backend: benchmarkMode ? undefined : response.metrics.backend,
+        model: benchmarkMode ? undefined : response.metrics.model,
+      });
+    const signalKeywords = agentProfiles[id].keywords
+      .filter((keyword) => query.toLowerCase().includes(keyword.toLowerCase()))
+      .slice(0, 3)
+      .join("·");
+    const completedResult = {
+      id,
+      ...agentProfiles[id],
+      selected: true,
+      executionRole,
+      selectionReason: executionRole === "primary"
+        ? "Boundary Router가 이 요청의 1차 처리 책임자로 선택했습니다."
+        : executionRole === "required-reviewer"
+          ? "보안 경계와 결합 규칙에 따라 생략할 수 없는 검토 역할입니다."
+          : signalKeywords
+            ? `1차 결과의 필수 개념 공백과 ${signalKeywords} 신호를 보완합니다.`
+            : benchmarkMode
+              ? "비교 모드에서 전체 전문영역의 안전한 근거 매핑 대상으로 선택됐습니다."
+              : "1차 결과의 필수 개념 공백을 보완하기 위해 추가됐습니다.",
+      score: Math.min(99, 58 + scores[id] * 8),
+      question: questionFor(id),
+      summary,
+      report: buildAgentEvidenceReport({
+        grounded: groundedAnswersEnabled(),
+        agentId: id,
+        agentName: agentProfiles[id].name,
+        responsibility: agentProfiles[id].responsibility,
+        executionRole,
+        summary,
+        evidenceIds: projected.evidence.map((item) => item.id),
+        evidenceTitles: projected.evidence.map((item) => ({ id: item.id, title: item.title })),
+      }),
+      evidence: projected.evidence,
+      evidencePlan: response.evidencePlan,
+      edgeStatus: response.status,
+      edgePolicyOutcome: response.policy.outcome,
+      responsibility: agentProfiles[id].responsibility,
+      filteredFields: [...new Set([...inputFiltered, ...summaryResult.filteredFields, ...projected.filteredFields])],
+      latencyMs: response.metrics.latencyMs,
+      policy,
+      audit: {
+        allowedClasses: [...response.policy.effectiveClasses],
+        returnedClasses,
+        blockedCount: response.policy.blockedCount,
+        policyDecisionId: response.policy.decisionId,
+        edgeMode: projectedEdgeMode,
+      },
+      edgeMetrics: {
+        sourceBytesProcessed: response.metrics.sourceBytesProcessed,
+        egressBytes: response.metrics.egressBytes,
+        corpusChunks: response.metrics.corpusChunks,
+      },
+      inference: {
+        backend: response.metrics.backend,
+        answerSource: response.metrics.answerSource,
+        model: response.metrics.model,
+        ttftMs: response.metrics.ttftMs,
+        tpotMs: response.metrics.tpotMs,
+        tokensPerSecond: response.metrics.tokensPerSecond ?? null,
+        promptTokens: response.metrics.promptTokens,
+        completionTokens: response.metrics.completionTokens,
+        totalMs: response.metrics.latencyMs,
+        ...(response.status === "completed"
+          ? {}
+          : {
+              fallbackReasonCode: response.metrics.fallbackReasonCode,
+              fallbackReason: safeFallbackReason(response.metrics.fallbackReasonCode, response.status),
+            }),
+        role: benchmarkMode ? "evidence-projection" as const : "agent-llm" as const,
+      },
+    };
+    return completedResult;
+  };
+
+  const executed = new Map<AgentId, Awaited<ReturnType<typeof executeSelectedAgent>>>();
+  let adaptiveDecision: ReturnType<typeof planAdaptiveAdditions> | null = null;
+  if (routerDecision) {
+    const initialRoutingReviewRequired = routerDecision.humanReviewRequired;
+    const primary = await executeSelectedAgent(routerDecision.primaryAgent, "primary");
+    executed.set(primary.id, primary);
+    adaptiveDecision = planAdaptiveAdditions(routerDecision, {
+      [primary.id]: {
+        status: primary.edgeStatus,
+        policyOutcome: primary.edgePolicyOutcome,
+        evidenceCoverage: primary.evidencePlan,
+      },
+    });
+    adaptiveDecision = {
+      ...adaptiveDecision,
+      humanReviewRequired: initialRoutingReviewRequired || adaptiveDecision.humanReviewRequired,
+    };
+    const additions = adaptiveDecision.additions.filter((id) => id !== primary.id);
+    const adaptiveOnly = additions.filter((id) => !routerDecision!.required.includes(id));
+    selected = [primary.id, ...additions];
+    routerDecision = {
+      ...routerDecision,
+      selected: [...selected],
+      supportingAgents: additions,
+      adaptiveAdditions: adaptiveOnly,
+      supportSelection: additions.map((agentId) => ({
+        agentId,
+        reason: routerDecision!.required.includes(agentId) ? "required-review" as const : "coverage-gap" as const,
+        missingConceptIds: adaptiveDecision!.missingConceptIds.filter((conceptId) =>
+          routerDecision!.requiredConcepts.some((concept) => concept.id === conceptId && concept.owner === agentId)),
+      })),
+      humanReviewRequired: adaptiveDecision.humanReviewRequired,
+      rationale: [...routerDecision.rationale, adaptiveDecision.rationale],
+    };
+    if (additions.length) {
+      report("agents.adapted", adaptiveDecision.rationale, {
+        selectedAgents: [...selected],
+        routerDecision,
+      });
+      const supporting = await Promise.all(additions.map((id) => executeSelectedAgent(
+        id,
+        routerDecision!.required.includes(id) ? "required-reviewer" : "supporting",
+      )));
+      supporting.forEach((result) => executed.set(result.id, result));
+    }
+    const observed = Object.fromEntries([...executed.values()].map((result) => [result.id, {
+      status: result.edgeStatus,
+      policyOutcome: result.edgePolicyOutcome,
+      evidenceCoverage: result.evidencePlan,
+    }])) as Partial<Record<AgentId, ObservedAgentOutput>>;
+    const finalAdaptive = planAdaptiveAdditions(routerDecision, observed);
+    adaptiveDecision = {
+      ...finalAdaptive,
+      additions: [],
+      humanReviewRequired: initialRoutingReviewRequired || finalAdaptive.humanReviewRequired,
+    };
+    routerDecision = {
+      ...routerDecision,
+      humanReviewRequired: initialRoutingReviewRequired || finalAdaptive.humanReviewRequired,
+      rationale: [...routerDecision.rationale, finalAdaptive.rationale],
+    };
+  } else {
+    const completed = await Promise.all(selected.map((id) => executeSelectedAgent(id, "supporting")));
+    completed.forEach((result) => executed.set(result.id, result));
+  }
+  for (const task of executionPlan.tasks) {
+    if (task.kind === "agent" && task.status === "queued" && !executed.has(task.assignee as AgentId)) {
+      requestCoordinator.transitionTask(task.taskId, "skipped");
+    }
+  }
+  const agentResults = ids.map((id) => executed.get(id) ?? skippedAgentResult(id));
 
   const selectedResults = agentResults.filter((result) => result.selected);
-  const managedSupervisor =
-    mode === "managed"
-      ? await generateLocalAnswer({
+  const evidencePlan = routerDecision && adaptiveDecision
+    ? {
+        coverage: adaptiveDecision.coverage,
+        coveredConceptIds: adaptiveDecision.coveredConceptIds,
+        missingConceptIds: adaptiveDecision.missingConceptIds,
+        humanReviewRequired: adaptiveDecision.humanReviewRequired,
+        agentPlans: selectedResults.map((result) => ({
+          agentId: result.id,
+          status: result.evidencePlan?.status ?? "unknown" as const,
+          coverage: result.evidencePlan?.coverage ?? null,
+          modes: [...new Set(result.evidencePlan?.decisions.map((decision) => decision.appliedMode) ?? [])],
+          transfers: result.evidencePlan?.decisions.map((decision) => ({
+            referenceId: decision.referenceId,
+            plannedMode: decision.plannedMode,
+            appliedMode: decision.appliedMode,
+            egressBytes: decision.egressBytes,
+          })) ?? [],
+        })),
+      }
+    : null;
+  if (evidencePlan) {
+    report("evidence.plan.ready", evidencePlan.humanReviewRequired
+      ? `필수 개념 ${evidencePlan.missingConceptIds.length}개가 남아 사람 검토가 필요합니다.`
+      : "모든 필수 개념이 Edge 근거에서 확인됐습니다.", {
+        evidencePlan,
+      });
+    if (evidencePlan.humanReviewRequired) {
+      report("router.review-required", "주관기관 선정 불확실성, Edge 정책 또는 근거 충족도 Gate가 사람 검토를 요청했습니다.", {
+        selectedAgents: [...selected],
+        routerDecision: routerDecision ?? undefined,
+        evidencePlan,
+      });
+    }
+  }
+  const demoSynthesis = demoSynthesisEnabled() ? publicDemoSynthesis(selectedResults) : null;
+  const demoEvidenceInsufficient = demoSynthesis !== null && demoSynthesis.evidence.length === 0;
+  if (demoEvidenceInsufficient) {
+    for (const taskId of [`${runId}_central-integration`, `${runId}_managed-supervisor`]) {
+      if (requestCoordinator.getTask(taskId)?.status === "queued") requestCoordinator.transitionTask(taskId, "skipped");
+    }
+  }
+  const safeIntegrationEvidence: KnowledgeChunk[] = demoSynthesis?.evidence ?? selectedResults.map((result) => ({
+    id: result.evidence[0]?.id ?? `EDGE-SUMMARY-${result.id}`,
+    agent: result.id,
+    title: `${result.shortName} Edge 응답 요약`,
+    section: "summary + evidence IDs/classification",
+    text: [
+      `안전 요약: ${result.summary}`,
+      `근거 ID/등급: ${result.evidence.map((item) => `[${item.id}](${item.classification})`).join(", ") || "없음"}`,
+    ].join("\n"),
+    sourceType: "synthetic-internal",
+    classification: "public",
+    effectiveDate: "",
+    tags: ["edge-summary", "evidence-reference"],
+  }));
+
+  let centralizedGeneration: Awaited<ReturnType<typeof generateLocalAnswer>> | null = null;
+  if (!demoEvidenceInsufficient && (benchmarkMode || mode === "proposed")) {
+    const centralTaskId = `${runId}_central-integration`;
+    const synthesisCallId = crypto.randomUUID();
+    const evidenceCount = selectedResults.reduce((sum, result) => sum + result.evidence.length, 0);
+    report("central.retrieved", `Edge에서 안전한 근거 참조 ${evidenceCount}건을 확보했습니다.`, {
+      evidenceCount,
+    });
+    report("central.generating", mode === "proposed"
+      ? "중앙 통합 모델이 주관·보조 Agent의 안전 요약과 근거 ID로 최종 응답을 생성하는 중입니다."
+      : "중앙 모델이 안전한 요약과 근거 ID만으로 응답을 생성하는 중입니다.");
+    try {
+      const scheduled = await scheduleLocalLlmTask({
+        requestId: runId,
+        taskId: centralTaskId,
+        agentId: "tech",
+        taskKind: "central-integration",
+        stage: "central-integration",
+        signal,
+        execute: async (scheduledSignal) => {
+          const generated = await generateLocalAnswer({
+      agent: "tech",
+      agentName: mode === "proposed" ? "AXNetCC 중앙 통합 모델" : "중앙집중형 Core LLM",
+      responsibility: mode === "proposed"
+        ? "주관·보조 Agent가 반환한 안전 요약과 근거 식별자를 조정해 최종 응답 생성"
+        : "Edge가 반환한 안전 요약과 근거 식별자만 중앙에서 통합 처리",
+      query: mode === "remoterag" ? remoteRagQuery.query : query,
+      evidence: safeIntegrationEvidence,
+      fallback: selectedResults.map((result) => result.summary).join(" "),
+      outputFormat: "integrated-report",
+        signal: scheduledSignal,
+        onAccountingFailure: (metrics) => markInferenceAccountingIncomplete(runId, "synthesis", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, synthesisCallId),
+        onMetrics: (metrics) => recordInferenceStage(runId, "synthesis", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, synthesisCallId),
+        });
+          if (groundedAnswersEnabled() && generated.metrics.backend !== "ollama") {
+            centralizedGeneration = generated;
+            throw new Error("Grounded integration output rejected");
+          }
+          return generated;
+        },
+      });
+      centralizedGeneration = scheduled.value;
+      requestCoordinator.transitionTask(centralTaskId, "succeeded");
+    } catch (error) {
+      settleCoordinatorTaskAfterError(runId, centralTaskId, signal);
+      if (signal?.aborted) throw error;
+      centralizedGeneration ??= deterministicIntegrationFailure(
+        selectedResults.map((result) => result.summary).join(" "),
+        "Central integration execution failed",
+      );
+    }
+  }
+  if (demoEvidenceInsufficient) {
+    report("central.integrating", "확인 가능한 공개 근거가 없어 모델 합성을 실행하지 않았습니다.");
+  } else if (groundedAnswersEnabled()) {
+    report("central.integrating", "전달된 공개 근거와 출처를 모아 응답을 구성하는 중입니다. 답변 의미의 자동 검증은 수행하지 않습니다.");
+  } else if (mode === "managed") {
+    report("central.integrating", "Managed Supervisor가 Agent 응답과 근거를 통합해 최종 응답을 생성하는 중입니다.");
+  } else if (mode === "centralized" || mode === "remoterag") {
+    report("central.integrating", "중앙 모델 응답과 전문영역별 근거의 정합성을 검증하는 중입니다.");
+  } else if (mode === "proposed") {
+    report("central.integrating", "중앙 통합 모델 응답의 필수 개념·근거·정책 정합성을 검증하는 중입니다.");
+  } else {
+    report("central.integrating", "Core Orchestrator가 Agent 응답의 근거·누락·충돌을 검증하는 중입니다.");
+  }
+  let managedSupervisor: Awaited<ReturnType<typeof generateLocalAnswer>> | null = null;
+  if (!demoEvidenceInsufficient && mode === "managed") {
+    const supervisorTaskId = `${runId}_managed-supervisor`;
+    const supervisorCallId = crypto.randomUUID();
+    try {
+      const scheduled = await scheduleLocalLlmTask({
+        requestId: runId,
+        taskId: supervisorTaskId,
+        agentId: "tech",
+        taskKind: "managed-supervisor",
+        stage: "managed-supervisor",
+        signal,
+        execute: async (scheduledSignal) => {
+          const generated = await generateLocalAnswer({
           agent: "tech",
           agentName: "Managed Platform Supervisor",
-          responsibility: "중앙 Supervisor가 전문 Agent 응답과 조직 데이터를 통합",
+          responsibility: "중앙 Supervisor가 Edge의 안전 요약과 근거 식별자만 통합",
           query,
-          evidence: selectedResults.flatMap((result) =>
-            result.evidence.map((item) => ({
-              id: item.id,
-              agent: result.id as AgentId,
-              title: item.title,
-              section: item.sourceType,
-              text: item.excerpt,
-              sourceType: "public" as const,
-              classification: "public" as const,
-              effectiveDate: item.effectiveDate ?? "",
-              sourceUrl: item.sourceUrl,
-              tags: [],
-            })),
-          ),
+          evidence: safeIntegrationEvidence,
           fallback: selectedResults.map((result) => result.summary).join(" "),
-        })
-      : null;
+          outputFormat: "integrated-report",
+          signal: scheduledSignal,
+          onAccountingFailure: (metrics) => markInferenceAccountingIncomplete(runId, "supervisor", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, supervisorCallId),
+          onMetrics: (metrics) => recordInferenceStage(runId, "supervisor", { ...metrics, nodeId: process.env.DEMO_CORE_NODE_ID ?? null }, supervisorCallId),
+        });
+          if (groundedAnswersEnabled() && generated.metrics.backend !== "ollama") {
+            managedSupervisor = generated;
+            throw new Error("Grounded integration output rejected");
+          }
+          return generated;
+        },
+      });
+      managedSupervisor = scheduled.value;
+      requestCoordinator.transitionTask(supervisorTaskId, "succeeded");
+    } catch (error) {
+      settleCoordinatorTaskAfterError(runId, supervisorTaskId, signal);
+      if (signal?.aborted) throw error;
+      managedSupervisor ??= deterministicIntegrationFailure(
+        selectedResults.map((result) => result.summary).join(" "),
+        "Managed Supervisor execution failed",
+      );
+    }
+  }
   const evidenceCount = selectedResults.reduce((sum, result) => sum + result.evidence.length, 0);
   const requiresSecurity = /개인|민감|내부|보안|민원|데이터/i.test(query);
   const requiresLegal = /법|계약|책임|위탁|개인/i.test(query);
@@ -334,56 +952,13 @@ export async function orchestrate(
     requiresSecurity && !selected.includes("security") ? "보안" : "",
     requiresLegal && !selected.includes("legal") ? "법무" : "",
   ].filter(Boolean);
-  const tokens = Math.ceil((query.length + selectedResults.reduce((sum, result) => sum + result.summary.length, 0)) * 1.7);
   const encoder = new TextEncoder();
-  const bytes = encoder.encode(JSON.stringify(selectedResults)).length;
-  const distributedPayloadBytes = encoder.encode(JSON.stringify(
-    selectedResults.map((result) => ({
-      question: result.question,
-      summary: result.summary,
-      evidenceIds: result.evidence.map((item) => item.id),
-    })),
-  )).length;
-  const centralizedSourceBytes = encoder.encode(JSON.stringify(
-    ids.flatMap((id) => retrieve(query, id, 3).map((item) => item.chunk)),
-  )).length + encoder.encode(rawQuery).length;
-  const remoteRagBoundaryBytes = encoder.encode(JSON.stringify({
-    protectedQuery: remoteRagQuery.query,
-    candidateEvidence: centralizedEvidence.map((chunk) => ({
-      id: chunk.id,
-      text: chunk.text,
-    })),
-  })).length;
-  const masRouterBoundaryBytes = encoder.encode(JSON.stringify({
-    query,
-    selectedAgents: selected,
-    responses: selectedResults.map((result) => result.summary),
-  })).length;
-  const boundaryBytes =
-    mode === "centralized"
-      ? centralizedSourceBytes
-      : mode === "remoterag"
-        ? remoteRagBoundaryBytes
-        : mode === "masrouter"
-          ? masRouterBoundaryBytes
-          : distributedPayloadBytes;
-  const minimizationRate =
-    mode === "centralized"
-      ? 0
-      : Math.max(0, Math.round((1 - boundaryBytes / Math.max(centralizedSourceBytes, 1)) * 100));
-  const privacyRiskScore =
-    mode === "centralized"
-      ? Math.min(100, 75 + inputFiltered.length * 10)
-      : mode === "managed"
-        ? Math.min(100, 65 + selected.length * 3 + inputFiltered.length * 6)
-      : mode === "remoterag"
-        ? Math.min(100, 42 + selected.length * 2 + inputFiltered.length * 4)
-      : mode === "masrouter"
-        ? Math.min(100, 58 + selected.length * 3 + inputFiltered.length * 5)
-      : mode === "parallel"
-        ? Math.min(100, 30 + selected.length * 4 + inputFiltered.length * 5)
-        : Math.min(100, 8 + selected.length * 3 + inputFiltered.length * 4);
+  const centralizedSourceBytes = selectedResults.reduce(
+    (sum, result) => sum + result.edgeMetrics.sourceBytesProcessed,
+    0,
+  );
   const validEvidenceIds = new Set(selectedResults.flatMap((result) => result.evidence.map((item) => item.id)));
+  const integrationEvidenceIds = demoSynthesis ? new Set(safeIntegrationEvidence.map(item => item.id)) : validEvidenceIds;
   const citations = selectedResults.flatMap((result) =>
     [...result.summary.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]),
   );
@@ -441,96 +1016,473 @@ export async function orchestrate(
       citationRecall * 0.15 +
       claimSupportRate * 0.2,
   );
-  const inferenceResults = [
-    ...selectedResults.map((result) => result.inference),
+  const allInferenceResults = [
+    ...selectedResults
+      .filter((result) => result.inference.role === "agent-llm")
+      .map((result) => result.inference),
+    ...(centralizedGeneration ? [centralizedGeneration.metrics] : []),
     ...(managedSupervisor ? [managedSupervisor.metrics] : []),
   ];
+  const tokenReading = aggregateInferenceTokenCounts(allInferenceResults);
+  const defaultConclusion = "제한적 시범 도입을 권고합니다. 원문 데이터의 조직 내 보존, 역할 기반 접근통제, 담당자 최종 검토를 선행조건으로 설정하고 PoC 이후 품질·보안·비용 지표를 재평가해야 합니다.";
+  const integratedGeneration = managedSupervisor ?? centralizedGeneration;
+  const integratedRawConclusion = integratedGeneration
+    ? demoSynthesis
+      ? filterDemoSynthesisCitations(integratedGeneration.text, integrationEvidenceIds)
+      : enforceEvidenceCitation(integratedGeneration.text, [...integrationEvidenceIds])
+    : demoEvidenceInsufficient
+      ? "확인 가능한 공개 근거가 부족하여 답변을 생성하지 않았습니다. Agent 연결 상태와 공개 근거를 확인한 뒤 다시 요청해 주세요."
+      : groundedAnswersEnabled() ? groundedUnavailable() : defaultConclusion;
+  const { sanitized: conclusion } = sanitize(integratedRawConclusion);
+  const reportTitle = "신규 AI 서비스 도입 종합 검토보고서";
+  const primaryAgentId = routerDecision?.primaryAgent ?? selectedResults[0]?.id ?? "tech";
+  const integratedReport = buildIntegratedEvidenceReport({
+    preserveConclusionCitations: Boolean(demoSynthesis),
+    grounded: groundedAnswersEnabled(),
+    title: reportTitle,
+    conclusion,
+    primaryAgentId,
+    agents: selectedResults
+      .filter((agent) => agent.report)
+      .map((agent) => ({
+        id: agent.id,
+        report: agent.report!,
+        evidenceIds: agent.evidence.map((item) => item.id).filter(id => integrationEvidenceIds.has(id)),
+      })),
+  });
+  const integration = managedSupervisor
+    ? {
+        actor: "managed-supervisor" as const,
+        label: "Managed Platform Supervisor",
+        backend: managedSupervisor.metrics.backend,
+        answerSource: managedSupervisor.metrics.answerSource,
+        ...(managedSupervisor.metrics.fallbackReason
+          ? { fallbackReason: managedSupervisor.metrics.fallbackReason }
+          : {}),
+        model: managedSupervisor.metrics.model,
+      }
+    : centralizedGeneration
+      ? {
+          actor: "central-llm" as const,
+          label: mode === "proposed" ? "AXNetCC 중앙 통합 모델" : "중앙집중형 Core LLM",
+          backend: centralizedGeneration.metrics.backend,
+          answerSource: centralizedGeneration.metrics.answerSource,
+          ...(centralizedGeneration.metrics.fallbackReason
+            ? { fallbackReason: centralizedGeneration.metrics.fallbackReason }
+            : {}),
+          model: centralizedGeneration.metrics.model,
+        }
+      : {
+          actor: "core-orchestrator" as const,
+          label: "Core Orchestrator",
+          backend: "deterministic" as const,
+          answerSource: "deterministic-fallback" as const,
+          fallbackReason: demoEvidenceInsufficient
+            ? "Insufficient approved public evidence; synthesis not attempted"
+            : "No integration LLM was scheduled for this mode",
+          model: null,
+        };
+  const integratedEvidenceText = demoSynthesis
+    ? safeIntegrationEvidence.map(item => item.text.slice(0, 800)).join(" ")
+    : selectedResults.flatMap((result) => result.evidence).map(item => item.excerpt).join(" ");
+  const integratedCitations = [...conclusion.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1]);
+  const integratedValidCitations = integratedCitations.filter((id) => integrationEvidenceIds.has(id));
+  const integratedCitationValidity = integratedCitations.length
+    ? Math.round(integratedValidCitations.length / integratedCitations.length * 100)
+    : 0;
+  const integratedCitationRecall = Math.round(
+    new Set(integratedValidCitations).size / Math.max(integrationEvidenceIds.size, 1) * 100,
+  );
+  const integratedClaims = conclusion
+    .split(/\n+|(?<=[.!?다요])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => terms(sentence.replace(/\[[^\]]+\]/g, "")).length >= 3);
+  const integratedClaimSupport = Math.round(
+    integratedClaims.filter((sentence) =>
+      [...sentence.matchAll(/\[([^\]]+)\]/g)].some((match) => integrationEvidenceIds.has(match[1])),
+    ).length / Math.max(integratedClaims.length, 1) * 100,
+  );
+  const integratedRelevance = lexicalCoverage(query, conclusion);
+  const integratedEvidenceSupport = lexicalCoverage(conclusion, integratedEvidenceText);
+  const reportedGroundedness = integratedGeneration ? integratedEvidenceSupport : groundedness;
+  const reportedRelevance = integratedGeneration ? integratedRelevance : relevance;
+  const reportedEvidenceSupport = integratedGeneration ? integratedEvidenceSupport : evidenceSupport;
+  const reportedCitationCoverage = integratedGeneration ? integratedClaimSupport : citationCoverage;
+  const reportedCitationValidity = integratedGeneration ? integratedCitationValidity : citationValidity;
+  const reportedCitationRecall = integratedGeneration ? integratedCitationRecall : citationRecall;
+  const reportedClaimSupportRate = integratedGeneration ? integratedClaimSupport : claimSupportRate;
+  const reportedAnswerCompleteness = integratedGeneration
+    ? conclusion.trim().length >= 40 && integratedEvidenceText.length > 0 ? 100 : 0
+    : answerCompleteness;
+  const reportedQualityScore = integratedGeneration
+    ? Math.round(
+        integratedRelevance * 0.15 +
+          integratedEvidenceSupport * 0.2 +
+          retrievalSuccessRate * 0.15 +
+          integratedCitationValidity * 0.15 +
+          integratedCitationRecall * 0.15 +
+          integratedClaimSupport * 0.2,
+      )
+    : qualityScore;
   const commercialJudge = useCommercialJudge
-    ? await evaluateWithCommercialJudge({
-        query,
-        answer: selectedResults.map((result) => `${result.shortName}: ${result.summary}`).join("\n"),
-        evidence: selectedResults.flatMap((result) =>
-          result.evidence.map((item) => `[${item.id}] ${item.excerpt}`),
-        ).join("\n"),
-      })
+    ? await (async () => {
+        const judgeTaskId = `${runId}_commercial-judge`;
+        report("judge.evaluating", "상용 LLM이 답변 품질을 블라인드 평가하는 중입니다.");
+        try {
+          const scheduled = await scheduleCommercialJudgeTask({
+            requestId: runId,
+            taskId: judgeTaskId,
+            stage: "commercial-judge",
+            signal,
+            execute: (scheduledSignal) => evaluateWithCommercialJudge({
+              query,
+              answer: conclusion,
+              evidence: selectedResults.flatMap((result) =>
+                result.evidence.map((item) => `[${item.id}] classification=${item.classification}`),
+              ).join("\n"),
+              signal: scheduledSignal,
+            }),
+          });
+          const judged = scheduled.value;
+          requestCoordinator.transitionTask(judgeTaskId, judged.error ? "failed" : "succeeded");
+          report("judge.completed", judged.error ? "상용 LLM 평가를 완료하지 못했습니다." : "상용 LLM 품질 평가가 완료됐습니다.");
+          return judged;
+        } catch (error) {
+          settleCoordinatorTaskAfterError(runId, judgeTaskId, signal);
+          if (signal?.aborted) throw error;
+          return {
+            enabled: true,
+            provider: "configured",
+            error: "Commercial judge execution failed",
+          };
+        }
+      })()
     : {
         enabled: false,
         provider: "disabled",
       };
 
-  return {
-    runId: `RUN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+  const boundaryTransport = selectedResults.some((agent) => agent.policy.edgeMode === "remote")
+    ? "remote" as const
+    : "local" as const;
+  const blockedDocuments = selectedResults.reduce(
+    (sum, agent) => sum + agent.policy.blockedCount,
+    0,
+  );
+  const egressEnvelopes: EgressEnvelope[] = selectedResults.map((agent) => ({
+      id: `${runId}:edge:${agent.id}`,
+      recipientId: `edge-agent:${agent.id}`,
+      channel: "edge-agent" as const,
+      leavesBoundary: agent.policy.edgeMode === "remote",
+      payloadBytes: agent.edgeMetrics.egressBytes,
+      byteSource: "measured-contract" as const,
+      disclosures: [{
+        sourceId: "user-input",
+        mode: agent.policy.edgeMode === "remote" ? "masked" as const : "none" as const,
+      }],
+    }));
+  const integrationGenerationForPrivacy = managedSupervisor ?? centralizedGeneration;
+  if (integrationGenerationForPrivacy?.metrics.transport === "remote") {
+    const integrationPayloadBytes = encoder.encode(JSON.stringify({
+      query,
+      evidence: safeIntegrationEvidence.map((item) => ({
+        id: item.id,
+        classification: item.classification,
+        text: item.text,
+      })),
+    })).length;
+    egressEnvelopes.push({
+      id: `${runId}:central-llm`,
+      recipientId: `central-llm:${integrationGenerationForPrivacy.metrics.model}`,
+      channel: "central-llm",
+      leavesBoundary: true,
+      payloadBytes: integrationPayloadBytes,
+      byteSource: "derived-safe-payload",
+      disclosures: [{ sourceId: "user-input", mode: "masked" }],
+    });
+  }
+  if (commercialJudge.enabled) {
+    const judgePayloadBytes = encoder.encode(JSON.stringify({
+      query,
+      answer: conclusion,
+      evidence: selectedResults.flatMap((agent) => agent.evidence.map((item) => ({
+        id: item.id,
+        classification: item.classification,
+      }))),
+    })).length;
+    egressEnvelopes.push({
+      id: `${runId}:commercial-judge`,
+      recipientId: `commercial-judge:${commercialJudge.provider}`,
+      channel: "commercial-judge",
+      leavesBoundary: true,
+      payloadBytes: judgePayloadBytes,
+      byteSource: "derived-safe-payload",
+      disclosures: [{ sourceId: "user-input", mode: "masked" }],
+    });
+  }
+  const boundaryBytes = egressEnvelopes.reduce(
+    (sum, envelope) => sum + (envelope.payloadBytes ?? 0),
+    0,
+  );
+  const minimizationRate = centralizedSourceBytes > 0
+    ? Math.max(0, Math.round((1 - boundaryBytes / centralizedSourceBytes) * 100))
+    : null;
+  const privacyRisk = calculatePrivacyRiskV2({
+    protectedSources: [{ id: "user-input", kind: "user-input", text: rawQuery.trim() }],
+    egressEnvelopes,
+    selectedAgentIds: selected,
+    totalAgentCount: ids.length,
+    outputTexts: [conclusion, ...selectedResults.map((agent) => agent.summary)],
+  });
+  const traceabilityReading = calculateCitationTraceability(conclusion, integrationEvidenceIds);
+  const conflictAnalysis = detectExplicitClaimConflicts(
+    selectedResults.map((agent) => ({ agentId: agent.id, text: agent.summary })),
+  );
+  const execution = requestCoordinator.getRequest(runId);
+  if (!execution) throw new Error(`Execution state not found for ${runId}`);
+  const schedulerMetrics = executionMetricsForRequest(runId);
+  const schedulerMetricsByTask = new Map(
+    schedulerMetrics.map((metrics) => [metrics.taskId, metrics]),
+  );
+  const executionTasks = execution.taskIds
+    .map((taskId) => {
+      const task = requestCoordinator.getTask(taskId);
+      return task
+        ? { ...task, scheduler: schedulerMetricsByTask.get(taskId) ?? null }
+        : null;
+    })
+    .filter((task) => task !== null);
+  const elapsedReading = calculateElapsedMetric(startedAt, Date.now());
+  const aggregateQueueWaitMs = schedulerMetrics.reduce((sum, item) => sum + item.queueWaitMs, 0);
+  const aggregateInferenceMs = schedulerMetrics.reduce((sum, item) => sum + item.inferenceMs, 0);
+  const callsReading = derivedMetric(allInferenceResults.length, {
+    source: "scheduled inference results",
+    method: "count Agent and central/Supervisor inference results; evidence-only mapping is excluded",
+  });
+  const boundaryBytesReading = derivedMetric(boundaryBytes, {
+    source: "boundary.egressLedger.v2.envelopes.payloadBytes",
+    method: "sum every measured-contract and derived-safe-payload byte count",
+  });
+  const exposedFieldsReading = derivedMetric(Math.ceil(privacyRisk.sensitiveTransmittedCount), {
+    source: "boundary.egressLedger.v2 disclosures",
+    method: "ceil privacy-risk-v2 sensitive transmitted occurrence equivalents",
+  });
+  const rawDataLeavesEdgeReading = derivedMetric(privacyRisk.rawDataLeavesEdge, {
+    source: "boundary.egressLedger.v2 disclosures",
+    method: "true when any protected-source original byte crosses a physical trust boundary",
+  });
+  const queueWaitReading = derivedMetric(aggregateQueueWaitMs, {
+    source: "endpoint scheduler task audit",
+    method: "sum task queueWaitMs for this request",
+  });
+  const inferenceTimeReading = derivedMetric(aggregateInferenceMs, {
+    source: "endpoint scheduler task audit",
+    method: "sum task inferenceMs for this request",
+  });
+  const reviewStatus = missing.length ||
+    evidencePlan?.humanReviewRequired ||
+    conflictAnalysis.status === "detected" ||
+    execution.status === "partial_failed" ||
+    execution.status === "failed"
+    ? "review" as const
+    : "ready" as const;
+
+  const result = {
+    runId,
+    requestId: runId,
     mode,
-    query,
-    title: "신규 AI 서비스 도입 종합 검토",
-    conclusion: "제한적 시범 도입을 권고합니다. 원문 데이터의 조직 내 보존, 역할 기반 접근통제, 담당자 최종 검토를 선행조건으로 설정하고 PoC 이후 품질·보안·비용 지표를 재평가해야 합니다.",
-    status: missing.length ? "review" : "ready",
+    title: reportTitle,
+    conclusion,
+    report: integratedReport,
+    integration,
+    routerDecision,
+    evidencePlan,
+    status: reviewStatus,
+    reviewStatus,
+    executionStatus: demoEvidenceInsufficient && execution.status === "completed" ? "partial_failed" : execution.status,
+    execution: {
+      requestId: execution.requestId,
+      executionStatus: demoEvidenceInsufficient && execution.status === "completed" ? "partial_failed" : execution.status,
+      totalCount: execution.progress.total,
+      terminalCount: execution.progress.total - execution.progress.remaining,
+      remainingCount: execution.progress.remaining,
+      version: execution.version,
+      tasks: executionTasks,
+      persistence: "single-process-memory" as const,
+      scheduling: {
+        authority: "single-process-memory" as const,
+        policy: "fifo-last-task-aging-deadline" as const,
+        scheduledTaskCount: schedulerMetrics.length,
+      },
+    },
     agents: agentResults,
+    boundary: {
+      transport: boundaryTransport,
+      corePayloadFields: [...corePayloadFields],
+      blockedDocuments,
+      rawContentReturned: false as const,
+      policyVersion: "edge-rag-v1",
+      egressLedger: {
+        version: "v2",
+        envelopeCount: egressEnvelopes.length,
+        recipients: [...new Set(
+          egressEnvelopes
+            .filter((envelope) => envelope.leavesBoundary)
+            .map((envelope) => envelope.recipientId),
+        )],
+        totalPayloadBytes: boundaryBytes,
+        envelopes: egressEnvelopes.map((envelope) => ({
+          id: envelope.id,
+          recipientId: envelope.recipientId,
+          channel: envelope.channel,
+          leavesBoundary: envelope.leavesBoundary,
+          payloadBytes: envelope.payloadBytes ?? 0,
+          byteSource: envelope.byteSource ?? "derived-safe-payload",
+          disclosures: envelope.disclosures.map((disclosure) => ({
+            sourceId: disclosure.sourceId,
+            mode: disclosure.mode,
+            originalRangeCount: disclosure.originalRanges?.length ?? 0,
+          })),
+        })),
+      },
+    },
     checks: [
       { label: "필수 검토영역", status: missing.length ? "warn" : "pass", detail: missing.length ? `${missing.join("·")} 영역이 누락되었습니다.` : `${selected.length}개 필수 전문영역을 반영했습니다.` },
+      ...(evidencePlan ? [{
+        label: "필수 개념 Gate",
+        status: evidencePlan.humanReviewRequired ? "warn" as const : "pass" as const,
+        detail: evidencePlan.coverage === null
+          ? "필수 개념을 확정하지 못해 사람 검토로 전환했습니다."
+          : `${Math.round(evidencePlan.coverage * 100)}% 충족 · 미충족 ${evidencePlan.missingConceptIds.length}개`,
+      }] : []),
       { label: "근거 완전성", status: evidenceCount >= selected.length ? "pass" : "warn", detail: `${evidenceCount}개 근거 청크가 판단에 연결되었습니다.` },
-      { label: "응답 충돌", status: selected.length > 1 ? "warn" : "pass", detail: selected.length > 1 ? "기술 편의성과 데이터 최소화 원칙을 조건부 조정해야 합니다." : "상충 판단이 발견되지 않았습니다." },
+      {
+        label: "응답 충돌",
+        status: conflictAnalysis.status === "detected" ? "warn" : "pass",
+        detail: conflictAnalysis.status === "detected"
+          ? `명시적 허용·금지 충돌 ${conflictAnalysis.conflicts.length}건을 검토해야 합니다.`
+          : conflictAnalysis.status === "not-evaluable"
+            ? "명시적 허용·금지 문장이 없어 자동 판정하지 않았습니다."
+            : "보수적 명시 규칙에서 충돌이 탐지되지 않았습니다(의미론적 무충돌을 보장하지 않음).",
+      },
       { label: "민감정보", status: "pass", detail: inputFiltered.length ? `${inputFiltered.join("·")} 입력을 마스킹했습니다.` : "직접 식별자가 발견되지 않았습니다." },
     ],
     metrics: {
-      calls: mode === "centralized" ? 1 : selected.length + (mode === "managed" ? 1 : 0),
-      tokens,
-      bytes,
-      latencyMs: selectedResults.some((result) => result.inference.backend === "ollama")
-        ? Date.now() - startedAt
-        : Date.now() - startedAt + Math.max(...selectedResults.map((result) => result.latencyMs)),
-      exposedFields: 0,
-      traceability: evidenceCount ? 100 : 0,
-      rawDataLeavesEdge:
-        mode === "centralized" ||
-        mode === "managed" ||
-        mode === "masrouter" ||
-        mode === "remoterag",
-      boundaryBytes: mode === "managed" ? centralizedSourceBytes + distributedPayloadBytes : boundaryBytes,
-      dataRecipients:
-        mode === "centralized" || mode === "remoterag"
-          ? 1
-          : selected.length + (mode === "managed" ? 1 : 0),
-      minimizationRate: mode === "managed" ? 0 : minimizationRate,
-      privacyRiskScore,
+      calls: callsReading.value,
+      agentCalls: selectedResults.filter((result) => result.inference.role === "agent-llm").length,
+      integrationCalls: Number(Boolean(centralizedGeneration)) + Number(Boolean(managedSupervisor)),
+      tokens: tokenReading.value?.totalTokens ?? null,
+      tokenBreakdown: tokenReading.value,
+      bytes: boundaryBytes,
+      latencyMs: elapsedReading.value,
+      latencyBreakdown: {
+        queueWaitMs: queueWaitReading.value,
+        inferenceMs: inferenceTimeReading.value,
+        endToEndMs: elapsedReading.value,
+        aggregation: "task-sum/task-sum/request-wall-clock" as const,
+      },
+      exposedFields: exposedFieldsReading.value,
+      traceability: traceabilityReading.value?.score ?? null,
+      traceabilityDetail: traceabilityReading.value,
+      rawDataLeavesEdge: privacyRisk.rawDataLeavesEdge,
+      boundaryBytes,
+      dataRecipients: privacyRisk.recipientCount,
+      minimizationRate,
+      privacyRiskScore: privacyRisk.score,
+      privacyRiskVersion: privacyRisk.privacyRiskVersion,
+      privacyRisk,
       queryProtection: mode === "remoterag" ? "deterministic-generalization" : "none",
       perturbedTerms: mode === "remoterag" ? remoteRagQuery.replaced : 0,
-      groundedness,
-      relevance,
-      evidenceSupport,
-      citationCoverage,
-      citationValidity,
-      citationRecall,
-      claimSupportRate,
-      evidenceUtilizationRate,
-      claimCitationCoverage,
+      groundedness: reportedGroundedness,
+      relevance: reportedRelevance,
+      evidenceSupport: reportedEvidenceSupport,
+      citationCoverage: reportedCitationCoverage,
+      citationValidity: reportedCitationValidity,
+      citationRecall: reportedCitationRecall,
+      claimSupportRate: reportedClaimSupportRate,
+      evidenceUtilizationRate: integratedGeneration ? reportedCitationRecall : evidenceUtilizationRate,
+      claimCitationCoverage: integratedGeneration ? reportedClaimSupportRate : claimCitationCoverage,
       retrievalSuccessRate,
       domainCoverage,
-      answerCompleteness,
-      qualityScore,
-      ragChunks: ragStats.chunks,
-      llmBackend: inferenceResults.every((result) => result.backend === "ollama") ? "ollama" : "deterministic",
-      model: selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
+      answerCompleteness: reportedAnswerCompleteness,
+      qualityScore: reportedQualityScore,
+      ragChunks: Math.max(0, ...selectedResults.map((result) => result.edgeMetrics.corpusChunks)),
+      llmBackend: !demoEvidenceInsufficient && allInferenceResults.length > 0 && allInferenceResults.every((result) => result.backend === "ollama") ? "ollama" : "deterministic",
+      model: integration.model ?? selectedResults[0]?.inference.model ?? process.env.LOCAL_LLM_MODEL ?? "qwen2.5:3b",
       ttftMs: (() => {
-        const values = inferenceResults
+        const values = allInferenceResults
           .map((result) => result.ttftMs)
           .filter((value): value is number => value !== null);
         return values.length ? Math.min(...values) : null;
       })(),
       tpotMs: (() => {
-        const values = inferenceResults
+        const values = allInferenceResults
           .map((result) => result.tpotMs)
           .filter((value): value is number => value !== null);
         return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : null;
       })(),
+      provenance: {
+        version: METRIC_PROVENANCE_VERSION,
+        fields: {
+          calls: callsReading.provenance,
+          tokens: tokenReading.provenance,
+          latencyMs: elapsedReading.provenance,
+          queueWaitMs: queueWaitReading.provenance,
+          inferenceMs: inferenceTimeReading.provenance,
+          boundaryBytes: boundaryBytesReading.provenance,
+          exposedFields: exposedFieldsReading.provenance,
+          rawDataLeavesEdge: rawDataLeavesEdgeReading.provenance,
+          traceability: traceabilityReading.provenance,
+          privacyRiskScore: derivedMetric(privacyRisk.score, {
+            source: "privacy-risk-v2 S/A/O breakdown",
+            method: "round(100 * (0.5S + 0.3A + 0.2O))",
+          }).provenance,
+          sensitiveTransmissionRatio: derivedMetric(privacyRisk.sensitiveTransmissionRatio, {
+            source: "boundary.egressLedger.v2 disclosures",
+            method: "sensitive transmitted occurrence equivalents / detected occurrences",
+          }).provenance,
+          agentSelectionRatio: derivedMetric(privacyRisk.agentSelectionRatio, {
+            source: "Boundary Router selected Agent IDs",
+            method: "deduplicated selected Agents / eligible Agents",
+          }).provenance,
+          originalDisclosureRatio: derivedMetric(privacyRisk.originalDisclosureRatio, {
+            source: "boundary.egressLedger.v2 protected-source ranges",
+            method: "unique disclosed original UTF-8 bytes / protected source UTF-8 bytes",
+          }).provenance,
+        },
+      },
+      conflictAnalysis,
     },
     commercialJudge,
-    timeline: [
-      { label: "요청 정제", detail: `민감필드 ${inputFiltered.length}개 제거`, ms: 8 },
-      { label: "Agent 선택", detail: `${selected.length}개 역할 관련도·권한 일치`, ms: 12 },
-      { label: "Local RAG", detail: `${evidenceCount}개 근거 청크 검색`, ms: 31 },
-      { label: "응답 검증", detail: "필수영역·근거·충돌·민감정보 점검", ms: 15 },
-      { label: "결과 통합", detail: "근거 식별자·검토주체 연결", ms: 11 },
-    ],
+    timeline: schedulerMetrics.length
+      ? schedulerMetrics.map((item) => ({
+          label: `${item.taskKind} · ${item.agentId}`,
+          detail: `${item.dispatchReason} · ${item.outcome}`,
+          ms: item.endToEndMs,
+          queueWaitMs: item.queueWaitMs,
+          inferenceMs: item.inferenceMs,
+          provenance: "measured" as const,
+        }))
+      : [{
+          label: "요청 전체",
+          detail: "scheduler task가 없어 wall-clock만 기록",
+          ms: elapsedReading.value ?? 0,
+          queueWaitMs: null,
+          inferenceMs: null,
+          provenance: elapsedReading.provenance.kind,
+        }],
   };
+  report("central.completed", groundedAnswersEnabled() && result.executionStatus !== "completed"
+    ? `${integration.label}의 최종 통합에 실패했습니다. 최종 답변을 확정하지 못했습니다.`
+    : `${integration.label}의 최종 통합이 완료됐습니다.`, {
+    backend: integration.backend,
+    model: integration.model ?? undefined,
+    evidenceCount,
+  });
+  report("request.completed", groundedAnswersEnabled()
+    ? result.executionStatus === "completed" ? "최종 응답과 출처·실행 지표 생성이 완료됐습니다." : "최종 답변을 확정하지 못했습니다. 실패 상태와 출처·실행 지표를 표시합니다."
+    : "최종 응답과 검증 지표 생성이 완료됐습니다.", {
+    evidenceCount,
+  });
+  return result;
 }

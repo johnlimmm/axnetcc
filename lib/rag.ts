@@ -1,5 +1,8 @@
 import corpus from "../data/rag-corpus.json";
-import type { AgentId } from "./knowledge";
+import type { AgentId } from "./agent-registry";
+import { selectPublicHits } from "./public-passages";
+export { selectPublicPassage } from "./public-passages";
+export type { PublicRagHit } from "./public-passages";
 
 type CorpusDocument = {
   id: string;
@@ -11,6 +14,7 @@ type CorpusDocument = {
   publishedAt?: string | null;
   sourceSha256: string;
   licenseReview: string;
+  classification?: "public";
 };
 
 const documents = corpus.documents as CorpusDocument[];
@@ -86,7 +90,11 @@ export function searchRag(
   agents: AgentId[],
   limit = 3,
 ): RagHit[] {
-  const expandedQuery = expandQuery(query);
+  return searchRanked(query, agents, limit, true);
+}
+
+function searchRanked(query: string, agents: AgentId[], limit: number, expand: boolean): RagHit[] {
+  const expandedQuery = expand ? expandQuery(query) : query;
   const queryTokens = [...new Set(tokenize(expandedQuery))];
   const queryWords = contentWords(query);
   const candidates = indexed.filter((entry) => agents.includes(
@@ -141,3 +149,8 @@ export const ragStats = {
   generatedAt: corpus.generatedAt,
   algorithm: "BM25 + CPU lexical reranker",
 };
+
+/** Explicit demo-only public-body path. Ordinary retrieval and disclosure are unchanged. */
+export function searchPublicRag(query: string, agents: AgentId[], limit = 3) {
+  return selectPublicHits(query, searchRanked(query, agents, documents.length, false), limit, documents);
+}

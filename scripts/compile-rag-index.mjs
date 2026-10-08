@@ -1,7 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const root = new URL("../", import.meta.url);
 const agents = ["tech", "data", "security", "legal", "policy", "finance", "procurement", "operations"];
 const documents = [];
 
@@ -20,6 +19,7 @@ for (const agent of agents) {
       publishedAt: chunk.published_at,
       sourceSha256: chunk.source_sha256,
       licenseReview: chunk.license_review,
+      classification: "public",
     });
   }
 }
